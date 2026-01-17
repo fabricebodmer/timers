@@ -52,6 +52,10 @@
         }
         .duration-card:hover { border-color: #cbd5e1; }
         .duration-card.dragging { opacity: 0.4; transform: scale(0.98); }
+        .duration-card.over {
+            border: 2px dashed var(--primary);
+            transform: scale(1.02);
+        }
         
         .drag-handle { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-wrap: wrap; width: 12px; gap: 3px; opacity: 0; }
         .duration-card:hover .drag-handle { opacity: 0.4; }
@@ -139,6 +143,7 @@
     let intervals = {};
     let soundIntervals = {};
     let globalSoundEnabled = true;
+    let dragSrcEl = null;
 
 
 // --- LOGIQUE AUDIO (IPAD FIX) ---
@@ -272,6 +277,7 @@
             <div class="card-actions" id="actions-${obj.id}"><button class="btn-start" onclick="demarrerDuree('${obj.id}')">${t.start}</button></div>
             <div class="progress-bar-container"><div class="progress-bar-fill" id="progress-${obj.id}"></div></div>`;
         document.getElementById('durationsList').appendChild(card);
+        attacherEvenementsDrag(card);
     }
 
     function demarrerDuree(id) {
@@ -367,8 +373,83 @@
         localStorage.setItem('timers_v16_data', JSON.stringify(dataToSave));
     }
 
+    function handleDragStart(e) {
+        this.classList.add('dragging');
+        dragSrcEl = this;
+        e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragOver(e) {
+        if (e.preventDefault) e.preventDefault();
+        return false;
+    }
+
+    function handleDragEnter(e) {
+        this.classList.add('over');
+    }
+
+    function handleDragLeave(e) {
+        this.classList.remove('over');
+    }
+
+    function handleDrop(e) {
+        if (e.stopPropagation) e.stopPropagation();
+        
+        if (dragSrcEl !== this) {
+            const list = document.getElementById('durationsList');
+            const allCards = Array.from(list.querySelectorAll('.duration-card'));
+            const indexSrc = allCards.indexOf(dragSrcEl);
+            const indexDest = allCards.indexOf(this);
+
+            if (indexSrc < indexDest) {
+                this.after(dragSrcEl);
+            } else {
+                this.before(dragSrcEl);
+            }
+            reindexerListe();
+        }
+        return false;
+    }
+
+    function handleDragEnd(e) {
+        const cards = document.querySelectorAll('.duration-card');
+        cards.forEach(card => {
+            card.classList.remove('over');
+            card.classList.remove('dragging');
+        });
+    }
+
+    function reindexerListe() {
+        const nouvellesCartes = document.querySelectorAll('.duration-card');
+        const nouvelleListe = [];
+        nouvellesCartes.forEach(carte => {
+            const id = carte.id.replace('card-', '');
+            const timerObj = listeDurees.find(d => d.id.toString() === id.toString());
+            if (timerObj) nouvelleListe.push(timerObj);
+        });
+        listeDurees = nouvelleListe;
+        sauvegarder();
+    }
+
+    // Fonction pour attacher les événements à chaque nouvelle carte
+    function attacherEvenementsDrag(el) {
+        el.addEventListener('dragstart', handleDragStart, false);
+        el.addEventListener('dragenter', handleDragEnter, false);
+        el.addEventListener('dragover', handleDragOver, false);
+        el.addEventListener('dragleave', handleDragLeave, false);
+        el.addEventListener('drop', handleDrop, false);
+        el.addEventListener('dragend', handleDragEnd, false);
+    }
+
     function reinitialiserTout() { if(confirm(i18n[currentLang].confirmReset)) { localStorage.clear(); location.reload(); } }
     function toggleFullscreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+
+    document.addEventListener('dragend', (e) => {
+        if (e.target.classList.contains('duration-card')) {
+            e.target.classList.remove('dragging');
+            reindexerListe(); // C'est ici que la magie opère
+        }
+    });
 
     /*
     window.onload = () => {

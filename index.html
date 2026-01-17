@@ -502,6 +502,7 @@
                             // Si le temps est fini pendant que la page était fermée
                             d.start = null; 
                             d.extraSecs = 0;
+                            d.muted = false; // On force le son à "ON" lorsqu'un timer écoulé est rechargé
                         }
                     }
                 });

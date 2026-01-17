@@ -314,6 +314,7 @@
         clearInterval(intervals[id]); clearInterval(soundIntervals[id]);
         const obj = listeDurees.find(d => d.id.toString() === id.toString());
         obj.start = null; obj.extraSecs = 0;
+        obj.muted = false;  // Réactive le son pour la prochaine fois
         const card = document.getElementById(`card-${id}`);
         card.classList.remove('active', 'finished');
         document.getElementById(`time-${id}`).textContent = formaterTemps(obj.totalSecs);

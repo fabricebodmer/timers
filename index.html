@@ -14,28 +14,61 @@
             --danger: #ef4444;
             --danger-bg: #fff1f2;
             --progress-line: #e2e8f0;
+            --top-bar-bg: #1e293b;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --input-border: #cbd5e1;
+            --btn-bg: #334155;
+            --btn-close-bg: #f1f5f9;
+            --settings-bg: #ffffff;
+            --shadow-color: rgba(0,0,0,0.04);
         }
 
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text-dark); }
+        [data-theme="dark"] {
+            --primary: #38bdf8;
+            --success: #4ade80;
+            --bg: #0f172a;
+            --text-dark: #f1f5f9;
+            --text-light: #94a3b8;
+            --danger: #f87171;
+            --danger-bg: #3f1f1f;
+            --progress-line: #1e293b;
+            --top-bar-bg: #020617;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --input-border: #475569;
+            --btn-bg: #475569;
+            --btn-close-bg: #334155;
+            --settings-bg: #1e293b;
+            --shadow-color: rgba(0,0,0,0.3);
+        }
+
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text-dark); transition: background-color 0.3s ease, color 0.3s ease; }
         
-        .top-bar { background: #1e293b; display: flex; justify-content: space-between; align-items: center; padding: 12px 30px; z-index: 100; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .top-bar { background: var(--top-bar-bg); display: flex; justify-content: space-between; align-items: center; padding: 12px 30px; z-index: 100; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: background-color 0.3s ease; }
         .app-title { font-weight: 900; font-size: 1.2rem; letter-spacing: 1px; }
         .right-controls { display: flex; align-items: center; gap: 12px; }
         
-        .lang-selector { background: #334155; border: none; color: white; padding: 8px; border-radius: 8px; font-weight: 700; cursor: pointer; border: 1px solid #475569; outline: none; }
+        .lang-selector { background: var(--btn-bg); border: none; color: white; padding: 8px; border-radius: 8px; font-weight: 700; cursor: pointer; border: 1px solid #475569; outline: none; transition: background-color 0.3s ease; }
         
-        .btn-sound-global { background: #334155; border: 2px solid transparent; color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .btn-sound-global { background: var(--btn-bg); border: 2px solid transparent; color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
         .btn-sound-global.is-off { border-color: var(--danger); color: var(--danger); }
-        .btn-ctrl { background: #334155; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 700; }
+        .btn-ctrl { background: var(--btn-bg); color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 700; transition: background-color 0.3s ease; }
+        .btn-ctrl:hover { opacity: 0.9; }
 
-        .settings-panel { background: white; padding: 20px 25px; border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .btn-theme { background: var(--btn-bg); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 8px; transition: all 0.2s; font-size: 1.2rem; }
+        .btn-theme:hover { opacity: 0.9; }
+
+        .settings-panel { background: var(--settings-bg); padding: 20px 25px; border-bottom: 1px solid var(--card-border); box-shadow: 0 4px 12px var(--shadow-color); transition: background-color 0.3s ease, border-color 0.3s ease; }
         .input-group { display: flex; gap: 20px; align-items: flex-end; justify-content: center; }
         .field { display: flex; flex-direction: column; gap: 8px; }
-        .field label { font-size: 0.75rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; }
-        input { padding: 12px; border: 2px solid #cbd5e1; border-radius: 10px; font-weight: 700; font-size: 1rem; outline: none; }
+        .field label { font-size: 0.75rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; transition: color 0.3s ease; }
+        input { padding: 12px; border: 2px solid var(--input-border); border-radius: 10px; font-weight: 700; font-size: 1rem; outline: none; background: var(--card-bg); color: var(--text-dark); transition: all 0.3s ease; }
+        input:focus { border-color: var(--primary); }
         .input-name { width: 300px; }
         .input-time { width: 80px; text-align: center; }
-        .btn-add-main { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 1rem; text-transform: uppercase; }
+        .btn-add-main { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 1rem; text-transform: uppercase; transition: opacity 0.2s; }
+        .btn-add-main:hover { opacity: 0.9; }
 
         #durationsList { 
             display: grid; 
@@ -45,48 +78,232 @@
         }
         
         .duration-card { 
-            background: white; border-radius: 35px; padding: 40px 40px 50px 40px; 
-            border: 1px solid #e2e8f0; text-align: center; position: relative; 
-            box-shadow: 0 12px 24px rgba(0,0,0,0.04); transition: transform 0.2s;
+            background: var(--card-bg); border-radius: 35px; padding: 40px 40px 50px 40px; 
+            border: 1px solid var(--card-border); text-align: center; position: relative; 
+            box-shadow: 0 12px 24px var(--shadow-color); transition: all 0.3s ease;
             overflow: hidden; cursor: grab; user-select: none;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
-        .duration-card:hover { border-color: #cbd5e1; }
+        .duration-card:hover { border-color: var(--text-light); }
         .duration-card.dragging { opacity: 0.4; transform: scale(0.98); }
         .duration-card.over {
             border: 2px dashed var(--primary);
             transform: scale(1.02);
         }
         
-        .drag-handle { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-wrap: wrap; width: 12px; gap: 3px; opacity: 0; }
+        .drag-handle { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-wrap: wrap; width: 12px; gap: 3px; opacity: 0; transition: opacity 0.3s; }
         .duration-card:hover .drag-handle { opacity: 0.4; }
         .drag-dot { width: 4px; height: 4px; background: var(--text-light); border-radius: 50%; }
 
         .active { border-color: var(--primary) !important; }
         .finished { background: var(--danger-bg) !important; border-color: var(--danger) !important; animation: pulse-red 1.5s infinite; }
 
-        .progress-bar-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 12px; background: var(--progress-line); pointer-events: none; }
-        .progress-bar-fill { height: 100%; width: 0%; background: var(--primary); transition: width 1s linear; }
+        .progress-bar-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 12px; background: var(--progress-line); pointer-events: none; transition: background-color 0.3s ease; }
+        .progress-bar-fill { height: 100%; width: 0%; background: var(--primary); transition: width 1s linear, background-color 0.3s ease; }
         .finished .progress-bar-fill { background: var(--danger); width: 100% !important; }
 
-        .btn-close { position: absolute; top: 20px; right: 20px; background: #f1f5f9; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-weight: 900; color: var(--text-light); z-index: 10; }
+        .btn-close { position: absolute; top: 20px; right: 20px; background: var(--btn-close-bg); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-weight: 900; color: var(--text-light); z-index: 10; transition: all 0.3s ease; }
+        .btn-close:hover { opacity: 0.7; }
         
-        .label-duree-titre { font-weight: 900; color: var(--text-light); font-size: 1.2rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
-        .label-nom { font-weight: 800; color: var(--primary); font-size: 1.8rem; margin-bottom: 5px; }
+        .label-duree-titre { font-weight: 900; color: var(--text-light); font-size: 1.2rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s ease; }
+        .label-nom { font-weight: 800; color: var(--primary); font-size: 1.8rem; margin-bottom: 5px; transition: color 0.3s ease; }
         
-        .time-left { font-size: 6rem; font-weight: 900; color: #cbd5e1; margin: 0; line-height: 1; }
+        .time-left { font-size: 6rem; font-weight: 900; color: var(--input-border); margin: 0; line-height: 1; transition: color 0.3s ease; }
         .active .time-left { color: var(--text-dark); }
         .finished .time-left { color: var(--danger); }
 
-        .end-time-display { font-weight: 800; color: var(--text-light); font-size: 1.1rem; margin-bottom: 15px; min-height: 1.2em; text-transform: uppercase; }
+        .end-time-display { font-weight: 800; color: var(--text-light); font-size: 1.1rem; margin-bottom: 15px; min-height: 1.2em; text-transform: uppercase; transition: color 0.3s ease; }
         .active .end-time-display { color: var(--primary); }
         .finished .end-time-display { visibility: hidden; }
 
         .card-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-        .btn-start { background: var(--success); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 1rem; width: 100%; max-width: 200px; }
-        .btn-action { background: white; color: var(--text-light); border: 2px solid #cbd5e1; padding: 10px 18px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .btn-start { background: var(--success); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 1rem; width: 100%; max-width: 200px; transition: opacity 0.2s; }
+        .btn-start:hover { opacity: 0.9; }
+        .btn-action { background: var(--card-bg); color: var(--text-light); border: 2px solid var(--input-border); padding: 10px 18px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.3s ease; }
+        .btn-action:hover { border-color: var(--text-light); }
         .btn-stop { border-color: var(--danger); color: var(--danger); }
 
         @keyframes pulse-red { 0% { box-shadow: 0 0 0px rgba(239, 68, 68, 0); } 50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.3); } 100% { box-shadow: 0 0 0px rgba(239, 68, 68, 0); } }
+        
+        /* Onglets */
+        .tabs-container { background: var(--settings-bg); border-bottom: 1px solid var(--card-border); display: flex; gap: 0; padding: 0 30px; transition: background-color 0.3s ease; }
+        .tab-btn { background: transparent; border: none; color: var(--text-light); padding: 15px 25px; cursor: pointer; font-weight: 700; font-size: 1rem; border-bottom: 3px solid transparent; transition: all 0.3s ease; }
+        .tab-btn:hover { color: var(--text-dark); }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Éditeur Markdown */
+        .markdown-container { display: flex; flex-direction: column; height: calc(100vh - 180px); padding: 0; }
+        .markdown-editor-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .markdown-toolbar { position: absolute; top: 20px; right: 20px; z-index: 100; display: flex; gap: 8px; }
+        .markdown-toolbar button { background: var(--btn-bg); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.85rem; transition: opacity 0.2s; }
+        .markdown-toolbar button:hover { opacity: 0.8; }
+        .markdown-toolbar .btn-edit { background: transparent; color: var(--text-light); border: 1px solid var(--card-border); font-size: 0.8rem; padding: 5px 10px; }
+        .markdown-toolbar .btn-edit:hover { background: var(--card-bg); }
+        .markdown-textarea { flex: 1; width: 100%; padding: 40px; border: none; outline: none; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; font-size: 1.5rem; line-height: 1.4; background: var(--bg); color: var(--text-dark); resize: none; transition: all 0.3s ease; }
+        .markdown-preview { flex: 1; padding: 40px; overflow-y: auto; background: var(--bg); color: var(--text-dark); line-height: 1.4; font-size: 1.5rem; position: relative; }
+        .markdown-preview h1 { font-size: 3.5rem; font-weight: 900; margin-top: 0; margin-bottom: 0.6rem; color: var(--primary); line-height: 1.1; }
+        .markdown-preview h2 { font-size: 2.8rem; font-weight: 800; margin-top: 1.2rem; margin-bottom: 0.6rem; color: var(--text-dark); line-height: 1.1; }
+        .markdown-preview h3 { font-size: 2.2rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; color: var(--text-dark); line-height: 1.1; }
+        .markdown-preview p { margin-bottom: 0.6rem; }
+        .markdown-preview ul, .markdown-preview ol { margin-bottom: 0.6rem; padding-left: 2.5rem; }
+        .markdown-preview li { margin-bottom: 0.2rem; }
+        .markdown-preview code { background: var(--card-bg); padding: 3px 8px; border-radius: 4px; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; font-size: 1.3rem; border: 1px solid var(--card-border); }
+        .markdown-preview pre { background: var(--card-bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin-bottom: 0.6rem; border: 1px solid var(--card-border); }
+        .markdown-preview pre code { background: transparent; border: none; padding: 0; }
+        .markdown-preview blockquote { border-left: 4px solid var(--primary); padding-left: 1.5rem; margin-left: 0; margin-bottom: 0.6rem; color: var(--text-light); font-style: italic; font-size: 1.6rem; line-height: 1.3; }
+        .markdown-preview strong { font-weight: 700; color: var(--text-dark); }
+        .markdown-preview em { font-style: italic; }
+        .markdown-preview a { color: var(--primary); text-decoration: underline; }
+        .markdown-preview hr { border: none; border-top: 2px solid var(--card-border); margin: 1.2rem 0; }
+        
+        /* Bouton toggle settings panel */
+        .settings-panel { position: relative; transition: all 0.3s ease; }
+        .settings-panel.collapsed { max-height: 0; overflow: hidden; padding: 0; border: none; }
+        .toggle-settings-btn { position: absolute; right: 30px; top: 15px; background: transparent; border: 1px solid var(--card-border); color: var(--text-light); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; z-index: 10; }
+        .toggle-settings-btn:hover { background: var(--card-bg); }
+        
+        .show-settings-bar { background: var(--settings-bg); padding: 15px 40px; border-bottom: 1px solid var(--card-border); display: none; transition: background-color 0.3s ease; text-align: right; }
+        .show-settings-bar.visible { display: block; }
+        .btn-show-settings { background: transparent; color: var(--text-light); border: 1px solid var(--card-border); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 1.2rem; transition: all 0.2s; }
+        .btn-show-settings:hover { background: var(--card-bg); }
+        
+        /* Responsive Mobile */
+        @media (max-width: 768px) {
+            .top-bar { 
+                flex-direction: column; 
+                padding: 10px 15px; 
+                gap: 10px;
+                align-items: stretch;
+            }
+            
+            .app-title { 
+                text-align: center; 
+                font-size: 1rem;
+            }
+            
+            .right-controls { 
+                flex-wrap: wrap; 
+                justify-content: center;
+                gap: 8px;
+            }
+            
+            .lang-selector, .btn-sound-global, .btn-ctrl, .btn-theme { 
+                font-size: 0.75rem; 
+                padding: 6px 10px;
+            }
+            
+            .btn-theme {
+                font-size: 1rem;
+            }
+            
+            .settings-panel { 
+                padding: 15px; 
+            }
+            
+            .input-group { 
+                flex-direction: column; 
+                gap: 12px; 
+                align-items: stretch;
+            }
+            
+            .field { 
+                width: 100%;
+            }
+            
+            .input-name, .input-time { 
+                width: 100%;
+            }
+            
+            .btn-add-main { 
+                width: 100%;
+                padding: 12px;
+            }
+            
+            .toggle-settings-btn {
+                right: 15px;
+            }
+            
+            .show-settings-bar {
+                padding: 10px 15px;
+            }
+            
+            #durationsList { 
+                grid-template-columns: 1fr; 
+                padding: 20px 15px; 
+                gap: 20px;
+            }
+            
+            .duration-card { 
+                padding: 25px 20px 40px 20px;
+                border-radius: 20px;
+            }
+            
+            .time-left { 
+                font-size: 4rem;
+            }
+            
+            .label-nom { 
+                font-size: 1.4rem;
+            }
+            
+            .label-duree-titre { 
+                font-size: 1rem;
+            }
+            
+            .card-actions { 
+                flex-direction: column; 
+                gap: 8px;
+            }
+            
+            .btn-start, .btn-action { 
+                width: 100%;
+                max-width: none;
+            }
+            
+            .tabs-container {
+                padding: 0 15px;
+            }
+            
+            .tab-btn {
+                padding: 12px 15px;
+                font-size: 0.9rem;
+            }
+            
+            .markdown-toolbar {
+                top: 10px;
+                right: 10px;
+                gap: 5px;
+            }
+            
+            .markdown-toolbar button {
+                font-size: 0.75rem;
+                padding: 5px 8px;
+            }
+            
+            .markdown-preview, .markdown-textarea { 
+                padding: 20px; 
+                font-size: 1.2rem;
+            }
+            
+            .markdown-preview h1 { 
+                font-size: 2.2rem;
+            }
+            
+            .markdown-preview h2 { 
+                font-size: 1.8rem;
+            }
+            
+            .markdown-preview h3 { 
+                font-size: 1.5rem;
+            }
+            
+            .markdown-preview blockquote { 
+                font-size: 1.3rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -98,6 +315,12 @@
     <div class="top-bar">
         <div class="app-title">TIMERS</div>
         <div class="right-controls">
+            <button class="btn-theme" onclick="toggleTheme()" title="Basculer mode sombre/clair">
+                <span id="themeIcon">🌙</span>
+            </button>
+            <button id="hideSecondsBtn" class="btn-sound-global" onclick="toggleHideSeconds()">
+                <span id="txt-hide-seconds">SEC</span> : <span id="hideSecondsText">ON</span>
+            </button>
             <select id="langSelector" class="lang-selector" onchange="changeLanguage(this.value)">
                 <option value="fr">FR</option>
                 <option value="de">DE</option>
@@ -111,7 +334,17 @@
         </div>
     </div>
 
-    <div class="settings-panel">
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="switchTab('timers')" id="tab-timers-btn">⏱️ Timers</button>
+        <button class="tab-btn" onclick="switchTab('instructions')" id="tab-instructions-btn">📝 Instructions</button>
+    </div>
+
+    <div id="timers-tab" class="tab-content active">
+    <div class="show-settings-bar" id="showSettingsBar">
+        <button class="btn-show-settings" onclick="toggleSettingsPanel()" id="btn-show-settings">+</button>
+    </div>
+    <div class="settings-panel" id="settingsPanel">
+        <button class="toggle-settings-btn" onclick="toggleSettingsPanel()" id="toggleSettingsBtn">▲</button>
         <div class="input-group">
             <div class="field">
                 <label id="txt-label-name">Nom</label>
@@ -130,12 +363,26 @@
     </div>
 
     <div id="durationsList"></div>
+    </div>
+
+    <div id="instructions-tab" class="tab-content">
+        <div class="markdown-container">
+            <div class="markdown-editor-wrapper">
+                <div class="markdown-toolbar">
+                    <button class="btn-edit" onclick="toggleMarkdownMode()">✏️ <span id="mode-text">Éditer</span></button>
+                    <button onclick="resetInstructions()">🔄 <span id="reset-text">Réinitialiser</span></button>
+                </div>
+                <textarea id="markdownEditor" class="markdown-textarea" placeholder="Entrez vos instructions en Markdown..." style="display: none;"></textarea>
+                <div id="markdownPreview" class="markdown-preview"></div>
+            </div>
+        </div>
+    </div>
 
 <script>
     const i18n = {
-        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Pain", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?" },
-        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Brot", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?" },
-        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. Bread", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?" }
+        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informations", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer" },
+        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informationen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen" },
+        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Information", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer" }
     };
 
     let currentLang = 'fr';
@@ -144,7 +391,253 @@
     let soundIntervals = {};
     let globalSoundEnabled = true;
     let dragSrcEl = null;
+    let darkMode = false;
+    let hideSeconds = false;
+    let markdownMode = 'preview'; // 'edit' ou 'preview'
+    let settingsPanelVisible = true;
+    let currentTab = 'timers';
+    let defaultMarkdown = `# Put your content
+`;
 
+
+// --- LOGIQUE THEME ---
+    function toggleTheme() {
+        darkMode = !darkMode;
+        applyTheme();
+        sauvegarder();
+    }
+
+    function applyTheme() {
+        if (darkMode) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.getElementById('themeIcon').textContent = '☀️';
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            document.getElementById('themeIcon').textContent = '🌙';
+        }
+    }
+
+// --- LOGIQUE ONGLETS ---
+    function switchTab(tabName) {
+        // Masquer tous les onglets
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        
+        // Afficher l'onglet sélectionné
+        document.getElementById(`${tabName}-tab`).classList.add('active');
+        document.getElementById(`tab-${tabName}-btn`).classList.add('active');
+        
+        // Mémoriser l'onglet actif
+        currentTab = tabName;
+        localStorage.setItem('timers_current_tab', tabName);
+        
+        // Si on affiche l'onglet instructions, charger le markdown
+        if (tabName === 'instructions') {
+            loadMarkdown();
+        }
+    }
+
+    function toggleSettingsPanel() {
+        const panel = document.getElementById('settingsPanel');
+        const btn = document.getElementById('toggleSettingsBtn');
+        const showBar = document.getElementById('showSettingsBar');
+        settingsPanelVisible = !settingsPanelVisible;
+        
+        if (settingsPanelVisible) {
+            panel.classList.remove('collapsed');
+            showBar.classList.remove('visible');
+            btn.textContent = '▲';
+        } else {
+            panel.classList.add('collapsed');
+            showBar.classList.add('visible');
+            btn.textContent = '▼';
+        }
+        
+        localStorage.setItem('timers_settings_visible', settingsPanelVisible);
+    }
+
+// --- LOGIQUE MARKDOWN ---
+    function loadMarkdown() {
+        const savedMarkdown = localStorage.getItem('timers_markdown');
+        const editor = document.getElementById('markdownEditor');
+        editor.value = savedMarkdown || defaultMarkdown;
+        // Toujours afficher le rendu par défaut
+        renderMarkdown();
+    }
+
+    function saveMarkdown() {
+        const editor = document.getElementById('markdownEditor');
+        localStorage.setItem('timers_markdown', editor.value);
+    }
+
+    function toggleMarkdownMode() {
+        const editor = document.getElementById('markdownEditor');
+        const preview = document.getElementById('markdownPreview');
+        const modeText = document.getElementById('mode-text');
+        
+        if (markdownMode === 'preview') {
+            markdownMode = 'edit';
+            editor.style.display = 'block';
+            preview.style.display = 'none';
+            modeText.textContent = i18n[currentLang].preview;
+        } else {
+            markdownMode = 'preview';
+            renderMarkdown();
+            editor.style.display = 'none';
+            preview.style.display = 'block';
+            modeText.textContent = i18n[currentLang].edit;
+        }
+    }
+
+    function renderMarkdown() {
+        const editor = document.getElementById('markdownEditor');
+        const preview = document.getElementById('markdownPreview');
+        const text = editor.value;
+        
+        // Simple parseur Markdown
+        let html = text
+            // Headers
+            .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+            .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+            .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+            // Bold
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            // Italic
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            // Code inline
+            .replace(/`(.+?)`/g, '<code>$1</code>')
+            // Links
+            .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>')
+            // Horizontal rule
+            .replace(/^---$/gim, '<hr>')
+            // Blockquotes
+            .replace(/^> (.+)$/gim, '<blockquote>$1</blockquote>');
+        
+        // Traiter les listes à puces avec deux niveaux
+        const lines = html.split('\n');
+        let inList = false;
+        let inSubList = false;
+        let result = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            
+            // Liste de niveau 1
+            if (/^- (.+)$/.test(line)) {
+                if (!inList) {
+                    result.push('<ul>');
+                    inList = true;
+                }
+                if (inSubList) {
+                    result.push('</ul></li>');
+                    inSubList = false;
+                }
+                result.push('<li>' + line.replace(/^- /, '') + '</li>');
+            }
+            // Liste de niveau 2 (indentée avec 2 espaces ou tab)
+            else if (/^  - (.+)$/.test(line) || /^\t- (.+)$/.test(line)) {
+                if (!inSubList) {
+                    // Retirer le dernier </li> ajouté
+                    result[result.length - 1] = result[result.length - 1].replace(/<\/li>$/, '');
+                    result.push('<ul>');
+                    inSubList = true;
+                }
+                result.push('<li>' + line.replace(/^  - /, '').replace(/^\t- /, '') + '</li>');
+            }
+            // Liste numérotée de niveau 1
+            else if (/^\d+\. (.+)$/.test(line)) {
+                if (inList && !inSubList) {
+                    result.push('</ul>');
+                    inList = false;
+                }
+                if (inSubList) {
+                    result.push('</ul></li></ul>');
+                    inList = false;
+                    inSubList = false;
+                }
+                if (!inList) {
+                    result.push('<ol>');
+                    inList = true;
+                }
+                result.push('<li>' + line.replace(/^\d+\. /, '') + '</li>');
+            }
+            // Liste numérotée de niveau 2
+            else if (/^  \d+\. (.+)$/.test(line) || /^\t\d+\. (.+)$/.test(line)) {
+                if (!inSubList) {
+                    result[result.length - 1] = result[result.length - 1].replace(/<\/li>$/, '');
+                    result.push('<ol>');
+                    inSubList = true;
+                }
+                result.push('<li>' + line.replace(/^  \d+\. /, '').replace(/^\t\d+\. /, '') + '</li>');
+            }
+            else {
+                if (inSubList) {
+                    result.push('</ol></li>');
+                    inSubList = false;
+                }
+                if (inList) {
+                    result.push(line.includes('<ol>') ? '</ol>' : '</ul>');
+                    inList = false;
+                }
+                result.push(line);
+            }
+        }
+        
+        // Fermer les listes ouvertes
+        if (inSubList) {
+            result.push(result[0].includes('<ol>') ? '</ol></li>' : '</ul></li>');
+        }
+        if (inList) {
+            result.push(result[0].includes('<ol>') ? '</ol>' : '</ul>');
+        }
+        
+        html = result.join('\n');
+        
+        // Line breaks et paragraphes
+        html = html.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+        
+        preview.innerHTML = '<p>' + html + '</p>';
+    }
+
+    function resetInstructions() {
+        if (confirm(i18n[currentLang].confirmResetInstructions)) {
+            // Essayer de charger le fichier info.md (ne fonctionne que via serveur web)
+            fetch('info.md')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Fichier non trouvé');
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    // Sauvegarder le texte du fichier
+                    localStorage.setItem('timers_markdown', text);
+                    const editor = document.getElementById('markdownEditor');
+                    editor.value = text;
+                    renderMarkdown();
+                })
+                .catch(error => {
+                    // Utiliser le texte par défaut (fonctionne en mode file://)
+                    console.log('Utilisation du texte par défaut (mode local ou fichier non trouvé)');
+                    localStorage.setItem('timers_markdown', defaultMarkdown);
+                    const editor = document.getElementById('markdownEditor');
+                    editor.value = defaultMarkdown;
+                    renderMarkdown();
+                });
+        }
+    }
+
+    // Auto-save markdown
+    let markdownSaveTimeout;
+    document.addEventListener('DOMContentLoaded', () => {
+        const editor = document.getElementById('markdownEditor');
+        if (editor) {
+            editor.addEventListener('input', () => {
+                clearTimeout(markdownSaveTimeout);
+                markdownSaveTimeout = setTimeout(saveMarkdown, 1000);
+            });
+        }
+    });
 
 // --- LOGIQUE AUDIO (IPAD FIX) ---
     const beep = document.getElementById('beepAudio');
@@ -152,14 +645,12 @@
     let globalAudioCtx = null;
 
     function unlockAudio() {
-        // Crée le contexte une seule fois au premier clic
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
-        // Amorce Safari
         beep.play().then(() => { beep.pause(); beep.currentTime = 0; }).catch(() => {});
     }
 
@@ -169,12 +660,10 @@
         if (obj && obj.muted) return;
 
         try {
-            // 2. On réutilise toujours le même contexte
             if (!globalAudioCtx) {
                 globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
             
-            // 3. Forcer la reprise (essentiel pour iPad entre deux bips)
             if (globalAudioCtx.state === 'suspended') {
                 globalAudioCtx.resume();
             }
@@ -185,7 +674,6 @@
             osc.type = 'sine';
             osc.frequency.setValueAtTime(880, globalAudioCtx.currentTime);
 
-            // Enveloppe anti-hachage (le "brr")
             g.gain.setValueAtTime(0, globalAudioCtx.currentTime);
             g.gain.linearRampToValueAtTime(0.4, globalAudioCtx.currentTime + 0.1);
             g.gain.exponentialRampToValueAtTime(0.01, globalAudioCtx.currentTime + 1);
@@ -213,12 +701,18 @@
         const t = i18n[currentLang];
         document.getElementById('txt-sound').textContent = t.sound;
         document.getElementById('globalSoundText').textContent = globalSoundEnabled ? t.on : t.off;
+        document.getElementById('txt-hide-seconds').textContent = t.hideSeconds;
+        document.getElementById('hideSecondsText').textContent = hideSeconds ? t.off : t.on;
         document.getElementById('txt-clear-all').textContent = t.clearAll;
         document.getElementById('txt-label-name').textContent = t.labelName;
         document.getElementById('txt-label-min').textContent = t.labelMin;
         document.getElementById('txt-label-sec').textContent = t.labelSec;
         document.getElementById('txt-btn-add').textContent = t.btnAdd;
         document.getElementById('nameInput').placeholder = t.placeholderName;
+        document.getElementById('tab-timers-btn').textContent = t.tabTimers;
+        document.getElementById('tab-instructions-btn').textContent = t.tabInstructions;
+        document.getElementById('mode-text').textContent = markdownMode === 'preview' ? t.edit : t.preview;
+        document.getElementById('reset-text').textContent = t.reset;
         listeDurees.forEach(d => {
             const card = document.getElementById(`card-${d.id}`);
             if (card) {
@@ -232,7 +726,14 @@
         });
     }
 
-    function formaterTemps(s) { return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; }
+    function formaterTemps(s) { 
+        const minutes = Math.floor(s/60);
+        const secondes = s % 60;
+        if (hideSeconds && minutes > 0) {
+            return `${minutes} min`;
+        }
+        return `${minutes}:${secondes.toString().padStart(2,'0')}`; 
+    }
     function formaterHeure(date) { return date.toLocaleTimeString(currentLang === 'en'?'en-US':(currentLang==='de'?'de-DE':'fr-FR'), {hour:'2-digit', minute:'2-digit'}); }
 
     function majHeureFin(id) {
@@ -252,9 +753,44 @@
         document.getElementById('globalSoundText').textContent = globalSoundEnabled ? i18n[currentLang].on : i18n[currentLang].off;
     }
 
+    function toggleHideSeconds() { 
+        hideSeconds = !hideSeconds; 
+        updateHideSecondsUI(); 
+        // Rafraîchir l'affichage de tous les timers
+        listeDurees.forEach(d => {
+            const timeDisplay = document.getElementById(`time-${d.id}`);
+            if (timeDisplay) {
+                const obj = listeDurees.find(obj => obj.id.toString() === d.id.toString());
+                if (obj?.start) {
+                    const ecoule = Date.now() - obj.start;
+                    const total = (obj.totalSecs + obj.extraSecs) * 1000;
+                    const restant = total - ecoule;
+                    if (restant > 0) {
+                        timeDisplay.textContent = formaterTemps(Math.ceil(restant/1000));
+                    }
+                } else {
+                    timeDisplay.textContent = formaterTemps(d.totalSecs);
+                }
+            }
+            const card = document.getElementById(`card-${d.id}`);
+            if (card) {
+                card.querySelector('.label-duree-titre').textContent = `${i18n[currentLang].duration} — ${formaterTemps(d.totalSecs)}`;
+            }
+        });
+        sauvegarder(); 
+    }
+    
+    function updateHideSecondsUI() {
+        const btn = document.getElementById('hideSecondsBtn');
+        btn.classList.toggle('is-off', hideSeconds);
+        document.getElementById('txt-hide-seconds').textContent = i18n[currentLang].hideSeconds;
+        document.getElementById('hideSecondsText').textContent = hideSeconds ? i18n[currentLang].off : i18n[currentLang].on;
+    }
+
     function ajouterDuree() {
         const t = i18n[currentLang];
-        const nom = document.getElementById('nameInput').value || t.untiteld;
+        const nomInput = document.getElementById('nameInput').value.trim();
+        const nom = nomInput || '';
         const totalSecs = (parseInt(document.getElementById('minInput').value)||0)*60 + (parseInt(document.getElementById('secInput').value)||0);
         if (totalSecs <= 0) return;
         const id = Date.now();
@@ -268,10 +804,11 @@
         const t = i18n[currentLang];
         const card = document.createElement('div');
         card.className = 'duration-card'; card.id = `card-${obj.id}`; card.draggable = true;
+        const nomHTML = obj.nom ? `<div class="label-nom">${obj.nom}</div>` : '';
         card.innerHTML = `<div class="drag-handle"><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div></div>
             <button class="btn-close" onclick="supprimerDuree('${obj.id}')">×</button>
             <div class="label-duree-titre">${t.duration} — ${formaterTemps(obj.totalSecs)}</div>
-            <div class="label-nom">${obj.nom}</div>
+            ${nomHTML}
             <div class="time-left" id="time-${obj.id}">${formaterTemps(obj.totalSecs)}</div>
             <div class="end-time-display" id="endtime-${obj.id}"></div>
             <div class="card-actions" id="actions-${obj.id}"><button class="btn-start" onclick="demarrerDuree('${obj.id}')">${t.start}</button></div>
@@ -314,7 +851,7 @@
         clearInterval(intervals[id]); clearInterval(soundIntervals[id]);
         const obj = listeDurees.find(d => d.id.toString() === id.toString());
         obj.start = null; obj.extraSecs = 0;
-        obj.muted = false;  // Réactive le son pour la prochaine fois
+        obj.muted = false;
         const card = document.getElementById(`card-${id}`);
         card.classList.remove('active', 'finished');
         document.getElementById(`time-${id}`).textContent = formaterTemps(obj.totalSecs);
@@ -357,21 +894,19 @@
         sauvegarder();
     }
 
-    /*function sauvegarder() { localStorage.setItem('timers_v16_data', JSON.stringify({ timers: listeDurees, globalSound: globalSoundEnabled, lang: currentLang })); }*/
-
     function sauvegarder() {
-        // Sécurité : on ne sauvegarde pas si la liste est vide et que la page vient de charger
-        // (cela évite d'écraser vos données par erreur)
-        if (listeDurees.length === 0 && !localStorage.getItem('timers_v16_data')) {
-            // On ne fait rien s'il n'y a vraiment rien à sauvegarder
+        if (listeDurees.length === 0 && !localStorage.getItem('timers_v17_data')) {
+            // Ne rien faire si aucune donnée à sauvegarder
         }
         
         const dataToSave = {
             timers: listeDurees,
             globalSound: globalSoundEnabled,
-            lang: currentLang
+            lang: currentLang,
+            darkMode: darkMode,
+            hideSeconds: hideSeconds
         };
-        localStorage.setItem('timers_v16_data', JSON.stringify(dataToSave));
+        localStorage.setItem('timers_v17_data', JSON.stringify(dataToSave));
     }
 
     function handleDragStart(e) {
@@ -432,7 +967,6 @@
         sauvegarder();
     }
 
-    // Fonction pour attacher les événements à chaque nouvelle carte
     function attacherEvenementsDrag(el) {
         el.addEventListener('dragstart', handleDragStart, false);
         el.addEventListener('dragenter', handleDragEnter, false);
@@ -448,30 +982,12 @@
     document.addEventListener('dragend', (e) => {
         if (e.target.classList.contains('duration-card')) {
             e.target.classList.remove('dragging');
-            reindexerListe(); // C'est ici que la magie opère
+            reindexerListe();
         }
     });
 
-    /*
     window.onload = () => {
-        const data = JSON.parse(localStorage.getItem('timers_v16_data') || '{}');
-        currentLang = data.lang || 'fr';
-        globalSoundEnabled = data.globalSound !== undefined ? data.globalSound : true;
-        changeLanguage(currentLang);
-        if (data.timers) {
-            data.timers.forEach(d => {
-                listeDurees.push(d); creerCarteHTML(d);
-                if (d.start) {
-                    if (Date.now() - d.start < (d.totalSecs+d.extraSecs)*1000) { majInterfaceActive(d.id); majHeureFin(d.id); lancerTick(d.id); }
-                    else { d.start = null; d.extraSecs = 0; }
-                }
-            });
-        }
-    };
-    */
-
-    window.onload = () => {
-        const savedData = localStorage.getItem('timers_v16_data');
+        const savedData = localStorage.getItem('timers_v17_data');
         
         if (savedData) {
             const data = JSON.parse(savedData);
@@ -479,8 +995,10 @@
             // 1. Restaurer les réglages
             currentLang = data.lang || 'fr';
             globalSoundEnabled = data.globalSound !== undefined ? data.globalSound : true;
+            darkMode = data.darkMode !== undefined ? data.darkMode : false;
+            hideSeconds = data.hideSeconds !== undefined ? data.hideSeconds : false;
             
-            // 2. Vider la liste actuelle avant de recharger (pour éviter les doublons)
+            // 2. Vider la liste actuelle avant de recharger
             listeDurees = [];
             document.getElementById('durationsList').innerHTML = "";
 
@@ -490,7 +1008,6 @@
                     listeDurees.push(d);
                     creerCarteHTML(d);
                     
-                    // Si la durée était active, on relance le visuel et le tick
                     if (d.start) {
                         const ecoule = Date.now() - d.start;
                         const total = (d.totalSecs + d.extraSecs) * 1000;
@@ -499,22 +1016,42 @@
                             majInterfaceActive(d.id);
                             lancerTick(d.id);
                         } else {
-                            // Si le temps est fini pendant que la page était fermée
                             d.start = null; 
                             d.extraSecs = 0;
-                            d.muted = false; // On force le son à "ON" lorsqu'un timer écoulé est rechargé
+                            d.muted = false;
                         }
                     }
                 });
             }
             
-            // 4. Appliquer la langue et le son
+            // 4. Appliquer la langue, le son, le thème et l'affichage des secondes
             changeLanguage(currentLang);
             updateGlobalSoundUI();
+            updateHideSecondsUI();
+            applyTheme();
+        }
+        
+        // 5. Restaurer l'onglet actif
+        const savedTab = localStorage.getItem('timers_current_tab');
+        if (savedTab) {
+            currentTab = savedTab;
+            switchTab(savedTab);
+        }
+        
+        // 6. Restaurer l'état du panneau settings
+        const savedSettingsVisible = localStorage.getItem('timers_settings_visible');
+        if (savedSettingsVisible !== null) {
+            settingsPanelVisible = savedSettingsVisible === 'true';
+            const panel = document.getElementById('settingsPanel');
+            const btn = document.getElementById('toggleSettingsBtn');
+            const showBar = document.getElementById('showSettingsBar');
+            if (!settingsPanelVisible) {
+                panel.classList.add('collapsed');
+                showBar.classList.add('visible');
+                btn.textContent = '▼';
+            }
         }
     };
-
-
 
 </script>
 </body>

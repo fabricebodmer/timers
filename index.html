@@ -59,6 +59,23 @@
         .btn-theme { background: var(--btn-bg); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 8px; transition: all 0.2s; font-size: 1.2rem; }
         .btn-theme:hover { opacity: 0.9; }
 
+        /* Menu dropdown ⋮ */
+        .menu-wrapper { position: relative; display: inline-block; }
+        .btn-menu { font-size: 1.4rem; font-weight: 900; padding: 8px 14px; line-height: 1; }
+        .dropdown-menu { display: none; position: absolute; top: calc(100% + 6px); right: 0; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); min-width: 220px; z-index: 200; padding: 6px; }
+        .dropdown-menu.visible { display: block; }
+        .dropdown-item { display: flex; align-items: center; gap: 8px; width: 100%; background: transparent; color: var(--text-dark); border: none; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.95rem; text-align: left; transition: background 0.15s; }
+        .dropdown-item:hover { background: var(--btn-close-bg); }
+        .dropdown-item.dropdown-danger { color: var(--danger); }
+        .dropdown-item.dropdown-danger:hover { background: var(--danger-bg); }
+        .dropdown-divider { height: 1px; background: var(--card-border); margin: 6px 0; }
+        .dropdown-setting { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 200px; }
+        .dropdown-setting label { font-size: 0.75rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+        .dropdown-setting-input { display: flex; align-items: center; gap: 8px; }
+        .dropdown-setting-input input { width: 70px; padding: 6px 8px; border: 1px solid var(--input-border); border-radius: 6px; font-weight: 700; font-size: 0.95rem; background: var(--bg); color: var(--text-dark); outline: none; text-align: center; }
+        .dropdown-setting-input input:focus { border-color: var(--primary); }
+        .dropdown-setting-input span { font-weight: 700; color: var(--text-light); font-size: 0.9rem; }
+
         .settings-panel { background: var(--settings-bg); padding: 20px 25px; border-bottom: 1px solid var(--card-border); box-shadow: 0 4px 12px var(--shadow-color); transition: background-color 0.3s ease, border-color 0.3s ease; }
         .input-group { display: flex; gap: 20px; align-items: flex-end; justify-content: center; }
         .field { display: flex; flex-direction: column; gap: 8px; }
@@ -104,17 +121,57 @@
 
         .btn-close { position: absolute; top: 20px; right: 20px; background: var(--btn-close-bg); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-weight: 900; color: var(--text-light); z-index: 10; transition: all 0.3s ease; }
         .btn-close:hover { opacity: 0.7; }
+
+        .btn-duplicate { position: absolute; top: 20px; left: 20px; background: var(--btn-close-bg); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-weight: 900; color: var(--text-light); z-index: 10; transition: all 0.3s ease; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
+        .btn-duplicate:hover { opacity: 0.7; }
         
-        .label-duree-titre { font-weight: 900; color: var(--text-light); font-size: 1.2rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s ease; }
+        .label-duree-titre { font-weight: 900; color: var(--text-light); font-size: 1.2rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s ease; cursor: pointer; padding: 6px 12px; border-radius: 8px; border: 2px dashed transparent; position: relative; display: inline-block; }
+        .label-duree-titre::after { content: " ✏️"; opacity: 0; transition: opacity 0.2s ease; font-size: 0.9rem; }
+        .label-duree-titre:hover { background: var(--btn-close-bg); color: var(--text-dark); border-color: var(--input-border); }
+        .label-duree-titre:hover::after { opacity: 1; }
+        .duration-edit-form { display: flex; gap: 8px; align-items: center; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; padding: 12px 16px; background: var(--bg); border: 2px solid var(--primary); border-radius: 12px; box-shadow: 0 4px 12px var(--shadow-color); }
+        .duration-edit-form input { width: 70px; padding: 8px 10px; font-size: 1.1rem; border: 2px solid var(--input-border); border-radius: 8px; }
+        .duration-edit-form input:focus { border-color: var(--primary); }
+        .duration-edit-form span { font-weight: 700; color: var(--text-light); font-size: 0.9rem; text-transform: uppercase; }
+        .duration-edit-form button { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 800; font-size: 0.95rem; transition: opacity 0.2s; }
+        .duration-edit-form button:hover { opacity: 0.85; }
+        .duration-edit-form button.btn-cancel { background: var(--btn-close-bg); color: var(--text-light); border: 1px solid var(--input-border); }
+
+        /* Modal de confirmation (pour ne pas sortir du plein écran) */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(2px); }
+        .modal-overlay.visible { display: flex; }
+        .modal-box { background: var(--card-bg); border-radius: 16px; padding: 30px 35px; max-width: 90%; width: 420px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 1px solid var(--card-border); }
+        .modal-message { font-size: 1.2rem; font-weight: 700; color: var(--text-dark); margin-bottom: 25px; text-align: center; }
+        .modal-actions { display: flex; gap: 12px; justify-content: center; }
+        .modal-actions button { padding: 12px 24px; border-radius: 10px; font-weight: 800; font-size: 1rem; cursor: pointer; border: none; min-width: 100px; transition: opacity 0.2s; }
+        .modal-actions button:hover { opacity: 0.85; }
+        .modal-btn-confirm { background: var(--danger); color: white; }
+        .modal-btn-cancel { background: var(--btn-close-bg); color: var(--text-light); border: 1px solid var(--input-border) !important; }
         .label-nom { font-weight: 800; color: var(--primary); font-size: 1.8rem; margin-bottom: 5px; transition: color 0.3s ease; }
         
-        .time-left { font-size: 6rem; font-weight: 900; color: var(--input-border); margin: 0; line-height: 1; transition: color 0.3s ease; }
+        .time-left { font-size: 6rem; font-weight: 900; color: var(--input-border); margin: 0; line-height: 1; transition: all 0.2s ease; cursor: pointer; padding: 4px 12px; border-radius: 12px; }
+        .time-left:hover { background: var(--btn-close-bg); }
         .active .time-left { color: var(--text-dark); }
         .finished .time-left { color: var(--danger); }
+        .finished .time-left:hover { background: var(--danger-bg); }
 
-        .end-time-display { font-weight: 800; color: var(--text-light); font-size: 1.1rem; margin-bottom: 15px; min-height: 1.2em; text-transform: uppercase; transition: color 0.3s ease; }
+        /* Champ seuil secondes */
+        .field-threshold { border-left: 1px solid var(--card-border); padding-left: 20px; margin-left: 10px; }
+        .threshold-input-wrapper { display: flex; align-items: center; gap: 6px; }
+        .threshold-unit { font-weight: 700; color: var(--text-light); font-size: 0.9rem; }
+
+        /* Indicateur de drop pour le drag */
+        .drop-indicator { position: absolute; background: var(--primary); border-radius: 4px; pointer-events: none; z-index: 50; box-shadow: 0 0 12px rgba(14, 165, 233, 0.5); display: none; }
+        .drop-indicator.visible { display: block; }
+
+        .end-time-display { font-weight: 800; color: var(--text-light); font-size: 1.1rem; margin-bottom: 15px; min-height: 1.2em; text-transform: uppercase; transition: all 0.2s ease; }
         .active .end-time-display { color: var(--primary); }
         .finished .end-time-display { visibility: hidden; }
+        /* Quand le timer est actif, l'heure de fin devient cliquable */
+        .active .end-time-display { cursor: pointer; padding: 4px 10px; border-radius: 8px; border: 2px dashed transparent; display: inline-block; }
+        .active .end-time-display:hover { background: var(--btn-close-bg); border-color: var(--input-border); }
+        .end-time-display .start-time-part { color: var(--text-light); margin-right: 12px; font-weight: 700; }
+        .end-time-display .start-time-part::after { content: " →"; margin-left: 8px; opacity: 0.6; }
 
         .card-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
         .btn-start { background: var(--success); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 1rem; width: 100%; max-width: 200px; transition: opacity 0.2s; }
@@ -135,29 +192,34 @@
         .tab-content.active { display: block; }
         
         /* Éditeur Markdown */
-        .markdown-container { display: flex; flex-direction: column; height: calc(100vh - 180px); padding: 0; }
-        .markdown-editor-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        .markdown-toolbar { position: absolute; top: 20px; right: 20px; z-index: 100; display: flex; gap: 8px; }
-        .markdown-toolbar button { background: var(--btn-bg); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.85rem; transition: opacity 0.2s; }
-        .markdown-toolbar button:hover { opacity: 0.8; }
-        .markdown-toolbar .btn-edit { background: transparent; color: var(--text-light); border: 1px solid var(--card-border); font-size: 0.8rem; padding: 5px 10px; }
-        .markdown-toolbar .btn-edit:hover { background: var(--card-bg); }
-        .markdown-textarea { flex: 1; width: 100%; padding: 40px; border: none; outline: none; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; font-size: 1.5rem; line-height: 1.4; background: var(--bg); color: var(--text-dark); resize: none; transition: all 0.3s ease; }
-        .markdown-preview { flex: 1; padding: 40px; overflow-y: auto; background: var(--bg); color: var(--text-dark); line-height: 1.4; font-size: 1.5rem; position: relative; }
-        .markdown-preview h1 { font-size: 3.5rem; font-weight: 900; margin-top: 0; margin-bottom: 0.6rem; color: var(--primary); line-height: 1.1; }
-        .markdown-preview h2 { font-size: 2.8rem; font-weight: 800; margin-top: 1.2rem; margin-bottom: 0.6rem; color: var(--text-dark); line-height: 1.1; }
-        .markdown-preview h3 { font-size: 2.2rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; color: var(--text-dark); line-height: 1.1; }
-        .markdown-preview p { margin-bottom: 0.6rem; }
-        .markdown-preview ul, .markdown-preview ol { margin-bottom: 0.6rem; padding-left: 2.5rem; }
-        .markdown-preview li { margin-bottom: 0.2rem; }
-        .markdown-preview code { background: var(--card-bg); padding: 3px 8px; border-radius: 4px; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; font-size: 1.3rem; border: 1px solid var(--card-border); }
-        .markdown-preview pre { background: var(--card-bg); padding: 1.5rem; border-radius: 8px; overflow-x: auto; margin-bottom: 0.6rem; border: 1px solid var(--card-border); }
-        .markdown-preview pre code { background: transparent; border: none; padding: 0; }
-        .markdown-preview blockquote { border-left: 4px solid var(--primary); padding-left: 1.5rem; margin-left: 0; margin-bottom: 0.6rem; color: var(--text-light); font-style: italic; font-size: 1.6rem; line-height: 1.3; }
-        .markdown-preview strong { font-weight: 700; color: var(--text-dark); }
-        .markdown-preview em { font-style: italic; }
-        .markdown-preview a { color: var(--primary); text-decoration: underline; }
-        .markdown-preview hr { border: none; border-top: 2px solid var(--card-border); margin: 1.2rem 0; }
+        /* Onglet instructions (éditeur richtext WYSIWYG) */
+        #instructions-tab.active { display: flex; flex-direction: column; height: calc(100vh - 100px); }
+        .richtext-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .richtext-toolbar { background: var(--settings-bg); border-bottom: 1px solid var(--card-border); padding: 10px 20px; display: none; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .richtext-container.editing .richtext-toolbar { display: flex; }
+        .richtext-toolbar button { background: var(--card-bg); color: var(--text-dark); border: 1px solid var(--card-border); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.9rem; transition: all 0.2s; min-width: 36px; }
+        .richtext-toolbar button:hover { background: var(--btn-close-bg); border-color: var(--input-border); }
+        .richtext-toolbar button.btn-close-edit { margin-left: auto; background: var(--btn-close-bg); color: var(--text-light); font-size: 1rem; font-weight: 900; }
+        .richtext-toolbar button.btn-close-edit:hover { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
+        .richtext-toolbar button.rt-zoom-level { font-size: 0.8rem; min-width: 50px; color: var(--text-light); }
+        .richtext-toolbar .toolbar-sep { width: 1px; height: 22px; background: var(--card-border); margin: 0 4px; }
+        .richtext-editor { flex: 1; padding: 30px 40px; overflow-y: auto; background: var(--bg); color: var(--text-dark); line-height: 1.4; font-size: 1.5rem; outline: none; cursor: text; }
+        /* Hors mode édition, le pointeur reste un text-cursor pour signaler qu'on peut éditer */
+        .richtext-container:not(.editing) .richtext-editor { cursor: text; }
+        .richtext-container:not(.editing) .richtext-editor:hover { background: var(--btn-close-bg); }
+        .richtext-editor:focus { outline: none; }
+        .richtext-editor h1 { font-size: 3.5rem; font-weight: 900; margin-top: 0; margin-bottom: 0.6rem; color: var(--primary); line-height: 1.1; }
+        .richtext-editor h2 { font-size: 2.8rem; font-weight: 800; margin-top: 1.2rem; margin-bottom: 0.6rem; color: var(--text-dark); line-height: 1.1; }
+        .richtext-editor h3 { font-size: 2.2rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; color: var(--text-dark); line-height: 1.1; }
+        .richtext-editor p { margin-bottom: 0.6rem; }
+        .richtext-editor ul, .richtext-editor ol { margin-bottom: 0.6rem; padding-left: 2.5rem; }
+        .richtext-editor li { margin-bottom: 0.2rem; }
+        .richtext-editor blockquote { border-left: 4px solid var(--primary); padding-left: 1.5rem; margin-left: 0; margin-bottom: 0.6rem; color: var(--text-light); font-style: italic; font-size: 1.6rem; line-height: 1.3; }
+        .richtext-editor strong, .richtext-editor b { font-weight: 700; color: var(--text-dark); }
+        .richtext-editor em, .richtext-editor i { font-style: italic; }
+        .richtext-editor a { color: var(--primary); text-decoration: underline; }
+        .richtext-editor:empty::before { content: attr(data-placeholder); color: var(--text-light); pointer-events: none; }
+        
         
         /* Bouton toggle settings panel */
         .settings-panel { position: relative; transition: all 0.3s ease; }
@@ -272,35 +334,35 @@
                 font-size: 0.9rem;
             }
             
-            .markdown-toolbar {
-                top: 10px;
-                right: 10px;
-                gap: 5px;
+            .richtext-toolbar {
+                padding: 8px 10px;
+                gap: 4px;
             }
             
-            .markdown-toolbar button {
-                font-size: 0.75rem;
+            .richtext-toolbar button {
+                font-size: 0.85rem;
                 padding: 5px 8px;
+                min-width: 32px;
             }
             
-            .markdown-preview, .markdown-textarea { 
+            .richtext-editor { 
                 padding: 20px; 
                 font-size: 1.2rem;
             }
             
-            .markdown-preview h1 { 
+            .richtext-editor h1 { 
                 font-size: 2.2rem;
             }
             
-            .markdown-preview h2 { 
+            .richtext-editor h2 { 
                 font-size: 1.8rem;
             }
             
-            .markdown-preview h3 { 
+            .richtext-editor h3 { 
                 font-size: 1.5rem;
             }
             
-            .markdown-preview blockquote { 
+            .richtext-editor blockquote { 
                 font-size: 1.3rem;
             }
         }
@@ -312,14 +374,21 @@
         <source src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YV9vT19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f" type="audio/wav">
     </audio>
 
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal-box">
+            <div class="modal-message" id="confirmModalMessage"></div>
+            <div class="modal-actions">
+                <button class="modal-btn-cancel" id="confirmModalCancel">Annuler</button>
+                <button class="modal-btn-confirm" id="confirmModalOk">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
     <div class="top-bar">
         <div class="app-title">TIMERS</div>
         <div class="right-controls">
             <button class="btn-theme" onclick="toggleTheme()" title="Basculer mode sombre/clair">
                 <span id="themeIcon">🌙</span>
-            </button>
-            <button id="hideSecondsBtn" class="btn-sound-global" onclick="toggleHideSeconds()">
-                <span id="txt-hide-seconds">SEC</span> : <span id="hideSecondsText">ON</span>
             </button>
             <select id="langSelector" class="lang-selector" onchange="changeLanguage(this.value)">
                 <option value="fr">FR</option>
@@ -329,10 +398,28 @@
             <button id="globalSoundBtn" class="btn-sound-global" onclick="toggleGlobalSound()">
                 <span id="globalSoundIcon">🔊</span> <span id="txt-sound">SON</span> : <span id="globalSoundText">ON</span>
             </button>
-            <button class="btn-ctrl" onclick="reinitialiserTout()" id="txt-clear-all">Tout effacer</button>
+            <div class="menu-wrapper">
+                <button class="btn-ctrl btn-menu" onclick="toggleMenu(event)" title="Plus d'options">⋮</button>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <div class="dropdown-setting">
+                        <label id="txt-label-threshold">Sec affichées sous</label>
+                        <div class="dropdown-setting-input">
+                            <input type="number" id="thresholdInput" value="3" min="0" max="60" onchange="onThresholdChange()" onclick="event.stopPropagation()">
+                            <span id="txt-threshold-unit">min</span>
+                        </div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item" onclick="exporterConfig()">⬇️ <span id="txt-export">Exporter</span></button>
+                    <button class="dropdown-item" onclick="importerConfig()">⬆️ <span id="txt-import">Importer</span></button>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item dropdown-danger" onclick="reinitialiserTout()" id="txt-clear-all">Tout effacer</button>
+                </div>
+            </div>
             <button class="btn-ctrl" onclick="toggleFullscreen()">⛶</button>
         </div>
     </div>
+    <input type="file" id="importFileInput" accept="application/json,.json" style="display:none">
+
 
     <div class="tabs-container">
         <button class="tab-btn active" onclick="switchTab('timers')" id="tab-timers-btn">⏱️ Timers</button>
@@ -363,26 +450,42 @@
     </div>
 
     <div id="durationsList"></div>
+    <div class="drop-indicator" id="dropIndicator"></div>
     </div>
 
     <div id="instructions-tab" class="tab-content">
-        <div class="markdown-container">
-            <div class="markdown-editor-wrapper">
-                <div class="markdown-toolbar">
-                    <button class="btn-edit" onclick="toggleMarkdownMode()">✏️ <span id="mode-text">Éditer</span></button>
-                    <button onclick="resetInstructions()">🔄 <span id="reset-text">Réinitialiser</span></button>
-                </div>
-                <textarea id="markdownEditor" class="markdown-textarea" placeholder="Entrez vos instructions en Markdown..." style="display: none;"></textarea>
-                <div id="markdownPreview" class="markdown-preview"></div>
+        <div class="richtext-container">
+            <div class="richtext-toolbar" id="richtextToolbar">
+                <button type="button" id="rt-zoom-out" title="Zoom −">A−</button>
+                <button type="button" id="rt-zoom-reset" title="Zoom 100%" class="rt-zoom-level"><span id="rt-zoom-pct">100%</span></button>
+                <button type="button" id="rt-zoom-in" title="Zoom +">A+</button>
+                <div class="toolbar-sep"></div>
+                <button type="button" id="rt-h1" title="Titre 1"><b>H1</b></button>
+                <button type="button" id="rt-h2" title="Titre 2"><b>H2</b></button>
+                <button type="button" id="rt-h3" title="Titre 3"><b>H3</b></button>
+                <button type="button" id="rt-p" title="Paragraphe">¶</button>
+                <div class="toolbar-sep"></div>
+                <button type="button" id="rt-bold" title="Gras (Ctrl+B)"><b>B</b></button>
+                <button type="button" id="rt-italic" title="Italique (Ctrl+I)"><i>I</i></button>
+                <button type="button" id="rt-underline" title="Souligné (Ctrl+U)"><u>U</u></button>
+                <div class="toolbar-sep"></div>
+                <button type="button" id="rt-ul" title="Liste à puces">• ☰</button>
+                <button type="button" id="rt-ol" title="Liste numérotée">1. ☰</button>
+                <button type="button" id="rt-quote" title="Citation">❝</button>
+                <div class="toolbar-sep"></div>
+                <button type="button" id="rt-link" title="Lien">🔗</button>
+                <button type="button" id="rt-clear" title="Effacer le formatage">⎚</button>
+                <button type="button" class="btn-close-edit" id="rt-close" title="Sortir du mode édition">✕</button>
             </div>
+            <div id="richtextEditor" class="richtext-editor" contenteditable="true" data-placeholder="Cliquez ici pour commencer à écrire..."></div>
         </div>
     </div>
 
 <script>
     const i18n = {
-        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informations", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer" },
-        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informationen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen" },
-        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Information", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer" }
+        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informations", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", export: "Exporter", import: "Importer", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes" },
+        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informationen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", export: "Exportieren", import: "Importieren", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden" },
+        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Information", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", export: "Export", import: "Import", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", toggleSecondsTitle: "Click to show/hide seconds" }
     };
 
     let currentLang = 'fr';
@@ -393,11 +496,12 @@
     let dragSrcEl = null;
     let darkMode = false;
     let hideSeconds = false;
-    let markdownMode = 'preview'; // 'edit' ou 'preview'
+    let secondsThreshold = 180; // En dessous de 3 minutes par défaut, on affiche toujours les secondes
     let settingsPanelVisible = true;
     let currentTab = 'timers';
-    let defaultMarkdown = `# Put your content
-`;
+    let showStartTime = false; // Affichage global de l'heure de début pour tous les timers actifs
+    let richtextZoom = 1.0; // Niveau de zoom pour l'éditeur d'instructions (1.0 = 100%)
+    let defaultRichtext = `<h1>Mes instructions</h1><p>Cliquez ici pour commencer à écrire...</p>`;
 
 
 // --- LOGIQUE THEME ---
@@ -431,9 +535,9 @@
         currentTab = tabName;
         localStorage.setItem('timers_current_tab', tabName);
         
-        // Si on affiche l'onglet instructions, charger le markdown
+        // Si on affiche l'onglet instructions, charger le richtext
         if (tabName === 'instructions') {
-            loadMarkdown();
+            loadRichtext();
         }
     }
 
@@ -456,188 +560,181 @@
         localStorage.setItem('timers_settings_visible', settingsPanelVisible);
     }
 
-// --- LOGIQUE MARKDOWN ---
-    function loadMarkdown() {
-        const savedMarkdown = localStorage.getItem('timers_markdown');
-        const editor = document.getElementById('markdownEditor');
-        editor.value = savedMarkdown || defaultMarkdown;
-        // Toujours afficher le rendu par défaut
-        renderMarkdown();
-    }
-
-    function saveMarkdown() {
-        const editor = document.getElementById('markdownEditor');
-        localStorage.setItem('timers_markdown', editor.value);
-    }
-
-    function toggleMarkdownMode() {
-        const editor = document.getElementById('markdownEditor');
-        const preview = document.getElementById('markdownPreview');
-        const modeText = document.getElementById('mode-text');
-        
-        if (markdownMode === 'preview') {
-            markdownMode = 'edit';
-            editor.style.display = 'block';
-            preview.style.display = 'none';
-            modeText.textContent = i18n[currentLang].preview;
-        } else {
-            markdownMode = 'preview';
-            renderMarkdown();
-            editor.style.display = 'none';
-            preview.style.display = 'block';
-            modeText.textContent = i18n[currentLang].edit;
-        }
-    }
-
-    function renderMarkdown() {
-        const editor = document.getElementById('markdownEditor');
-        const preview = document.getElementById('markdownPreview');
-        const text = editor.value;
-        
-        // Simple parseur Markdown
+// --- LOGIQUE EDITEUR WYSIWYG (contenteditable) ---
+    // Convertit du Markdown brut en HTML, utilisé pour migrer l'ancien contenu
+    // stocké en Markdown vers le nouveau format HTML.
+    function markdownVersHtml(text) {
         let html = text
-            // Headers
             .replace(/^### (.*$)/gim, '<h3>$1</h3>')
             .replace(/^## (.*$)/gim, '<h2>$1</h2>')
             .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-            // Bold
             .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            // Italic
             .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            // Code inline
             .replace(/`(.+?)`/g, '<code>$1</code>')
-            // Links
             .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>')
-            // Horizontal rule
             .replace(/^---$/gim, '<hr>')
-            // Blockquotes
             .replace(/^> (.+)$/gim, '<blockquote>$1</blockquote>');
-        
-        // Traiter les listes à puces avec deux niveaux
         const lines = html.split('\n');
-        let inList = false;
-        let inSubList = false;
-        let result = [];
-        
+        let inList = false, inSubList = false, result = [];
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            
-            // Liste de niveau 1
             if (/^- (.+)$/.test(line)) {
-                if (!inList) {
-                    result.push('<ul>');
-                    inList = true;
-                }
-                if (inSubList) {
-                    result.push('</ul></li>');
-                    inSubList = false;
-                }
+                if (!inList) { result.push('<ul>'); inList = true; }
+                if (inSubList) { result.push('</ul></li>'); inSubList = false; }
                 result.push('<li>' + line.replace(/^- /, '') + '</li>');
-            }
-            // Liste de niveau 2 (indentée avec 2 espaces ou tab)
-            else if (/^  - (.+)$/.test(line) || /^\t- (.+)$/.test(line)) {
+            } else if (/^  - (.+)$/.test(line) || /^\t- (.+)$/.test(line)) {
                 if (!inSubList) {
-                    // Retirer le dernier </li> ajouté
                     result[result.length - 1] = result[result.length - 1].replace(/<\/li>$/, '');
-                    result.push('<ul>');
-                    inSubList = true;
+                    result.push('<ul>'); inSubList = true;
                 }
                 result.push('<li>' + line.replace(/^  - /, '').replace(/^\t- /, '') + '</li>');
-            }
-            // Liste numérotée de niveau 1
-            else if (/^\d+\. (.+)$/.test(line)) {
-                if (inList && !inSubList) {
-                    result.push('</ul>');
-                    inList = false;
-                }
-                if (inSubList) {
-                    result.push('</ul></li></ul>');
-                    inList = false;
-                    inSubList = false;
-                }
-                if (!inList) {
-                    result.push('<ol>');
-                    inList = true;
-                }
+            } else if (/^\d+\. (.+)$/.test(line)) {
+                if (inList && !inSubList) { result.push('</ul>'); inList = false; }
+                if (inSubList) { result.push('</ul></li></ul>'); inList = false; inSubList = false; }
+                if (!inList) { result.push('<ol>'); inList = true; }
                 result.push('<li>' + line.replace(/^\d+\. /, '') + '</li>');
-            }
-            // Liste numérotée de niveau 2
-            else if (/^  \d+\. (.+)$/.test(line) || /^\t\d+\. (.+)$/.test(line)) {
-                if (!inSubList) {
-                    result[result.length - 1] = result[result.length - 1].replace(/<\/li>$/, '');
-                    result.push('<ol>');
-                    inSubList = true;
-                }
-                result.push('<li>' + line.replace(/^  \d+\. /, '').replace(/^\t\d+\. /, '') + '</li>');
-            }
-            else {
-                if (inSubList) {
-                    result.push('</ol></li>');
-                    inSubList = false;
-                }
-                if (inList) {
-                    result.push(line.includes('<ol>') ? '</ol>' : '</ul>');
-                    inList = false;
-                }
+            } else {
+                if (inSubList) { result.push('</ul></li>'); inSubList = false; }
+                if (inList) { result.push(line.includes('<ol>') ? '</ol>' : '</ul>'); inList = false; }
                 result.push(line);
             }
         }
-        
-        // Fermer les listes ouvertes
-        if (inSubList) {
-            result.push(result[0].includes('<ol>') ? '</ol></li>' : '</ul></li>');
-        }
-        if (inList) {
-            result.push(result[0].includes('<ol>') ? '</ol>' : '</ul>');
-        }
-        
+        if (inSubList) result.push('</ul></li>');
+        if (inList) result.push('</ul>');
         html = result.join('\n');
-        
-        // Line breaks et paragraphes
         html = html.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
-        
-        preview.innerHTML = '<p>' + html + '</p>';
+        return '<p>' + html + '</p>';
     }
 
-    function resetInstructions() {
-        if (confirm(i18n[currentLang].confirmResetInstructions)) {
-            // Essayer de charger le fichier info.md (ne fonctionne que via serveur web)
-            fetch('info.md')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Fichier non trouvé');
-                    }
-                    return response.text();
-                })
-                .then(text => {
-                    // Sauvegarder le texte du fichier
-                    localStorage.setItem('timers_markdown', text);
-                    const editor = document.getElementById('markdownEditor');
-                    editor.value = text;
-                    renderMarkdown();
-                })
-                .catch(error => {
-                    // Utiliser le texte par défaut (fonctionne en mode file://)
-                    console.log('Utilisation du texte par défaut (mode local ou fichier non trouvé)');
-                    localStorage.setItem('timers_markdown', defaultMarkdown);
-                    const editor = document.getElementById('markdownEditor');
-                    editor.value = defaultMarkdown;
-                    renderMarkdown();
-                });
+    function loadRichtext() {
+        const editor = document.getElementById('richtextEditor');
+        if (!editor) return;
+        const savedHtml = localStorage.getItem('timers_richtext');
+        if (savedHtml !== null) {
+            editor.innerHTML = savedHtml;
+            return;
         }
+        // Migration : si du Markdown a été sauvegardé avec l'ancienne version
+        const oldMarkdown = localStorage.getItem('timers_markdown');
+        if (oldMarkdown) {
+            editor.innerHTML = markdownVersHtml(oldMarkdown);
+            saveRichtext();
+            // On garde l'ancien Markdown pour le moment (au cas où) — il sera nettoyé via "Réinitialiser"
+            return;
+        }
+        editor.innerHTML = defaultRichtext;
     }
 
-    // Auto-save markdown
-    let markdownSaveTimeout;
-    document.addEventListener('DOMContentLoaded', () => {
-        const editor = document.getElementById('markdownEditor');
+    function saveRichtext() {
+        const editor = document.getElementById('richtextEditor');
+        if (!editor) return;
+        localStorage.setItem('timers_richtext', editor.innerHTML);
+    }
+
+    // Applique une commande de formatage à la sélection courante
+    function exec(command, value = null) {
+        document.execCommand(command, false, value);
+        const editor = document.getElementById('richtextEditor');
+        if (editor) editor.focus();
+        saveRichtext();
+    }
+
+    function formatBlock(tag) {
+        // execCommand 'formatBlock' attend par exemple "<H1>" ou "h1" selon le navigateur
+        document.execCommand('formatBlock', false, tag);
+        const editor = document.getElementById('richtextEditor');
+        if (editor) editor.focus();
+        saveRichtext();
+    }
+
+    function insertLink() {
+        const url = prompt('URL :', 'https://');
+        if (url && url.trim()) exec('createLink', url.trim());
+    }
+
+    function entrerModeEdition() {
+        const container = document.querySelector('.richtext-container');
+        if (!container) return;
+        if (container.classList.contains('editing')) return;
+        container.classList.add('editing');
+        // Mettre le focus dans l'éditeur (sans déplacer le curseur si l'utilisateur a déjà cliqué)
+        const editor = document.getElementById('richtextEditor');
+        if (editor && document.activeElement !== editor) editor.focus();
+    }
+
+    function sortirModeEdition() {
+        const container = document.querySelector('.richtext-container');
+        if (!container) return;
+        container.classList.remove('editing');
+        const editor = document.getElementById('richtextEditor');
         if (editor) {
-            editor.addEventListener('input', () => {
-                clearTimeout(markdownSaveTimeout);
-                markdownSaveTimeout = setTimeout(saveMarkdown, 1000);
-            });
+            saveRichtext();
+            editor.blur();
         }
-    });
+    }
+
+    function attacherToolbarRichtext() {
+        const editor = document.getElementById('richtextEditor');
+        if (!editor) return;
+        // Auto-save (debouncé)
+        let saveTimeout;
+        editor.addEventListener('input', () => {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveRichtext, 500);
+        });
+        // Entrer en mode édition au clic ou au focus dans l'éditeur
+        editor.addEventListener('mousedown', entrerModeEdition);
+        editor.addEventListener('focus', entrerModeEdition);
+
+        const bind = (id, fn) => {
+            const btn = document.getElementById(id);
+            if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); fn(); });
+        };
+        bind('rt-h1', () => formatBlock('h1'));
+        bind('rt-h2', () => formatBlock('h2'));
+        bind('rt-h3', () => formatBlock('h3'));
+        bind('rt-p', () => formatBlock('p'));
+        bind('rt-bold', () => exec('bold'));
+        bind('rt-italic', () => exec('italic'));
+        bind('rt-underline', () => exec('underline'));
+        bind('rt-ul', () => exec('insertUnorderedList'));
+        bind('rt-ol', () => exec('insertOrderedList'));
+        bind('rt-quote', () => formatBlock('blockquote'));
+        bind('rt-link', () => insertLink());
+        bind('rt-clear', () => exec('removeFormat'));
+        bind('rt-close', () => sortirModeEdition());
+        // Boutons zoom (n'entrent pas en mode édition pour éviter d'ouvrir la toolbar... attends, elle est déjà ouverte si on les voit)
+        bind('rt-zoom-out', () => changerZoom(-0.1));
+        bind('rt-zoom-in', () => changerZoom(0.1));
+        bind('rt-zoom-reset', () => setZoom(1.0));
+        // Appliquer le zoom restauré
+        appliquerZoom();
+    }
+
+    function setZoom(value) {
+        // Bornes : 0.7× à 2.5× pour rester raisonnable
+        if (value < 0.7) value = 0.7;
+        if (value > 2.5) value = 2.5;
+        // Arrondir à 1 décimale pour éviter les flottants imprécis
+        richtextZoom = Math.round(value * 10) / 10;
+        appliquerZoom();
+        sauvegarder();
+    }
+
+    function changerZoom(delta) {
+        setZoom(richtextZoom + delta);
+    }
+
+    function appliquerZoom() {
+        const editor = document.getElementById('richtextEditor');
+        const pct = document.getElementById('rt-zoom-pct');
+        if (editor) {
+            // Le font-size de base de l'éditeur est 1.5rem dans le CSS
+            const size = Math.round(1.5 * richtextZoom * 100) / 100;
+            editor.style.fontSize = size + 'rem';
+        }
+        if (pct) pct.textContent = Math.round(richtextZoom * 100) + '%';
+    }
 
 // --- LOGIQUE AUDIO (IPAD FIX) ---
     const beep = document.getElementById('beepAudio');
@@ -701,26 +798,28 @@
         const t = i18n[currentLang];
         document.getElementById('txt-sound').textContent = t.sound;
         document.getElementById('globalSoundText').textContent = globalSoundEnabled ? t.on : t.off;
-        document.getElementById('txt-hide-seconds').textContent = t.hideSeconds;
-        document.getElementById('hideSecondsText').textContent = hideSeconds ? t.off : t.on;
         document.getElementById('txt-clear-all').textContent = t.clearAll;
+        const txtExport = document.getElementById('txt-export'); if (txtExport) txtExport.textContent = t.export;
+        const txtImport = document.getElementById('txt-import'); if (txtImport) txtImport.textContent = t.import;
         document.getElementById('txt-label-name').textContent = t.labelName;
         document.getElementById('txt-label-min').textContent = t.labelMin;
         document.getElementById('txt-label-sec').textContent = t.labelSec;
         document.getElementById('txt-btn-add').textContent = t.btnAdd;
+        const txtThreshold = document.getElementById('txt-label-threshold'); if (txtThreshold) txtThreshold.textContent = t.thresholdLabel;
+        const txtThresholdUnit = document.getElementById('txt-threshold-unit'); if (txtThresholdUnit) txtThresholdUnit.textContent = t.thresholdUnit;
         document.getElementById('nameInput').placeholder = t.placeholderName;
         document.getElementById('tab-timers-btn').textContent = t.tabTimers;
         document.getElementById('tab-instructions-btn').textContent = t.tabInstructions;
-        document.getElementById('mode-text').textContent = markdownMode === 'preview' ? t.edit : t.preview;
-        document.getElementById('reset-text').textContent = t.reset;
         listeDurees.forEach(d => {
             const card = document.getElementById(`card-${d.id}`);
             if (card) {
-                card.querySelector('.label-duree-titre').textContent = `${t.duration} — ${formaterTemps(d.totalSecs)}`;
+                majTitreDuree(d.id);
                 const btnStart = card.querySelector('.btn-start'); if (btnStart) btnStart.textContent = t.start;
                 const btnStop = card.querySelector('.btn-stop'); if (btnStop) btnStop.textContent = `🛑 ${t.stop}`;
                 const btnPlus = card.querySelector('.btn-plus'); if (btnPlus) btnPlus.textContent = t.plus30;
                 const btnMute = card.querySelector(`[id^="btn-mute-"]`); if (btnMute) btnMute.innerHTML = `${d.muted?'🔇':'🔊'} ${t.mute}`;
+                const btnDup = card.querySelector('.btn-duplicate'); if (btnDup) btnDup.title = t.duplicate;
+                const timeEl = card.querySelector('.time-left'); if (timeEl) timeEl.title = t.toggleSecondsTitle;
                 majHeureFin(d.id);
             }
         });
@@ -729,7 +828,8 @@
     function formaterTemps(s) { 
         const minutes = Math.floor(s/60);
         const secondes = s % 60;
-        if (hideSeconds && minutes > 0) {
+        // On masque les secondes UNIQUEMENT si hideSeconds est actif ET qu'on est au-dessus du seuil
+        if (hideSeconds && s >= secondsThreshold && minutes > 0) {
             return `${minutes} min`;
         }
         return `${minutes}:${secondes.toString().padStart(2,'0')}`; 
@@ -741,8 +841,26 @@
         const display = document.getElementById(`endtime-${id}`);
         if (obj?.start && display) {
             const finMs = obj.start + ((obj.totalSecs + obj.extraSecs) * 1000);
-            display.textContent = `${i18n[currentLang].finishAt} ${formaterHeure(new Date(finMs))}`;
-        } else if (display) display.textContent = "";
+            const t = i18n[currentLang];
+            const heureFin = formaterHeure(new Date(finMs));
+            if (showStartTime) {
+                const heureDebut = formaterHeure(new Date(obj.start));
+                display.innerHTML = `<span class="start-time-part">${t.startedAt} ${heureDebut}</span>${t.finishAt} ${heureFin}`;
+            } else {
+                display.textContent = `${t.finishAt} ${heureFin}`;
+            }
+            display.title = t.showStartTimeTitle;
+        } else if (display) {
+            display.textContent = "";
+            display.title = "";
+        }
+    }
+
+    function toggleStartTime() {
+        showStartTime = !showStartTime;
+        // Rafraîchir tous les timers actifs
+        listeDurees.forEach(d => majHeureFin(d.id));
+        sauvegarder();
     }
 
     function toggleGlobalSound() { globalSoundEnabled = !globalSoundEnabled; updateGlobalSoundUI(); sauvegarder(); }
@@ -755,8 +873,12 @@
 
     function toggleHideSeconds() { 
         hideSeconds = !hideSeconds; 
-        updateHideSecondsUI(); 
-        // Rafraîchir l'affichage de tous les timers
+        rafraichirTousAffichages();
+        sauvegarder(); 
+    }
+
+    // Helper : rafraîchir l'affichage de tous les timers (utilisé par toggle SEC et changement de seuil)
+    function rafraichirTousAffichages() {
         listeDurees.forEach(d => {
             const timeDisplay = document.getElementById(`time-${d.id}`);
             if (timeDisplay) {
@@ -774,17 +896,21 @@
             }
             const card = document.getElementById(`card-${d.id}`);
             if (card) {
-                card.querySelector('.label-duree-titre').textContent = `${i18n[currentLang].duration} — ${formaterTemps(d.totalSecs)}`;
+                majTitreDuree(d.id);
             }
         });
-        sauvegarder(); 
     }
-    
-    function updateHideSecondsUI() {
-        const btn = document.getElementById('hideSecondsBtn');
-        btn.classList.toggle('is-off', hideSeconds);
-        document.getElementById('txt-hide-seconds').textContent = i18n[currentLang].hideSeconds;
-        document.getElementById('hideSecondsText').textContent = hideSeconds ? i18n[currentLang].off : i18n[currentLang].on;
+
+    function onThresholdChange() {
+        const input = document.getElementById('thresholdInput');
+        if (!input) return;
+        let val = parseInt(input.value);
+        if (isNaN(val) || val < 0) val = 0;
+        if (val > 60) val = 60;
+        input.value = val;
+        secondsThreshold = val * 60;
+        rafraichirTousAffichages();
+        sauvegarder();
     }
 
     function ajouterDuree() {
@@ -806,11 +932,12 @@
         card.className = 'duration-card'; card.id = `card-${obj.id}`; card.draggable = true;
         const nomHTML = obj.nom ? `<div class="label-nom">${obj.nom}</div>` : '';
         card.innerHTML = `<div class="drag-handle"><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div></div>
+            <button class="btn-duplicate" onclick="dupliquerDuree('${obj.id}')" title="${t.duplicate}">⎘</button>
             <button class="btn-close" onclick="supprimerDuree('${obj.id}')">×</button>
-            <div class="label-duree-titre">${t.duration} — ${formaterTemps(obj.totalSecs)}</div>
+            <div class="label-duree-titre" id="title-${obj.id}" onclick="editerDuree('${obj.id}')" title="${t.editDurationTitle}">${t.duration} — ${formaterTemps(obj.totalSecs)}</div>
             ${nomHTML}
-            <div class="time-left" id="time-${obj.id}">${formaterTemps(obj.totalSecs)}</div>
-            <div class="end-time-display" id="endtime-${obj.id}"></div>
+            <div class="time-left" id="time-${obj.id}" onclick="toggleHideSeconds()" title="${t.toggleSecondsTitle}">${formaterTemps(obj.totalSecs)}</div>
+            <div class="end-time-display" id="endtime-${obj.id}" onclick="toggleStartTime()"></div>
             <div class="card-actions" id="actions-${obj.id}"><button class="btn-start" onclick="demarrerDuree('${obj.id}')">${t.start}</button></div>
             <div class="progress-bar-container"><div class="progress-bar-fill" id="progress-${obj.id}"></div></div>`;
         document.getElementById('durationsList').appendChild(card);
@@ -822,33 +949,90 @@
         const obj = listeDurees.find(d => d.id.toString() === id.toString());
         if(!obj) return;
         obj.start = Date.now();
-        majInterfaceActive(id); majHeureFin(id); lancerTick(id); sauvegarder();
+        obj.extraSecs = 0;  // Réinitialiser le temps supplémentaire au démarrage
+        majInterfaceActive(id); majHeureFin(id); majTitreDuree(id); lancerTick(id); sauvegarder();
     }
 
-    function lancerTick(id) {
-        clearInterval(intervals[id]);
-        intervals[id] = setInterval(() => {
+    // Met à jour le texte du titre "DURÉE — X:XX" ou "DURÉE — X:XX (+30s)" si extraSecs > 0
+    function majTitreDuree(id) {
+        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        const titleEl = document.getElementById(`title-${id}`);
+        if (!titleEl) return;
+        // Ne pas écraser si l'utilisateur est en mode édition
+        if (titleEl.classList.contains('duration-edit-form')) return;
+        const t = i18n[currentLang];
+        let txt = `${t.duration} — ${formaterTemps(obj.totalSecs)}`;
+        if (obj.extraSecs > 0) {
+            txt += ` (+${formaterTempsExtra(obj.extraSecs)})`;
+        }
+        titleEl.textContent = txt;
+    }
+
+    // Format compact pour le temps supplémentaire : "30s", "1:30", "2:00"
+    function formaterTempsExtra(s) {
+        if (s < 60) return `${s}s`;
+        const m = Math.floor(s/60);
+        const sec = s % 60;
+        if (sec === 0) return `${m}min`;
+        return `${m}:${sec.toString().padStart(2,'0')}`;
+    }
+
+    // Tick global unique : tous les timers sont rafraîchis en même temps,
+    // ce qui garantit l'affichage synchrone des timers dupliqués (même start).
+    let globalTickInterval = null;
+    let activeTickIds = new Set();
+
+    function tickGlobal() {
+        activeTickIds.forEach(id => {
             const obj = listeDurees.find(d => d.id.toString() === id.toString());
-            if (!obj?.start) return;
+            if (!obj?.start) { activeTickIds.delete(id); return; }
             const ecoule = Date.now() - obj.start;
             const total = (obj.totalSecs + obj.extraSecs) * 1000;
             const restant = total - ecoule;
+            const timeEl = document.getElementById(`time-${id}`);
+            const progressEl = document.getElementById(`progress-${id}`);
+            const card = document.getElementById(`card-${id}`);
+            if (!timeEl || !progressEl || !card) { activeTickIds.delete(id); return; }
             if (restant <= 0) {
-                document.getElementById(`time-${id}`).textContent = "0:00";
-                document.getElementById(`progress-${id}`).style.width = "100%";
-                const card = document.getElementById(`card-${id}`);
+                timeEl.textContent = "0:00";
+                progressEl.style.width = "100%";
                 if (!card.classList.contains('finished')) { card.classList.add('finished'); lancerAlarme(id); }
-                clearInterval(intervals[id]); return;
+                activeTickIds.delete(id);
+                return;
             }
-            document.getElementById(`time-${id}`).textContent = formaterTemps(Math.ceil(restant/1000));
-            document.getElementById(`progress-${id}`).style.width = (ecoule/total*100) + "%";
-        }, 500);
+            timeEl.textContent = formaterTemps(Math.ceil(restant/1000));
+            progressEl.style.width = (ecoule/total*100) + "%";
+        });
+        // Plus aucun timer actif → arrêter l'horloge
+        if (activeTickIds.size === 0 && globalTickInterval !== null) {
+            clearInterval(globalTickInterval);
+            globalTickInterval = null;
+        }
+    }
+
+    function lancerTick(id) {
+        activeTickIds.add(id.toString());
+        // Démarrer le tick global s'il n'est pas déjà actif
+        if (globalTickInterval === null) {
+            globalTickInterval = setInterval(tickGlobal, 250);
+        }
+        // Rafraîchissement immédiat pour que la carte affiche tout de suite la bonne valeur
+        tickGlobal();
+    }
+
+    function arreterTick(id) {
+        activeTickIds.delete(id.toString());
+        if (activeTickIds.size === 0 && globalTickInterval !== null) {
+            clearInterval(globalTickInterval);
+            globalTickInterval = null;
+        }
     }
 
     function lancerAlarme(id) { playBellSound(id); soundIntervals[id] = setInterval(() => playBellSound(id), 3000); }
 
     function stopDuree(id) {
-        clearInterval(intervals[id]); clearInterval(soundIntervals[id]);
+        arreterTick(id); clearInterval(soundIntervals[id]);
         const obj = listeDurees.find(d => d.id.toString() === id.toString());
         obj.start = null; obj.extraSecs = 0;
         obj.muted = false;
@@ -856,6 +1040,7 @@
         card.classList.remove('active', 'finished');
         document.getElementById(`time-${id}`).textContent = formaterTemps(obj.totalSecs);
         document.getElementById(`endtime-${id}`).textContent = "";
+        majTitreDuree(id);
         document.getElementById(`actions-${id}`).innerHTML = `<button class="btn-start" onclick="demarrerDuree('${id}')">${i18n[currentLang].start}</button>`;
         sauvegarder();
     }
@@ -878,7 +1063,7 @@
 
     function ajouter30s(id) {
         const obj = listeDurees.find(d => d.id.toString() === id.toString());
-        obj.extraSecs += 30; majHeureFin(id);
+        obj.extraSecs += 30; majHeureFin(id); majTitreDuree(id);
         if (document.getElementById(`card-${id}`).classList.contains('finished')) {
             document.getElementById(`card-${id}`).classList.remove('finished');
             clearInterval(soundIntervals[id]); lancerTick(id);
@@ -886,12 +1071,238 @@
         sauvegarder();
     }
 
-    function supprimerDuree(id) {
-        if (!document.getElementById(`card-${id}`).classList.contains('finished') && !confirm(i18n[currentLang].confirmDelete)) return;
-        clearInterval(intervals[id]); clearInterval(soundIntervals[id]);
+    async function supprimerDuree(id) {
+        if (!document.getElementById(`card-${id}`).classList.contains('finished')) {
+            const ok = await confirmDialog(i18n[currentLang].confirmDelete);
+            if (!ok) return;
+        }
+        arreterTick(id); clearInterval(soundIntervals[id]);
         document.getElementById(`card-${id}`).remove();
         listeDurees = listeDurees.filter(d => d.id.toString() !== id.toString());
         sauvegarder();
+    }
+
+    // Modal de confirmation custom (préserve le plein écran, contrairement à window.confirm)
+    function confirmDialog(message, options = {}) {
+        return new Promise((resolve) => {
+            const overlay = document.getElementById('confirmModal');
+            const msg = document.getElementById('confirmModalMessage');
+            const btnOk = document.getElementById('confirmModalOk');
+            const btnCancel = document.getElementById('confirmModalCancel');
+            const t = i18n[currentLang];
+            const alertMode = options.alertMode === true;
+            msg.textContent = message;
+            btnOk.textContent = t.save || 'OK';
+            btnCancel.textContent = t.cancel || 'Annuler';
+            // En mode alerte, on n'affiche que OK
+            btnCancel.style.display = alertMode ? 'none' : '';
+            overlay.classList.add('visible');
+
+            const cleanup = (result) => {
+                overlay.classList.remove('visible');
+                btnCancel.style.display = '';
+                btnOk.removeEventListener('click', onOk);
+                btnCancel.removeEventListener('click', onCancel);
+                document.removeEventListener('keydown', onKey);
+                overlay.removeEventListener('click', onOverlayClick);
+                resolve(result);
+            };
+            const onOk = () => cleanup(true);
+            const onCancel = () => cleanup(false);
+            const onKey = (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); cleanup(true); }
+                else if (e.key === 'Escape') { e.preventDefault(); cleanup(alertMode ? true : false); }
+            };
+            const onOverlayClick = (e) => {
+                // Clic sur le fond (pas sur la boîte) = annuler (ou OK en mode alerte)
+                if (e.target === overlay) cleanup(alertMode ? true : false);
+            };
+            btnOk.addEventListener('click', onOk);
+            btnCancel.addEventListener('click', onCancel);
+            document.addEventListener('keydown', onKey);
+            overlay.addEventListener('click', onOverlayClick);
+            // En mode alerte, focus sur OK ; sinon sur Annuler (action moins destructive)
+            setTimeout(() => (alertMode ? btnOk : btnCancel).focus(), 0);
+        });
+    }
+
+    function dupliquerDuree(id) {
+        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        // Garantir un id unique même en cas de clics rapides
+        let nouvelId = Date.now();
+        while (listeDurees.some(d => d.id === nouvelId)) nouvelId++;
+        // On copie TOUTES les propriétés du timer source
+        const sourceLancee = obj.start !== null;
+        const copie = {
+            id: nouvelId,
+            nom: obj.nom,
+            totalSecs: obj.totalSecs,
+            start: obj.start,           // même heure de départ exacte (synchro à la ms)
+            extraSecs: obj.extraSecs,   // même temps supplémentaire
+            muted: obj.muted            // même état muet
+        };
+        // Insérer juste après l'original dans la liste de données
+        const index = listeDurees.findIndex(d => d.id.toString() === id.toString());
+        listeDurees.splice(index + 1, 0, copie);
+        // Créer la carte HTML et l'insérer juste après l'original dans le DOM
+        creerCarteHTML(copie);
+        const cardOriginale = document.getElementById(`card-${id}`);
+        const cardCopie = document.getElementById(`card-${nouvelId}`);
+        cardOriginale.after(cardCopie);
+        // Si le timer source était en cours, refléter l'état d'exécution sur la copie
+        if (sourceLancee) {
+            const ecoule = Date.now() - copie.start;
+            const total = (copie.totalSecs + copie.extraSecs) * 1000;
+            if (ecoule < total) {
+                majInterfaceActive(nouvelId);
+                majHeureFin(nouvelId);
+                majTitreDuree(nouvelId);
+                lancerTick(nouvelId);
+            } else {
+                // Timer déjà terminé au moment de la duplication → reproduire l'état "fini"
+                majInterfaceActive(nouvelId);
+                majTitreDuree(nouvelId);
+                document.getElementById(`time-${nouvelId}`).textContent = "0:00";
+                document.getElementById(`progress-${nouvelId}`).style.width = "100%";
+                const cardC = document.getElementById(`card-${nouvelId}`);
+                cardC.classList.add('finished');
+                lancerAlarme(nouvelId);
+            }
+        }
+        sauvegarder();
+    }
+
+    function editerDuree(id) {
+        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        const titleEl = document.getElementById(`title-${id}`);
+        if (!titleEl) return;
+        // Si déjà en mode édition, ne rien faire
+        if (titleEl.querySelector('input')) return;
+        // Fermer toute autre édition en cours
+        document.querySelectorAll('.duration-edit-form').forEach(el => {
+            const otherId = el.id.replace('title-', '');
+            if (otherId !== id.toString()) annulerEditionDuree(otherId);
+        });
+        const t = i18n[currentLang];
+        const min = Math.floor(obj.totalSecs / 60);
+        const sec = obj.totalSecs % 60;
+        titleEl.classList.remove('label-duree-titre');
+        titleEl.classList.add('duration-edit-form');
+        titleEl.onclick = null;
+        titleEl.innerHTML = `
+            <input type="number" id="edit-min-${id}" value="${min}" min="0" />
+            <span>${t.labelMin}</span>
+            <input type="number" id="edit-sec-${id}" value="${sec}" min="0" max="59" />
+            <span>${t.labelSec}</span>
+            <button type="button" id="edit-ok-${id}">${t.save}</button>
+            <button type="button" class="btn-cancel" id="edit-cancel-${id}">${t.cancel}</button>
+        `;
+        const minInput = document.getElementById(`edit-min-${id}`);
+        const secInput = document.getElementById(`edit-sec-${id}`);
+        const btnOk = document.getElementById(`edit-ok-${id}`);
+        const btnCancel = document.getElementById(`edit-cancel-${id}`);
+
+        // Attacher les handlers via addEventListener pour plus de fiabilité
+        // stopPropagation pour qu'un éventuel onclick parent ne se déclenche pas
+        btnOk.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            validerEditionDuree(id);
+        });
+        btnCancel.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            annulerEditionDuree(id);
+        });
+        // Empêcher que le clic sur les inputs ferme/ré-ouvre quoi que ce soit
+        [minInput, secInput].forEach(el => {
+            el.addEventListener('click', (e) => e.stopPropagation());
+        });
+
+        minInput.focus();
+        minInput.select();
+        // Empêcher le drag pendant l'édition
+        const card = document.getElementById(`card-${id}`);
+        if (card) card.draggable = false;
+        // Valider avec Entrée, annuler avec Échap
+        const handler = (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); validerEditionDuree(id); }
+            else if (e.key === 'Escape') { e.preventDefault(); annulerEditionDuree(id); }
+        };
+        minInput.addEventListener('keydown', handler);
+        secInput.addEventListener('keydown', handler);
+    }
+
+    function validerEditionDuree(id) {
+        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        const minInput = document.getElementById(`edit-min-${id}`);
+        const secInput = document.getElementById(`edit-sec-${id}`);
+        if (!minInput || !secInput) return;
+        const nouveauTotal = (parseInt(minInput.value) || 0) * 60 + (parseInt(secInput.value) || 0);
+        if (nouveauTotal <= 0) {
+            // Durée invalide, on annule
+            annulerEditionDuree(id);
+            return;
+        }
+        // IMPORTANT : on ne touche PAS à obj.start si le timer tourne.
+        // On modifie uniquement la durée totale ; le tick recalculera automatiquement.
+        obj.totalSecs = nouveauTotal;
+
+        // Restaurer le titre
+        restaurerTitreDuree(id);
+
+        // Si le timer tournait et qu'on a une nouvelle durée plus longue que le temps écoulé,
+        // il faut potentiellement le sortir de l'état "fini" et relancer le tick.
+        const card = document.getElementById(`card-${id}`);
+        if (obj.start) {
+            const ecoule = Date.now() - obj.start;
+            const total = (obj.totalSecs + obj.extraSecs) * 1000;
+            if (ecoule < total) {
+                // Le timer doit (re)tourner
+                if (card.classList.contains('finished')) {
+                    card.classList.remove('finished');
+                    clearInterval(soundIntervals[id]);
+                }
+                lancerTick(id);
+                majHeureFin(id);
+            } else {
+                // La nouvelle durée est dépassée → forcer l'état fini si pas déjà
+                document.getElementById(`time-${id}`).textContent = "0:00";
+                document.getElementById(`progress-${id}`).style.width = "100%";
+                if (!card.classList.contains('finished')) {
+                    card.classList.add('finished');
+                    lancerAlarme(id);
+                }
+                arreterTick(id);
+            }
+        } else {
+            // Timer pas démarré : juste rafraîchir l'affichage du temps restant
+            document.getElementById(`time-${id}`).textContent = formaterTemps(obj.totalSecs);
+        }
+        sauvegarder();
+    }
+
+    function annulerEditionDuree(id) {
+        restaurerTitreDuree(id);
+    }
+
+    function restaurerTitreDuree(id) {
+        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        const titleEl = document.getElementById(`title-${id}`);
+        if (!titleEl) return;
+        const t = i18n[currentLang];
+        titleEl.classList.remove('duration-edit-form');
+        titleEl.classList.add('label-duree-titre');
+        titleEl.title = t.editDurationTitle;
+        titleEl.onclick = () => editerDuree(id);
+        const card = document.getElementById(`card-${id}`);
+        if (card) card.draggable = true;
+        // Recalculer le texte avec extraSecs si pertinent
+        majTitreDuree(id);
     }
 
     function sauvegarder() {
@@ -904,7 +1315,10 @@
             globalSound: globalSoundEnabled,
             lang: currentLang,
             darkMode: darkMode,
-            hideSeconds: hideSeconds
+            hideSeconds: hideSeconds,
+            secondsThreshold: secondsThreshold,
+            showStartTime: showStartTime,
+            richtextZoom: richtextZoom
         };
         localStorage.setItem('timers_v17_data', JSON.stringify(dataToSave));
     }
@@ -915,39 +1329,87 @@
         e.dataTransfer.effectAllowed = 'move';
     }
 
-    function handleDragOver(e) {
-        if (e.preventDefault) e.preventDefault();
-        return false;
-    }
-
     function handleDragEnter(e) {
-        this.classList.add('over');
+        // (rien : on gère tout dans dragover pour avoir la position du curseur)
     }
 
     function handleDragLeave(e) {
-        this.classList.remove('over');
+        // (rien : on cache l'indicateur seulement à dragend ou drop)
+    }
+
+    function handleDragOver(e) {
+        if (e.preventDefault) e.preventDefault();
+        if (this === dragSrcEl) return false;
+        const rect = this.getBoundingClientRect();
+        // Détection du layout : si le voisin direct est à droite (même rangée), on est en mode multi-colonnes
+        // → utiliser X pour décider du sens d'insertion. Sinon (mono-colonne), utiliser Y.
+        const list = document.getElementById('durationsList');
+        const cards = Array.from(list.querySelectorAll('.duration-card'));
+        const idx = cards.indexOf(this);
+        const voisinDroite = cards[idx + 1];
+        const voisinGauche = cards[idx - 1];
+        const memeRangee = (
+            (voisinDroite && Math.abs(voisinDroite.getBoundingClientRect().top - rect.top) < 10) ||
+            (voisinGauche && Math.abs(voisinGauche.getBoundingClientRect().top - rect.top) < 10)
+        );
+        const insererAvant = memeRangee
+            ? (e.clientX < rect.left + rect.width / 2)
+            : (e.clientY < rect.top + rect.height / 2);
+        positionnerIndicateurDrop(this, insererAvant, memeRangee);
+        return false;
+    }
+
+    function positionnerIndicateurDrop(targetCard, insererAvant, vertical) {
+        const indicator = document.getElementById('dropIndicator');
+        if (!indicator) return;
+        const targetRect = targetCard.getBoundingClientRect();
+        if (vertical) {
+            // Barre verticale entre deux colonnes
+            const left = insererAvant ? targetRect.left - 6 : targetRect.right - 2;
+            indicator.style.left = (left + window.scrollX) + 'px';
+            indicator.style.top = (targetRect.top + window.scrollY) + 'px';
+            indicator.style.width = '6px';
+            indicator.style.height = targetRect.height + 'px';
+        } else {
+            // Barre horizontale au-dessus/en-dessous (mono-colonne)
+            const top = insererAvant ? targetRect.top - 6 : targetRect.bottom - 2;
+            indicator.style.left = (targetRect.left + window.scrollX) + 'px';
+            indicator.style.top = (top + window.scrollY) + 'px';
+            indicator.style.width = targetRect.width + 'px';
+            indicator.style.height = '6px';
+        }
+        indicator.classList.add('visible');
+        indicator.dataset.targetId = targetCard.id;
+        indicator.dataset.before = insererAvant ? '1' : '0';
+    }
+
+    function cacherIndicateurDrop() {
+        const indicator = document.getElementById('dropIndicator');
+        if (indicator) {
+            indicator.classList.remove('visible');
+            delete indicator.dataset.targetId;
+            delete indicator.dataset.before;
+        }
     }
 
     function handleDrop(e) {
         if (e.stopPropagation) e.stopPropagation();
-        
-        if (dragSrcEl !== this) {
-            const list = document.getElementById('durationsList');
-            const allCards = Array.from(list.querySelectorAll('.duration-card'));
-            const indexSrc = allCards.indexOf(dragSrcEl);
-            const indexDest = allCards.indexOf(this);
-
-            if (indexSrc < indexDest) {
-                this.after(dragSrcEl);
-            } else {
-                this.before(dragSrcEl);
-            }
-            reindexerListe();
-        }
+        if (e.preventDefault) e.preventDefault();
+        const indicator = document.getElementById('dropIndicator');
+        const targetId = indicator?.dataset.targetId;
+        const before = indicator?.dataset.before === '1';
+        cacherIndicateurDrop();
+        if (!dragSrcEl || !targetId) return false;
+        const target = document.getElementById(targetId);
+        if (!target || target === dragSrcEl) return false;
+        if (before) target.before(dragSrcEl);
+        else target.after(dragSrcEl);
+        reindexerListe();
         return false;
     }
 
     function handleDragEnd(e) {
+        cacherIndicateurDrop();
         const cards = document.querySelectorAll('.duration-card');
         cards.forEach(card => {
             card.classList.remove('over');
@@ -976,8 +1438,102 @@
         el.addEventListener('dragend', handleDragEnd, false);
     }
 
-    function reinitialiserTout() { if(confirm(i18n[currentLang].confirmReset)) { localStorage.clear(); location.reload(); } }
+    async function reinitialiserTout() { fermerMenu(); if(await confirmDialog(i18n[currentLang].confirmReset)) { localStorage.clear(); location.reload(); } }
     function toggleFullscreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+
+    // --- MENU DROPDOWN ---
+    function toggleMenu(e) {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById('dropdownMenu');
+        if (!menu) return;
+        const isVisible = menu.classList.toggle('visible');
+        if (isVisible) {
+            // Fermer au prochain clic en dehors
+            setTimeout(() => {
+                const handler = (ev) => {
+                    if (!menu.contains(ev.target)) {
+                        fermerMenu();
+                        document.removeEventListener('click', handler);
+                    }
+                };
+                document.addEventListener('click', handler);
+            }, 0);
+        }
+    }
+    function fermerMenu() {
+        const menu = document.getElementById('dropdownMenu');
+        if (menu) menu.classList.remove('visible');
+    }
+
+    // --- EXPORT / IMPORT ---
+    function exporterConfig() {
+        fermerMenu();
+        const data = {
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            data: {
+                timers_v17_data: localStorage.getItem('timers_v17_data'),
+                timers_richtext: localStorage.getItem('timers_richtext'),
+                timers_markdown: localStorage.getItem('timers_markdown'), // legacy, pour les anciens utilisateurs pas encore migrés
+                timers_current_tab: localStorage.getItem('timers_current_tab'),
+                timers_settings_visible: localStorage.getItem('timers_settings_visible')
+            }
+        };
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const today = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = `timers-backup-${today}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function importerConfig() {
+        fermerMenu();
+        const input = document.getElementById('importFileInput');
+        if (!input) return;
+        // Reset value pour pouvoir réimporter le même fichier deux fois de suite
+        input.value = '';
+        input.click();
+    }
+
+    async function gererFichierImport(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const parsed = JSON.parse(text);
+            // Valider la structure minimale
+            if (!parsed || typeof parsed !== 'object' || !parsed.data || typeof parsed.data !== 'object') {
+                throw new Error('Structure invalide');
+            }
+            // Au moins une clé connue doit être présente
+            const knownKeys = ['timers_v17_data', 'timers_richtext', 'timers_markdown', 'timers_current_tab', 'timers_settings_visible'];
+            const hasAnyKey = knownKeys.some(k => k in parsed.data);
+            if (!hasAnyKey) throw new Error('Aucune donnée reconnue');
+            // Confirmer avant écrasement
+            const ok = await confirmDialog(i18n[currentLang].confirmImport);
+            if (!ok) return;
+            // Écrire dans localStorage (uniquement les clés présentes)
+            knownKeys.forEach(k => {
+                const v = parsed.data[k];
+                if (v === null || v === undefined) {
+                    localStorage.removeItem(k);
+                } else if (typeof v === 'string') {
+                    localStorage.setItem(k, v);
+                }
+            });
+            // Recharger pour que tout soit appliqué proprement
+            location.reload();
+        } catch (e) {
+            console.error('Import error:', e);
+            await confirmDialog(i18n[currentLang].importError, { alertMode: true });
+        }
+    }
 
     document.addEventListener('dragend', (e) => {
         if (e.target.classList.contains('duration-card')) {
@@ -997,6 +1553,16 @@
             globalSoundEnabled = data.globalSound !== undefined ? data.globalSound : true;
             darkMode = data.darkMode !== undefined ? data.darkMode : false;
             hideSeconds = data.hideSeconds !== undefined ? data.hideSeconds : false;
+            secondsThreshold = data.secondsThreshold !== undefined ? data.secondsThreshold : 180;
+            // Migration : si l'ancienne forme (Set d'IDs) existe, on prend "true" si non vide
+            if (data.showStartTime !== undefined) {
+                showStartTime = data.showStartTime;
+            } else if (Array.isArray(data.showStartTimeIds) && data.showStartTimeIds.length > 0) {
+                showStartTime = true;
+            } else {
+                showStartTime = false;
+            }
+            richtextZoom = data.richtextZoom !== undefined ? data.richtextZoom : 1.0;
             
             // 2. Vider la liste actuelle avant de recharger
             listeDurees = [];
@@ -1014,6 +1580,7 @@
                         
                         if (ecoule < total) {
                             majInterfaceActive(d.id);
+                            majHeureFin(d.id);
                             lancerTick(d.id);
                         } else {
                             d.start = null; 
@@ -1024,10 +1591,11 @@
                 });
             }
             
-            // 4. Appliquer la langue, le son, le thème et l'affichage des secondes
+            // 4. Appliquer la langue, le son, le thème et le seuil de secondes
             changeLanguage(currentLang);
             updateGlobalSoundUI();
-            updateHideSecondsUI();
+            const threshInput = document.getElementById('thresholdInput');
+            if (threshInput) threshInput.value = Math.round(secondsThreshold / 60);
             applyTheme();
         }
         
@@ -1051,6 +1619,14 @@
                 btn.textContent = '▼';
             }
         }
+
+        // 7. Initialiser l'éditeur richtext (toolbar + contenu)
+        attacherToolbarRichtext();
+        loadRichtext();
+
+        // 8. Attacher le gestionnaire d'import de fichier
+        const importInput = document.getElementById('importFileInput');
+        if (importInput) importInput.addEventListener('change', gererFichierImport);
     };
 
 </script>

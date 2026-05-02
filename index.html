@@ -115,9 +115,29 @@
         .active { border-color: var(--primary) !important; }
         .finished { background: var(--danger-bg) !important; border-color: var(--danger) !important; animation: pulse-red 1.5s infinite; }
 
-        .progress-bar-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 12px; background: var(--progress-line); pointer-events: none; transition: background-color 0.3s ease; }
-        .progress-bar-fill { height: 100%; width: 0%; background: var(--primary); transition: width 1s linear, background-color 0.3s ease; }
-        .finished .progress-bar-fill { background: var(--danger); width: 100% !important; }
+        .progress-bar-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 12px; background: var(--progress-line); pointer-events: none; transition: background-color 0.3s ease; overflow: hidden; }
+        .progress-bar-fill { height: 100%; width: 0%; background: var(--primary); transition: width 1s linear, background-color 0.3s ease; position: relative; }
+        .finished .progress-bar-fill { background: var(--danger); width: 100%; }
+        /* Pendant auto-reset : la barre reste rouge mais width est animée par JS de 100% à 0%.
+           On surcharge le sélecteur .finished sans !important pour laisser le inline style prendre la main. */
+        .finished.auto-resetting .progress-bar-fill { background: var(--danger); }
+        /* Animation shimmer : un reflet clair traverse la barre quand le timer est actif */
+        .active .progress-bar-fill::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+            background-size: 200% 100%;
+            animation: progress-shimmer 2.5s ease-in-out infinite;
+        }
+        @keyframes progress-shimmer {
+            0% { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+        }
+        .finished .progress-bar-fill::after { display: none; }
 
         .btn-close { position: absolute; top: 20px; right: 20px; background: var(--btn-close-bg); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-weight: 900; color: var(--text-light); z-index: 10; transition: all 0.3s ease; }
         .btn-close:hover { opacity: 0.7; }
@@ -147,7 +167,20 @@
         .modal-actions button:hover { opacity: 0.85; }
         .modal-btn-confirm { background: var(--danger); color: white; }
         .modal-btn-cancel { background: var(--btn-close-bg); color: var(--text-light); border: 1px solid var(--input-border) !important; }
-        .label-nom { font-weight: 800; color: var(--primary); font-size: 1.8rem; margin-bottom: 5px; transition: color 0.3s ease; }
+        .prompt-modal-input { width: 100%; padding: 12px 14px; font-size: 1rem; border: 2px solid var(--input-border); border-radius: 8px; background: var(--bg); color: var(--text-dark); outline: none; margin-bottom: 25px; font-weight: 500; box-sizing: border-box; }
+        .prompt-modal-input:focus { border-color: var(--primary); }
+        .label-nom { font-weight: 800; color: var(--primary); font-size: 1.8rem; margin-bottom: 5px; transition: all 0.2s ease; cursor: pointer; padding: 4px 10px; border-radius: 8px; border: 2px dashed transparent; display: inline-block; max-width: 100%; }
+        .label-nom::after { content: " ✏️"; opacity: 0; transition: opacity 0.2s ease; font-size: 0.7em; }
+        .label-nom:hover { background: var(--btn-close-bg); border-color: var(--input-border); }
+        .label-nom:hover::after { opacity: 1; }
+        .label-nom[data-empty="1"] { color: var(--text-light); font-style: italic; opacity: 0; }
+        .label-nom[data-empty="1"]:hover { opacity: 0.6; }
+        .name-edit-form { display: flex; gap: 8px; align-items: center; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; padding: 12px 16px; background: var(--bg); border: 2px solid var(--primary); border-radius: 12px; box-shadow: 0 4px 12px var(--shadow-color); }
+        .name-edit-form input[type="text"] { flex: 1; min-width: 150px; padding: 8px 12px; font-size: 1.1rem; border: 2px solid var(--input-border); border-radius: 8px; font-weight: 600; background: var(--card-bg); color: var(--text-dark); outline: none; }
+        .name-edit-form input[type="text"]:focus { border-color: var(--primary); }
+        .name-edit-form button { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 800; font-size: 0.95rem; transition: opacity 0.2s; }
+        .name-edit-form button:hover { opacity: 0.85; }
+        .name-edit-form button.btn-cancel { background: var(--btn-close-bg); color: var(--text-light); border: 1px solid var(--input-border); }
         
         .time-left { font-size: 6rem; font-weight: 900; color: var(--input-border); margin: 0; line-height: 1; transition: all 0.2s ease; cursor: pointer; padding: 4px 12px; border-radius: 12px; }
         .time-left:hover { background: var(--btn-close-bg); }
@@ -187,13 +220,38 @@
         .tab-btn { background: transparent; border: none; color: var(--text-light); padding: 15px 25px; cursor: pointer; font-weight: 700; font-size: 1rem; border-bottom: 3px solid transparent; transition: all 0.3s ease; }
         .tab-btn:hover { color: var(--text-dark); }
         .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        /* Onglets dans la top-bar (à côté du logo) */
+        .top-tabs { display: flex; gap: 0; margin-left: 20px; flex: 1; }
+        .top-tabs .tab-btn { color: rgba(255,255,255,0.6); padding: 12px 18px; font-size: 0.95rem; border-bottom: 3px solid transparent; }
+        .top-tabs .tab-btn:hover { color: white; }
+        .top-tabs .tab-btn.active { color: white; border-bottom-color: var(--primary); }
+
+        /* Bouton + flottant pour ajouter un timer */
+        .btn-add-floating { position: fixed; bottom: 30px; right: 30px; width: 64px; height: 64px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 2.2rem; font-weight: 900; cursor: pointer; box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4); z-index: 90; transition: all 0.2s; line-height: 1; }
+        .btn-add-floating.hidden { display: none; }
+        .btn-add-floating:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(14, 165, 233, 0.5); }
+        .btn-add-floating:active { transform: scale(0.97); }
+
+        /* Modal d'ajout de timer */
+        #addTimerModal .modal-box { width: 480px; max-width: 90%; }
+        .add-modal-fields { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+        .add-modal-fields .field { display: flex; flex-direction: column; gap: 6px; }
+        .add-modal-fields .field label { font-size: 0.8rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+        .add-modal-fields .field input { padding: 10px 14px; font-size: 1.1rem; border: 1px solid var(--input-border); border-radius: 8px; background: var(--bg); color: var(--text-dark); outline: none; font-weight: 600; }
+        .add-modal-fields .field input:focus { border-color: var(--primary); }
+        .add-modal-time-row { display: flex; gap: 12px; }
+        .add-modal-time-row .field { flex: 1; }
+
+        /* Spacer pour pousser des éléments à droite dans une flex */
+        .toolbar-spacer { flex: 1; }
         
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
         /* Éditeur Markdown */
         /* Onglet instructions (éditeur richtext WYSIWYG) */
-        #instructions-tab.active { display: flex; flex-direction: column; height: calc(100vh - 100px); }
+        #instructions-tab.active { display: flex; flex-direction: column; height: calc(100vh - 60px); }
         .richtext-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .richtext-toolbar { background: var(--settings-bg); border-bottom: 1px solid var(--card-border); padding: 10px 20px; display: none; gap: 6px; align-items: center; flex-wrap: wrap; }
         .richtext-container.editing .richtext-toolbar { display: flex; }
@@ -384,8 +442,24 @@
         </div>
     </div>
 
+    <!-- Modal de saisie texte (pour Importer depuis URL) -->
+    <div class="modal-overlay" id="promptModal">
+        <div class="modal-box">
+            <div class="modal-message" id="promptModalMessage"></div>
+            <input type="text" id="promptModalInput" class="prompt-modal-input" placeholder="https://...">
+            <div class="modal-actions">
+                <button class="modal-btn-cancel" id="promptModalCancel">Annuler</button>
+                <button class="modal-btn-confirm" id="promptModalOk">OK</button>
+            </div>
+        </div>
+    </div>
+
     <div class="top-bar">
         <div class="app-title">TIMERS</div>
+        <nav class="top-tabs">
+            <button class="tab-btn active" onclick="switchTab('timers')" id="tab-timers-btn">⏱️ Timers</button>
+            <button class="tab-btn" onclick="switchTab('instructions')" id="tab-instructions-btn">📝 Instructions</button>
+        </nav>
         <div class="right-controls">
             <button class="btn-theme" onclick="toggleTheme()" title="Basculer mode sombre/clair">
                 <span id="themeIcon">🌙</span>
@@ -408,9 +482,18 @@
                             <span id="txt-threshold-unit">min</span>
                         </div>
                     </div>
+                    <div class="dropdown-setting">
+                        <label id="txt-label-autoreset">Auto-reset après</label>
+                        <div class="dropdown-setting-input">
+                            <input type="number" id="autoResetInput" value="60" min="0" max="3600" onchange="onAutoResetChange()" onclick="event.stopPropagation()">
+                            <span id="txt-autoreset-unit">sec</span>
+                        </div>
+                    </div>
                     <div class="dropdown-divider"></div>
                     <button class="dropdown-item" onclick="exporterConfig()">⬇️ <span id="txt-export">Exporter</span></button>
                     <button class="dropdown-item" onclick="importerConfig()">⬆️ <span id="txt-import">Importer</span></button>
+                    <button class="dropdown-item" onclick="importerDepuisUrl()">🔗 <span id="txt-import-url">Importer depuis URL</span></button>
+                    <button class="dropdown-item" onclick="partagerLien()">📋 <span id="txt-share">Partager le lien</span></button>
                     <div class="dropdown-divider"></div>
                     <button class="dropdown-item dropdown-danger" onclick="reinitialiserTout()" id="txt-clear-all">Tout effacer</button>
                 </div>
@@ -420,46 +503,42 @@
     </div>
     <input type="file" id="importFileInput" accept="application/json,.json" style="display:none">
 
-
-    <div class="tabs-container">
-        <button class="tab-btn active" onclick="switchTab('timers')" id="tab-timers-btn">⏱️ Timers</button>
-        <button class="tab-btn" onclick="switchTab('instructions')" id="tab-instructions-btn">📝 Instructions</button>
-    </div>
-
-    <div id="timers-tab" class="tab-content active">
-    <div class="show-settings-bar" id="showSettingsBar">
-        <button class="btn-show-settings" onclick="toggleSettingsPanel()" id="btn-show-settings">+</button>
-    </div>
-    <div class="settings-panel" id="settingsPanel">
-        <button class="toggle-settings-btn" onclick="toggleSettingsPanel()" id="toggleSettingsBtn">▲</button>
-        <div class="input-group">
-            <div class="field">
-                <label id="txt-label-name">Nom</label>
-                <input type="text" id="nameInput" class="input-name" placeholder="Ex: Pain">
+    <!-- Modal d'ajout de timer -->
+    <div class="modal-overlay" id="addTimerModal">
+        <div class="modal-box">
+            <div class="modal-message" id="txt-add-modal-title">Nouveau timer</div>
+            <div class="add-modal-fields">
+                <div class="field">
+                    <label id="txt-label-name">Nom</label>
+                    <input type="text" id="nameInput" class="input-name" placeholder="Ex: Pain">
+                </div>
+                <div class="add-modal-time-row">
+                    <div class="field">
+                        <label id="txt-label-min">Min</label>
+                        <input type="number" id="minInput" class="input-time" value="0" min="0">
+                    </div>
+                    <div class="field">
+                        <label id="txt-label-sec">Sec</label>
+                        <input type="number" id="secInput" class="input-time" value="0" min="0" max="59">
+                    </div>
+                </div>
             </div>
-            <div class="field">
-                <label id="txt-label-min">Min</label>
-                <input type="number" id="minInput" class="input-time" value="0" min="0">
+            <div class="modal-actions">
+                <button class="modal-btn-cancel" onclick="fermerAddModal()" id="txt-modal-cancel">Annuler</button>
+                <button class="modal-btn-confirm" onclick="ajouterDuree()" id="txt-btn-add">Ajouter timer</button>
             </div>
-            <div class="field">
-                <label id="txt-label-sec">Sec</label>
-                <input type="number" id="secInput" class="input-time" value="0" min="0" max="59">
-            </div>
-            <button class="btn-add-main" onclick="ajouterDuree()" id="txt-btn-add">Ajouter timer</button>
         </div>
     </div>
 
-    <div id="durationsList"></div>
-    <div class="drop-indicator" id="dropIndicator"></div>
+    <div id="timers-tab" class="tab-content active">
+        <div id="durationsList"></div>
+        <div class="drop-indicator" id="dropIndicator"></div>
     </div>
+    <button class="btn-add-floating" id="btnAddFloating" onclick="ouvrirAddModal()" title="Ajouter un timer">+</button>
 
     <div id="instructions-tab" class="tab-content">
         <div class="richtext-container">
             <div class="richtext-toolbar" id="richtextToolbar">
-                <button type="button" id="rt-zoom-out" title="Zoom −">A−</button>
-                <button type="button" id="rt-zoom-reset" title="Zoom 100%" class="rt-zoom-level"><span id="rt-zoom-pct">100%</span></button>
-                <button type="button" id="rt-zoom-in" title="Zoom +">A+</button>
-                <div class="toolbar-sep"></div>
                 <button type="button" id="rt-h1" title="Titre 1"><b>H1</b></button>
                 <button type="button" id="rt-h2" title="Titre 2"><b>H2</b></button>
                 <button type="button" id="rt-h3" title="Titre 3"><b>H3</b></button>
@@ -475,6 +554,10 @@
                 <div class="toolbar-sep"></div>
                 <button type="button" id="rt-link" title="Lien">🔗</button>
                 <button type="button" id="rt-clear" title="Effacer le formatage">⎚</button>
+                <div class="toolbar-spacer"></div>
+                <button type="button" id="rt-zoom-out" title="Zoom −">A−</button>
+                <button type="button" id="rt-zoom-reset" title="Zoom 100%" class="rt-zoom-level"><span id="rt-zoom-pct">100%</span></button>
+                <button type="button" id="rt-zoom-in" title="Zoom +">A+</button>
                 <button type="button" class="btn-close-edit" id="rt-close" title="Sortir du mode édition">✕</button>
             </div>
             <div id="richtextEditor" class="richtext-editor" contenteditable="true" data-placeholder="Cliquez ici pour commencer à écrire..."></div>
@@ -483,9 +566,9 @@
 
 <script>
     const i18n = {
-        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informations", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", export: "Exporter", import: "Importer", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes" },
-        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informationen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", export: "Exportieren", import: "Importieren", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden" },
-        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Information", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", export: "Export", import: "Import", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", toggleSecondsTitle: "Click to show/hide seconds" }
+        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informations", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Auto-reset après", autoResetUnit: "sec (0=off)", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes" },
+        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informationen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Auto-Reset nach", autoResetUnit: "Sek (0=aus)", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden" },
+        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Information", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Auto-reset after", autoResetUnit: "sec (0=off)", toggleSecondsTitle: "Click to show/hide seconds" }
     };
 
     let currentLang = 'fr';
@@ -497,11 +580,11 @@
     let darkMode = false;
     let hideSeconds = false;
     let secondsThreshold = 180; // En dessous de 3 minutes par défaut, on affiche toujours les secondes
-    let settingsPanelVisible = true;
+    let autoResetDelay = 60; // Délai en secondes avant réinitialisation auto d'un timer terminé (0 = désactivé)
     let currentTab = 'timers';
     let showStartTime = false; // Affichage global de l'heure de début pour tous les timers actifs
     let richtextZoom = 1.0; // Niveau de zoom pour l'éditeur d'instructions (1.0 = 100%)
-    let defaultRichtext = `<h1>Mes instructions</h1><p>Cliquez ici pour commencer à écrire...</p>`;
+    let defaultRichtext = `<h1>Informations</h1><p>Cliquez ici pour commencer à écrire...</p>`;
 
 
 // --- LOGIQUE THEME ---
@@ -535,29 +618,14 @@
         currentTab = tabName;
         localStorage.setItem('timers_current_tab', tabName);
         
+        // Bouton + flottant uniquement sur l'onglet timers
+        const btnAdd = document.getElementById('btnAddFloating');
+        if (btnAdd) btnAdd.classList.toggle('hidden', tabName !== 'timers');
+
         // Si on affiche l'onglet instructions, charger le richtext
         if (tabName === 'instructions') {
             loadRichtext();
         }
-    }
-
-    function toggleSettingsPanel() {
-        const panel = document.getElementById('settingsPanel');
-        const btn = document.getElementById('toggleSettingsBtn');
-        const showBar = document.getElementById('showSettingsBar');
-        settingsPanelVisible = !settingsPanelVisible;
-        
-        if (settingsPanelVisible) {
-            panel.classList.remove('collapsed');
-            showBar.classList.remove('visible');
-            btn.textContent = '▲';
-        } else {
-            panel.classList.add('collapsed');
-            showBar.classList.add('visible');
-            btn.textContent = '▼';
-        }
-        
-        localStorage.setItem('timers_settings_visible', settingsPanelVisible);
     }
 
 // --- LOGIQUE EDITEUR WYSIWYG (contenteditable) ---
@@ -726,12 +794,12 @@
     }
 
     function appliquerZoom() {
-        const editor = document.getElementById('richtextEditor');
+        const tab = document.getElementById('instructions-tab');
         const pct = document.getElementById('rt-zoom-pct');
-        if (editor) {
-            // Le font-size de base de l'éditeur est 1.5rem dans le CSS
-            const size = Math.round(1.5 * richtextZoom * 100) / 100;
-            editor.style.fontSize = size + 'rem';
+        if (tab) {
+            // 'zoom' agit comme un facteur de mise à l'échelle pour tout le contenu (y compris la toolbar)
+            // Supporté par tous les navigateurs modernes (Firefox 126+, Chrome, Safari)
+            tab.style.zoom = richtextZoom;
         }
         if (pct) pct.textContent = Math.round(richtextZoom * 100) + '%';
     }
@@ -801,15 +869,21 @@
         document.getElementById('txt-clear-all').textContent = t.clearAll;
         const txtExport = document.getElementById('txt-export'); if (txtExport) txtExport.textContent = t.export;
         const txtImport = document.getElementById('txt-import'); if (txtImport) txtImport.textContent = t.import;
+        const txtImportUrl = document.getElementById('txt-import-url'); if (txtImportUrl) txtImportUrl.textContent = t.importUrl;
+        const txtShare = document.getElementById('txt-share'); if (txtShare) txtShare.textContent = t.share;
         document.getElementById('txt-label-name').textContent = t.labelName;
         document.getElementById('txt-label-min').textContent = t.labelMin;
         document.getElementById('txt-label-sec').textContent = t.labelSec;
         document.getElementById('txt-btn-add').textContent = t.btnAdd;
         const txtThreshold = document.getElementById('txt-label-threshold'); if (txtThreshold) txtThreshold.textContent = t.thresholdLabel;
         const txtThresholdUnit = document.getElementById('txt-threshold-unit'); if (txtThresholdUnit) txtThresholdUnit.textContent = t.thresholdUnit;
+        const txtAutoReset = document.getElementById('txt-label-autoreset'); if (txtAutoReset) txtAutoReset.textContent = t.autoResetLabel;
+        const txtAutoResetUnit = document.getElementById('txt-autoreset-unit'); if (txtAutoResetUnit) txtAutoResetUnit.textContent = t.autoResetUnit;
         document.getElementById('nameInput').placeholder = t.placeholderName;
         document.getElementById('tab-timers-btn').textContent = t.tabTimers;
         document.getElementById('tab-instructions-btn').textContent = t.tabInstructions;
+        const txtAddTitle = document.getElementById('txt-add-modal-title'); if (txtAddTitle) txtAddTitle.textContent = t.addTimerTitle || (t.addTimer || t.btnAdd);
+        const txtModalCancel = document.getElementById('txt-modal-cancel'); if (txtModalCancel) txtModalCancel.textContent = t.cancel;
         listeDurees.forEach(d => {
             const card = document.getElementById(`card-${d.id}`);
             if (card) {
@@ -820,6 +894,12 @@
                 const btnMute = card.querySelector(`[id^="btn-mute-"]`); if (btnMute) btnMute.innerHTML = `${d.muted?'🔇':'🔊'} ${t.mute}`;
                 const btnDup = card.querySelector('.btn-duplicate'); if (btnDup) btnDup.title = t.duplicate;
                 const timeEl = card.querySelector('.time-left'); if (timeEl) timeEl.title = t.toggleSecondsTitle;
+                // Mettre à jour le placeholder "Sans titre" pour les timers sans nom
+                const nomEl = card.querySelector('.label-nom');
+                if (nomEl && nomEl.hasAttribute('data-empty')) {
+                    nomEl.textContent = t.untiteld || 'Sans titre';
+                }
+                if (nomEl) nomEl.title = t.editNameTitle;
                 majHeureFin(d.id);
             }
         });
@@ -877,28 +957,27 @@
         sauvegarder(); 
     }
 
+    function rafraichirAffichageTimer(id) {
+        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        const timeDisplay = document.getElementById(`time-${id}`);
+        if (!timeDisplay) return;
+        if (obj.start) {
+            const ecoule = Date.now() - obj.start;
+            const total = (obj.totalSecs + obj.extraSecs) * 1000;
+            const restant = total - ecoule;
+            if (restant > 0) {
+                timeDisplay.textContent = formaterTemps(Math.ceil(restant/1000));
+            }
+        } else {
+            timeDisplay.textContent = formaterTemps(obj.totalSecs);
+        }
+        majTitreDuree(id);
+    }
+
     // Helper : rafraîchir l'affichage de tous les timers (utilisé par toggle SEC et changement de seuil)
     function rafraichirTousAffichages() {
-        listeDurees.forEach(d => {
-            const timeDisplay = document.getElementById(`time-${d.id}`);
-            if (timeDisplay) {
-                const obj = listeDurees.find(obj => obj.id.toString() === d.id.toString());
-                if (obj?.start) {
-                    const ecoule = Date.now() - obj.start;
-                    const total = (obj.totalSecs + obj.extraSecs) * 1000;
-                    const restant = total - ecoule;
-                    if (restant > 0) {
-                        timeDisplay.textContent = formaterTemps(Math.ceil(restant/1000));
-                    }
-                } else {
-                    timeDisplay.textContent = formaterTemps(d.totalSecs);
-                }
-            }
-            const card = document.getElementById(`card-${d.id}`);
-            if (card) {
-                majTitreDuree(d.id);
-            }
-        });
+        listeDurees.forEach(d => rafraichirAffichageTimer(d.id));
     }
 
     function onThresholdChange() {
@@ -913,8 +992,35 @@
         sauvegarder();
     }
 
+    function ouvrirAddModal() {
+        const modal = document.getElementById('addTimerModal');
+        if (!modal) return;
+        // Reset des champs
+        document.getElementById('nameInput').value = '';
+        document.getElementById('minInput').value = '0';
+        document.getElementById('secInput').value = '0';
+        modal.classList.add('visible');
+        // Focus sur le nom
+        setTimeout(() => document.getElementById('nameInput').focus(), 50);
+        // Échap pour fermer
+        const onKey = (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); fermerAddModal(); document.removeEventListener('keydown', onKey); }
+            else if (e.key === 'Enter' && (e.target.id === 'nameInput' || e.target.id === 'minInput' || e.target.id === 'secInput')) {
+                e.preventDefault(); ajouterDuree();
+            }
+        };
+        document.addEventListener('keydown', onKey);
+        modal._onKey = onKey;
+    }
+
+    function fermerAddModal() {
+        const modal = document.getElementById('addTimerModal');
+        if (!modal) return;
+        modal.classList.remove('visible');
+        if (modal._onKey) { document.removeEventListener('keydown', modal._onKey); modal._onKey = null; }
+    }
+
     function ajouterDuree() {
-        const t = i18n[currentLang];
         const nomInput = document.getElementById('nameInput').value.trim();
         const nom = nomInput || '';
         const totalSecs = (parseInt(document.getElementById('minInput').value)||0)*60 + (parseInt(document.getElementById('secInput').value)||0);
@@ -923,19 +1029,23 @@
         const nouvelle = { id, nom, totalSecs, start: null, extraSecs: 0, muted: false };
         listeDurees.push(nouvelle);
         creerCarteHTML(nouvelle);
-        document.getElementById('nameInput').value = ''; sauvegarder();
+        sauvegarder();
+        fermerAddModal();
     }
 
     function creerCarteHTML(obj) {
         const t = i18n[currentLang];
         const card = document.createElement('div');
         card.className = 'duration-card'; card.id = `card-${obj.id}`; card.draggable = true;
-        const nomHTML = obj.nom ? `<div class="label-nom">${obj.nom}</div>` : '';
+        // Le champ nom est TOUJOURS présent (même vide) pour pouvoir être cliqué/renommé.
+        // Si vide on affiche un placeholder visuel via CSS (data-empty="1").
+        const nomTexte = obj.nom || t.untiteld || 'Sans titre';
+        const nomDataEmpty = obj.nom ? '' : 'data-empty="1"';
         card.innerHTML = `<div class="drag-handle"><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div></div>
             <button class="btn-duplicate" onclick="dupliquerDuree('${obj.id}')" title="${t.duplicate}">⎘</button>
             <button class="btn-close" onclick="supprimerDuree('${obj.id}')">×</button>
             <div class="label-duree-titre" id="title-${obj.id}" onclick="editerDuree('${obj.id}')" title="${t.editDurationTitle}">${t.duration} — ${formaterTemps(obj.totalSecs)}</div>
-            ${nomHTML}
+            <div class="label-nom" id="nom-${obj.id}" ${nomDataEmpty} onclick="editerNom('${obj.id}')" title="${t.editNameTitle || 'Cliquer pour renommer'}">${escaperHtml(nomTexte)}</div>
             <div class="time-left" id="time-${obj.id}" onclick="toggleHideSeconds()" title="${t.toggleSecondsTitle}">${formaterTemps(obj.totalSecs)}</div>
             <div class="end-time-display" id="endtime-${obj.id}" onclick="toggleStartTime()"></div>
             <div class="card-actions" id="actions-${obj.id}"><button class="btn-start" onclick="demarrerDuree('${obj.id}')">${t.start}</button></div>
@@ -997,7 +1107,7 @@
             if (restant <= 0) {
                 timeEl.textContent = "0:00";
                 progressEl.style.width = "100%";
-                if (!card.classList.contains('finished')) { card.classList.add('finished'); lancerAlarme(id); }
+                if (!card.classList.contains('finished')) { marquerFini(id); }
                 activeTickIds.delete(id);
                 return;
             }
@@ -1031,13 +1141,76 @@
 
     function lancerAlarme(id) { playBellSound(id); soundIntervals[id] = setInterval(() => playBellSound(id), 3000); }
 
+    // Map id → setTimeout pour les compte à rebours d'auto-reset
+    let autoResetTimeouts = {};
+
+    // Marque un timer comme terminé : ajoute la classe finished, lance l'alarme, et démarre
+    // éventuellement l'auto-reset selon le réglage. Centralisé pour éviter de répéter la logique.
+    function marquerFini(id) {
+        const card = document.getElementById(`card-${id}`);
+        if (!card || card.classList.contains('finished')) return;
+        card.classList.add('finished');
+        lancerAlarme(id);
+        if (autoResetDelay > 0) lancerAutoReset(id);
+    }
+
+    function lancerAutoReset(id) {
+        // Annuler tout reset précédemment programmé pour ce timer
+        annulerAutoReset(id);
+        const card = document.getElementById(`card-${id}`);
+        const fill = document.getElementById(`progress-${id}`);
+        if (!card || !fill) return;
+        // Animer la barre rouge de droite à gauche : on inverse le sens via une classe,
+        // puis on déclenche la transition vers width:0 sur la durée autoResetDelay.
+        card.classList.add('auto-resetting');
+        // Forcer reflow pour que la transition prenne effet (sinon le navigateur peut
+        // grouper les changements de style et zapper la transition).
+        fill.style.width = '100%';
+        // eslint-disable-next-line no-unused-expressions
+        fill.offsetWidth;
+        fill.style.transition = `width ${autoResetDelay}s linear`;
+        fill.style.width = '0%';
+        // Au bout du délai, réinitialiser le timer
+        autoResetTimeouts[id] = setTimeout(() => {
+            delete autoResetTimeouts[id];
+            stopDuree(id);
+        }, autoResetDelay * 1000);
+    }
+
+    function annulerAutoReset(id) {
+        if (autoResetTimeouts[id]) {
+            clearTimeout(autoResetTimeouts[id]);
+            delete autoResetTimeouts[id];
+        }
+        const card = document.getElementById(`card-${id}`);
+        const fill = document.getElementById(`progress-${id}`);
+        if (card) card.classList.remove('auto-resetting');
+        if (fill) {
+            // Restaurer la transition par défaut (1s linear comme dans le CSS de base)
+            fill.style.transition = '';
+        }
+    }
+
+    function onAutoResetChange() {
+        const input = document.getElementById('autoResetInput');
+        if (!input) return;
+        let val = parseInt(input.value);
+        if (isNaN(val) || val < 0) val = 0;
+        if (val > 3600) val = 3600;
+        input.value = val;
+        autoResetDelay = val;
+        sauvegarder();
+    }
+
     function stopDuree(id) {
-        arreterTick(id); clearInterval(soundIntervals[id]);
+        arreterTick(id); clearInterval(soundIntervals[id]); annulerAutoReset(id);
         const obj = listeDurees.find(d => d.id.toString() === id.toString());
         obj.start = null; obj.extraSecs = 0;
         obj.muted = false;
         const card = document.getElementById(`card-${id}`);
         card.classList.remove('active', 'finished');
+        const fill = document.getElementById(`progress-${id}`);
+        if (fill) fill.style.width = '0%';
         document.getElementById(`time-${id}`).textContent = formaterTemps(obj.totalSecs);
         document.getElementById(`endtime-${id}`).textContent = "";
         majTitreDuree(id);
@@ -1065,7 +1238,11 @@
         const obj = listeDurees.find(d => d.id.toString() === id.toString());
         obj.extraSecs += 30; majHeureFin(id); majTitreDuree(id);
         if (document.getElementById(`card-${id}`).classList.contains('finished')) {
+            annulerAutoReset(id);
             document.getElementById(`card-${id}`).classList.remove('finished');
+            // Restaurer la barre à sa pleine largeur (l'auto-reset l'avait peut-être déjà rétrécie)
+            const fill = document.getElementById(`progress-${id}`);
+            if (fill) { fill.style.transition = ''; fill.style.width = '100%'; }
             clearInterval(soundIntervals[id]); lancerTick(id);
         }
         sauvegarder();
@@ -1076,7 +1253,7 @@
             const ok = await confirmDialog(i18n[currentLang].confirmDelete);
             if (!ok) return;
         }
-        arreterTick(id); clearInterval(soundIntervals[id]);
+        arreterTick(id); clearInterval(soundIntervals[id]); annulerAutoReset(id);
         document.getElementById(`card-${id}`).remove();
         listeDurees = listeDurees.filter(d => d.id.toString() !== id.toString());
         sauvegarder();
@@ -1165,9 +1342,7 @@
                 majTitreDuree(nouvelId);
                 document.getElementById(`time-${nouvelId}`).textContent = "0:00";
                 document.getElementById(`progress-${nouvelId}`).style.width = "100%";
-                const cardC = document.getElementById(`card-${nouvelId}`);
-                cardC.classList.add('finished');
-                lancerAlarme(nouvelId);
+                marquerFini(nouvelId);
             }
         }
         sauvegarder();
@@ -1273,8 +1448,7 @@
                 document.getElementById(`time-${id}`).textContent = "0:00";
                 document.getElementById(`progress-${id}`).style.width = "100%";
                 if (!card.classList.contains('finished')) {
-                    card.classList.add('finished');
-                    lancerAlarme(id);
+                    marquerFini(id);
                 }
                 arreterTick(id);
             }
@@ -1305,6 +1479,83 @@
         majTitreDuree(id);
     }
 
+    // Échappe les caractères HTML pour éviter des injections via le nom de timer
+    function escaperHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    // --- ÉDITION DU NOM D'UN TIMER ---
+    function editerNom(id) {
+        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        const nomEl = document.getElementById(`nom-${id}`);
+        if (!nomEl) return;
+        if (nomEl.querySelector('input')) return; // déjà en édition
+        const t = i18n[currentLang];
+        nomEl.classList.remove('label-nom');
+        nomEl.classList.add('name-edit-form');
+        nomEl.removeAttribute('data-empty');
+        nomEl.onclick = null;
+        nomEl.innerHTML = `
+            <input type="text" id="edit-nom-${id}" value="${escaperHtml(obj.nom || '')}" placeholder="${t.placeholderName}">
+            <button type="button" id="edit-nom-ok-${id}">${t.save}</button>
+            <button type="button" class="btn-cancel" id="edit-nom-cancel-${id}">${t.cancel}</button>
+        `;
+        const input = document.getElementById(`edit-nom-${id}`);
+        const btnOk = document.getElementById(`edit-nom-ok-${id}`);
+        const btnCancel = document.getElementById(`edit-nom-cancel-${id}`);
+        btnOk.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); validerEditionNom(id); });
+        btnCancel.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); annulerEditionNom(id); });
+        input.addEventListener('click', (e) => e.stopPropagation());
+        input.focus();
+        input.select();
+        const card = document.getElementById(`card-${id}`);
+        if (card) card.draggable = false;
+        const handler = (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); validerEditionNom(id); }
+            else if (e.key === 'Escape') { e.preventDefault(); annulerEditionNom(id); }
+        };
+        input.addEventListener('keydown', handler);
+    }
+
+    function validerEditionNom(id) {
+        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        const input = document.getElementById(`edit-nom-${id}`);
+        if (!input) return;
+        const nouveau = input.value.trim();
+        obj.nom = nouveau;
+        restaurerNom(id);
+        sauvegarder();
+    }
+
+    function annulerEditionNom(id) {
+        restaurerNom(id);
+    }
+
+    function restaurerNom(id) {
+        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        const nomEl = document.getElementById(`nom-${id}`);
+        if (!nomEl) return;
+        const t = i18n[currentLang];
+        nomEl.classList.remove('name-edit-form');
+        nomEl.classList.add('label-nom');
+        nomEl.title = t.editNameTitle || 'Cliquer pour renommer';
+        nomEl.onclick = () => editerNom(id);
+        const nomTexte = obj.nom || t.untiteld || 'Sans titre';
+        nomEl.textContent = nomTexte;
+        if (obj.nom) nomEl.removeAttribute('data-empty');
+        else nomEl.setAttribute('data-empty', '1');
+        const card = document.getElementById(`card-${id}`);
+        if (card) card.draggable = true;
+    }
+
     function sauvegarder() {
         if (listeDurees.length === 0 && !localStorage.getItem('timers_v17_data')) {
             // Ne rien faire si aucune donnée à sauvegarder
@@ -1317,6 +1568,7 @@
             darkMode: darkMode,
             hideSeconds: hideSeconds,
             secondsThreshold: secondsThreshold,
+            autoResetDelay: autoResetDelay,
             showStartTime: showStartTime,
             richtextZoom: richtextZoom
         };
@@ -1475,8 +1727,7 @@
                 timers_v17_data: localStorage.getItem('timers_v17_data'),
                 timers_richtext: localStorage.getItem('timers_richtext'),
                 timers_markdown: localStorage.getItem('timers_markdown'), // legacy, pour les anciens utilisateurs pas encore migrés
-                timers_current_tab: localStorage.getItem('timers_current_tab'),
-                timers_settings_visible: localStorage.getItem('timers_settings_visible')
+                timers_current_tab: localStorage.getItem('timers_current_tab')
             }
         };
         const json = JSON.stringify(data, null, 2);
@@ -1501,37 +1752,203 @@
         input.click();
     }
 
+    // Modal de saisie texte (utilisé pour Importer depuis URL)
+    function promptDialog(message, defaultValue = '', placeholder = '') {
+        return new Promise((resolve) => {
+            const overlay = document.getElementById('promptModal');
+            const msg = document.getElementById('promptModalMessage');
+            const input = document.getElementById('promptModalInput');
+            const btnOk = document.getElementById('promptModalOk');
+            const btnCancel = document.getElementById('promptModalCancel');
+            const t = i18n[currentLang];
+            msg.textContent = message;
+            btnOk.textContent = t.save || 'OK';
+            btnCancel.textContent = t.cancel || 'Annuler';
+            input.value = defaultValue;
+            input.placeholder = placeholder || '';
+            overlay.classList.add('visible');
+            setTimeout(() => { input.focus(); input.select(); }, 0);
+
+            const cleanup = (result) => {
+                overlay.classList.remove('visible');
+                btnOk.removeEventListener('click', onOk);
+                btnCancel.removeEventListener('click', onCancel);
+                document.removeEventListener('keydown', onKey);
+                overlay.removeEventListener('click', onOverlayClick);
+                resolve(result);
+            };
+            const onOk = () => cleanup(input.value.trim());
+            const onCancel = () => cleanup(null);
+            const onKey = (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); cleanup(input.value.trim()); }
+                else if (e.key === 'Escape') { e.preventDefault(); cleanup(null); }
+            };
+            const onOverlayClick = (e) => {
+                if (e.target === overlay) cleanup(null);
+            };
+            btnOk.addEventListener('click', onOk);
+            btnCancel.addEventListener('click', onCancel);
+            document.addEventListener('keydown', onKey);
+            overlay.addEventListener('click', onOverlayClick);
+        });
+    }
+
+    // Applique un objet d'import déjà parsé (utilisé par fichier et URL).
+    // Renvoie true si l'import a été appliqué et la page va recharger.
+    async function appliquerImport(parsed) {
+        if (!parsed || typeof parsed !== 'object' || !parsed.data || typeof parsed.data !== 'object') {
+            throw new Error('Structure invalide');
+        }
+        const knownKeys = ['timers_v17_data', 'timers_richtext', 'timers_markdown', 'timers_current_tab'];
+        const hasAnyKey = knownKeys.some(k => k in parsed.data);
+        if (!hasAnyKey) throw new Error('Aucune donnée reconnue');
+        const ok = await confirmDialog(i18n[currentLang].confirmImport);
+        if (!ok) return false;
+        knownKeys.forEach(k => {
+            const v = parsed.data[k];
+            if (v === null || v === undefined) {
+                localStorage.removeItem(k);
+            } else if (typeof v === 'string') {
+                localStorage.setItem(k, v);
+            }
+        });
+        location.reload();
+        return true;
+    }
+
     async function gererFichierImport(event) {
         const file = event.target.files && event.target.files[0];
         if (!file) return;
         try {
             const text = await file.text();
             const parsed = JSON.parse(text);
-            // Valider la structure minimale
-            if (!parsed || typeof parsed !== 'object' || !parsed.data || typeof parsed.data !== 'object') {
-                throw new Error('Structure invalide');
-            }
-            // Au moins une clé connue doit être présente
-            const knownKeys = ['timers_v17_data', 'timers_richtext', 'timers_markdown', 'timers_current_tab', 'timers_settings_visible'];
-            const hasAnyKey = knownKeys.some(k => k in parsed.data);
-            if (!hasAnyKey) throw new Error('Aucune donnée reconnue');
-            // Confirmer avant écrasement
-            const ok = await confirmDialog(i18n[currentLang].confirmImport);
-            if (!ok) return;
-            // Écrire dans localStorage (uniquement les clés présentes)
-            knownKeys.forEach(k => {
-                const v = parsed.data[k];
-                if (v === null || v === undefined) {
-                    localStorage.removeItem(k);
-                } else if (typeof v === 'string') {
-                    localStorage.setItem(k, v);
-                }
-            });
-            // Recharger pour que tout soit appliqué proprement
-            location.reload();
+            await appliquerImport(parsed);
         } catch (e) {
             console.error('Import error:', e);
             await confirmDialog(i18n[currentLang].importError, { alertMode: true });
+        }
+    }
+
+    async function importerDepuisUrl() {
+        fermerMenu();
+        const t = i18n[currentLang];
+        const url = await promptDialog(t.promptUrlMessage, '', 'https://...');
+        if (!url) return;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const text = await response.text();
+            const parsed = JSON.parse(text);
+            await appliquerImport(parsed);
+        } catch (e) {
+            console.error('Import URL error:', e);
+            // Distinguer erreur réseau/CORS d'une erreur de format
+            const isFetchError = e instanceof TypeError || e.message.startsWith('HTTP');
+            const msg = isFetchError ? t.urlFetchError : t.importError;
+            await confirmDialog(msg, { alertMode: true });
+        }
+    }
+
+    // --- PARTAGE PAR URL (config encodée en base64 URL-safe) ---
+    function encoderBase64UrlSafe(str) {
+        const bytes = new TextEncoder().encode(str);
+        let bin = '';
+        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    function decoderBase64UrlSafe(b64) {
+        let s = b64.replace(/-/g, '+').replace(/_/g, '/');
+        while (s.length % 4) s += '=';
+        const bin = atob(s);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return new TextDecoder().decode(bytes);
+    }
+
+    function construireConfigExport() {
+        return {
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            data: {
+                timers_v17_data: localStorage.getItem('timers_v17_data'),
+                timers_richtext: localStorage.getItem('timers_richtext'),
+                timers_markdown: localStorage.getItem('timers_markdown'),
+                timers_current_tab: localStorage.getItem('timers_current_tab')
+            }
+        };
+    }
+
+    async function partagerLien() {
+        fermerMenu();
+        const t = i18n[currentLang];
+        const config = construireConfigExport();
+        const json = JSON.stringify(config);
+        const encoded = encoderBase64UrlSafe(json);
+        const base = location.origin + location.pathname;
+        const lien = `${base}?config=${encoded}`;
+        let copied = false;
+        try {
+            await navigator.clipboard.writeText(lien);
+            copied = true;
+        } catch (e) {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = lien;
+                ta.style.position = 'fixed'; ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                copied = document.execCommand('copy');
+                document.body.removeChild(ta);
+            } catch (e2) {
+                console.error('Copy failed:', e2);
+            }
+        }
+        if (copied) {
+            await confirmDialog(t.linkCopied, { alertMode: true });
+        } else {
+            console.log('Lien partageable :', lien);
+            await confirmDialog(t.linkTooLong, { alertMode: true });
+        }
+    }
+
+    // Détection d'un import au chargement via les paramètres URL (?config=... ou ?configUrl=...)
+    async function detecterImportDepuisUrl() {
+        const params = new URLSearchParams(location.search);
+        const configParam = params.get('config');
+        const configUrlParam = params.get('configUrl');
+        if (!configParam && !configUrlParam) return;
+        const t = i18n[currentLang];
+        try {
+            let parsed;
+            if (configParam) {
+                const json = decoderBase64UrlSafe(configParam);
+                parsed = JSON.parse(json);
+            } else {
+                const response = await fetch(configUrlParam);
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                parsed = JSON.parse(await response.text());
+            }
+            if (!parsed?.data || typeof parsed.data !== 'object') throw new Error('Structure invalide');
+            const knownKeys = ['timers_v17_data', 'timers_richtext', 'timers_markdown', 'timers_current_tab'];
+            const hasAnyKey = knownKeys.some(k => k in parsed.data);
+            if (!hasAnyKey) throw new Error('Aucune donnée reconnue');
+
+            const ok = await confirmDialog(t.confirmSharedImport);
+            // Nettoyer l'URL dans tous les cas pour ne pas redemander au prochain rechargement
+            history.replaceState(null, '', location.pathname);
+            if (!ok) return;
+            knownKeys.forEach(k => {
+                const v = parsed.data[k];
+                if (v === null || v === undefined) localStorage.removeItem(k);
+                else if (typeof v === 'string') localStorage.setItem(k, v);
+            });
+            location.reload();
+        } catch (e) {
+            console.error('Shared link import error:', e);
+            history.replaceState(null, '', location.pathname);
+            const isFetchError = e instanceof TypeError || (e.message && e.message.startsWith('HTTP'));
+            const msg = isFetchError ? t.urlFetchError : t.importError;
+            await confirmDialog(msg, { alertMode: true });
         }
     }
 
@@ -1554,6 +1971,7 @@
             darkMode = data.darkMode !== undefined ? data.darkMode : false;
             hideSeconds = data.hideSeconds !== undefined ? data.hideSeconds : false;
             secondsThreshold = data.secondsThreshold !== undefined ? data.secondsThreshold : 180;
+            autoResetDelay = data.autoResetDelay !== undefined ? data.autoResetDelay : 60;
             // Migration : si l'ancienne forme (Set d'IDs) existe, on prend "true" si non vide
             if (data.showStartTime !== undefined) {
                 showStartTime = data.showStartTime;
@@ -1596,6 +2014,8 @@
             updateGlobalSoundUI();
             const threshInput = document.getElementById('thresholdInput');
             if (threshInput) threshInput.value = Math.round(secondsThreshold / 60);
+            const autoResetInput = document.getElementById('autoResetInput');
+            if (autoResetInput) autoResetInput.value = autoResetDelay;
             applyTheme();
         }
         
@@ -1606,19 +2026,9 @@
             switchTab(savedTab);
         }
         
-        // 6. Restaurer l'état du panneau settings
-        const savedSettingsVisible = localStorage.getItem('timers_settings_visible');
-        if (savedSettingsVisible !== null) {
-            settingsPanelVisible = savedSettingsVisible === 'true';
-            const panel = document.getElementById('settingsPanel');
-            const btn = document.getElementById('toggleSettingsBtn');
-            const showBar = document.getElementById('showSettingsBar');
-            if (!settingsPanelVisible) {
-                panel.classList.add('collapsed');
-                showBar.classList.add('visible');
-                btn.textContent = '▼';
-            }
-        }
+        // 6. Initialiser le bouton + flottant selon l'onglet actif
+        const btnAdd = document.getElementById('btnAddFloating');
+        if (btnAdd) btnAdd.classList.toggle('hidden', currentTab !== 'timers');
 
         // 7. Initialiser l'éditeur richtext (toolbar + contenu)
         attacherToolbarRichtext();
@@ -1627,6 +2037,10 @@
         // 8. Attacher le gestionnaire d'import de fichier
         const importInput = document.getElementById('importFileInput');
         if (importInput) importInput.addEventListener('change', gererFichierImport);
+
+        // 9. Détecter un éventuel import via paramètre d'URL (?config=... ou ?configUrl=...)
+        // (en dernier pour que la langue et l'UI soient déjà initialisées avant la confirmation)
+        detecterImportDepuisUrl();
     };
 
 </script>

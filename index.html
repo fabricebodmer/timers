@@ -75,6 +75,8 @@
         .dropdown-setting-input input { width: 70px; padding: 6px 8px; border: 1px solid var(--input-border); border-radius: 6px; font-weight: 700; font-size: 0.95rem; background: var(--bg); color: var(--text-dark); outline: none; text-align: center; }
         .dropdown-setting-input input:focus { border-color: var(--primary); }
         .dropdown-setting-input span { font-weight: 700; color: var(--text-light); font-size: 0.9rem; }
+        .dropdown-setting-input select { padding: 6px 8px; border: 1px solid var(--input-border); border-radius: 6px; font-weight: 700; font-size: 0.95rem; background: var(--bg); color: var(--text-dark); outline: none; cursor: pointer; flex: 1; }
+        .dropdown-setting-input select:focus { border-color: var(--primary); }
 
         .settings-panel { background: var(--settings-bg); padding: 20px 25px; border-bottom: 1px solid var(--card-border); box-shadow: 0 4px 12px var(--shadow-color); transition: background-color 0.3s ease, border-color 0.3s ease; }
         .input-group { display: flex; gap: 20px; align-items: flex-end; justify-content: center; }
@@ -87,11 +89,14 @@
         .btn-add-main { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 1rem; text-transform: uppercase; transition: opacity 0.2s; }
         .btn-add-main:hover { opacity: 0.9; }
 
+        #timers-tab.active { display: flex; flex-direction: column; height: calc(100vh - 60px); overflow-y: auto; }
         #durationsList { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
-            gap: 35px; padding: 40px; overflow-y: auto; 
-            max-height: calc(100vh - 160px); align-content: start;
+            grid-template-columns: repeat(auto-fill, 500px);
+            justify-content: center;
+            gap: 30px; padding: 30px; 
+            align-content: start;
+            max-width: 1700px; width: 100%; margin: 0 auto; box-sizing: border-box;
         }
         
         .duration-card { 
@@ -233,6 +238,14 @@
         .btn-add-floating:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(14, 165, 233, 0.5); }
         .btn-add-floating:active { transform: scale(0.97); }
 
+        /* Bouton "démarrer tous" flottant à gauche du bouton + */
+        .btn-start-all { position: fixed; bottom: 30px; right: 110px; width: 64px; height: 64px; border-radius: 50%; background: #16a34a; color: white; border: none; font-size: 1.8rem; font-weight: 900; cursor: pointer; box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4); z-index: 90; transition: all 0.2s; line-height: 1; display: flex; align-items: center; justify-content: center; padding-left: 5px; }
+        .btn-start-all.hidden { display: none; }
+        .btn-start-all:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(22, 163, 74, 0.5); }
+        .btn-start-all:active { transform: scale(0.97); }
+        .btn-start-all:disabled { background: #999; cursor: not-allowed; box-shadow: none; opacity: 0.5; }
+        .btn-start-all:disabled:hover { transform: none; box-shadow: none; }
+
         /* Modal d'ajout de timer */
         #addTimerModal .modal-box { width: 480px; max-width: 90%; }
         .add-modal-fields { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
@@ -245,6 +258,33 @@
 
         /* Spacer pour pousser des éléments à droite dans une flex */
         .toolbar-spacer { flex: 1; }
+
+        /* Zone d'horloge en haut de l'onglet timers */
+        .clock-container { width: 100%; display: flex; justify-content: center; align-items: center; padding: 20px 30px 10px; }
+        .clock-container:empty { display: none; }
+        /* Wrapper interne cliquable, juste autour du contenu */
+        .clock-clickable { display: inline-flex; align-items: center; gap: 30px; cursor: pointer; padding: 8px 16px; border-radius: 12px; transition: opacity 0.2s ease, background 0.2s ease; }
+        .clock-clickable:hover { opacity: 0.7; }
+        .clock-container.cff-mode { padding: 30px 30px 10px; }
+        .clock-container.both-mode { padding: 25px 30px 10px; }
+        .clock-container.both-mode .clock-digital { font-size: 6rem; }
+
+        /* Horloge numérique : 1.5x la taille de time-left (6rem -> 9rem) */
+        .clock-digital { font-size: 9rem; font-weight: 900; color: var(--text-dark); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; transition: color 0.3s ease; }
+
+        /* Horloge CFF (SVG) */
+        .clock-cff { width: 240px; height: 240px; }
+        .clock-cff .cff-bg { fill: white; stroke: #000; stroke-width: 2; }
+        .clock-cff .cff-tick-hour { stroke: #000; stroke-width: 8; stroke-linecap: butt; }
+        .clock-cff .cff-tick-min { stroke: #000; stroke-width: 2; stroke-linecap: butt; }
+        .clock-cff .cff-hand-hour, .clock-cff .cff-hand-min { fill: #000; }
+        .clock-cff .cff-hand-sec { fill: #d8262a; transform-origin: 100px 100px; }
+
+        @media (max-width: 768px) {
+            .clock-digital { font-size: 5rem; }
+            .clock-cff { width: 160px; height: 160px; }
+            .clock-container { padding: 12px 15px 5px; }
+        }
         
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -464,11 +504,6 @@
             <button class="btn-theme" onclick="toggleTheme()" title="Basculer mode sombre/clair">
                 <span id="themeIcon">🌙</span>
             </button>
-            <select id="langSelector" class="lang-selector" onchange="changeLanguage(this.value)">
-                <option value="fr">FR</option>
-                <option value="de">DE</option>
-                <option value="en">EN</option>
-            </select>
             <button id="globalSoundBtn" class="btn-sound-global" onclick="toggleGlobalSound()">
                 <span id="globalSoundIcon">🔊</span> <span id="txt-sound">SON</span> : <span id="globalSoundText">ON</span>
             </button>
@@ -483,10 +518,38 @@
                         </div>
                     </div>
                     <div class="dropdown-setting">
+                        <label id="txt-label-extra">Temps supplémentaire</label>
+                        <div class="dropdown-setting-input">
+                            <input type="number" id="extraDelayInput" value="30" min="1" max="3600" onchange="onExtraDelayChange()" onclick="event.stopPropagation()">
+                            <span id="txt-extra-unit">sec</span>
+                        </div>
+                    </div>
+                    <div class="dropdown-setting">
                         <label id="txt-label-autoreset">Auto-reset après</label>
                         <div class="dropdown-setting-input">
                             <input type="number" id="autoResetInput" value="60" min="0" max="3600" onchange="onAutoResetChange()" onclick="event.stopPropagation()">
                             <span id="txt-autoreset-unit">sec</span>
+                        </div>
+                    </div>
+                    <div class="dropdown-setting">
+                        <label id="txt-label-clock">Horloge</label>
+                        <div class="dropdown-setting-input">
+                            <select id="clockModeSelect" onchange="onClockModeChange()" onclick="event.stopPropagation()">
+                                <option value="none" id="opt-clock-none">Aucune</option>
+                                <option value="digital" id="opt-clock-digital">Numérique</option>
+                                <option value="cff" id="opt-clock-cff">CFF</option>
+                                <option value="both" id="opt-clock-both">Les deux</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="dropdown-setting">
+                        <label id="txt-label-lang">Langue</label>
+                        <div class="dropdown-setting-input">
+                            <select id="langSelector" onchange="changeLanguage(this.value)" onclick="event.stopPropagation()">
+                                <option value="fr">Français</option>
+                                <option value="de">Deutsch</option>
+                                <option value="en">English</option>
+                            </select>
                         </div>
                     </div>
                     <div class="dropdown-divider"></div>
@@ -531,9 +594,11 @@
     </div>
 
     <div id="timers-tab" class="tab-content active">
+        <div id="clockContainer" class="clock-container"></div>
         <div id="durationsList"></div>
         <div class="drop-indicator" id="dropIndicator"></div>
     </div>
+    <button class="btn-start-all" id="btnStartAll" onclick="demarrerTous()" title="Démarrer tous les timers">▶</button>
     <button class="btn-add-floating" id="btnAddFloating" onclick="ouvrirAddModal()" title="Ajouter un timer">+</button>
 
     <div id="instructions-tab" class="tab-content">
@@ -566,9 +631,9 @@
 
 <script>
     const i18n = {
-        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informations", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Auto-reset après", autoResetUnit: "sec (0=off)", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes" },
-        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informationen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Auto-Reset nach", autoResetUnit: "Sek (0=aus)", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden" },
-        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Information", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Auto-reset after", autoResetUnit: "sec (0=off)", toggleSecondsTitle: "Click to show/hide seconds" }
+        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informations", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Auto-reset après", autoResetUnit: "sec (0=off)", extraLabel: "Temps supplémentaire", extraUnit: "sec", langLabel: "Langue", clockLabel: "Horloge", clockNone: "Aucune", clockDigital: "Numérique", clockCff: "CFF", clockBoth: "Les deux", clockToggleTitle: "Cliquer pour changer d'horloge", startAllTitle: "Démarrer tous les timers", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes" },
+        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informationen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Auto-Reset nach", autoResetUnit: "Sek (0=aus)", extraLabel: "Zusätzliche Zeit", extraUnit: "Sek", langLabel: "Sprache", clockLabel: "Uhr", clockNone: "Keine", clockDigital: "Digital", clockCff: "SBB", clockBoth: "Beide", clockToggleTitle: "Klicken, um Uhr zu wechseln", startAllTitle: "Alle Timer starten", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden" },
+        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Information", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Auto-reset after", autoResetUnit: "sec (0=off)", extraLabel: "Extra time", extraUnit: "sec", langLabel: "Language", clockLabel: "Clock", clockNone: "None", clockDigital: "Digital", clockCff: "SBB", clockBoth: "Both", clockToggleTitle: "Click to switch clock", startAllTitle: "Start all timers", toggleSecondsTitle: "Click to show/hide seconds" }
     };
 
     let currentLang = 'fr';
@@ -581,6 +646,8 @@
     let hideSeconds = false;
     let secondsThreshold = 180; // En dessous de 3 minutes par défaut, on affiche toujours les secondes
     let autoResetDelay = 60; // Délai en secondes avant réinitialisation auto d'un timer terminé (0 = désactivé)
+    let extraDelay = 30; // Temps supplémentaire ajouté par le bouton "+Xs" sur un timer (configurable)
+    let clockMode = 'digital'; // 'none' | 'digital' | 'cff' | 'both'
     let currentTab = 'timers';
     let showStartTime = false; // Affichage global de l'heure de début pour tous les timers actifs
     let richtextZoom = 1.0; // Niveau de zoom pour l'éditeur d'instructions (1.0 = 100%)
@@ -618,9 +685,11 @@
         currentTab = tabName;
         localStorage.setItem('timers_current_tab', tabName);
         
-        // Bouton + flottant uniquement sur l'onglet timers
+        // Boutons flottants uniquement sur l'onglet timers
         const btnAdd = document.getElementById('btnAddFloating');
         if (btnAdd) btnAdd.classList.toggle('hidden', tabName !== 'timers');
+        const btnStartAll = document.getElementById('btnStartAll');
+        if (btnStartAll) btnStartAll.classList.toggle('hidden', tabName !== 'timers');
 
         // Si on affiche l'onglet instructions, charger le richtext
         if (tabName === 'instructions') {
@@ -879,6 +948,18 @@
         const txtThresholdUnit = document.getElementById('txt-threshold-unit'); if (txtThresholdUnit) txtThresholdUnit.textContent = t.thresholdUnit;
         const txtAutoReset = document.getElementById('txt-label-autoreset'); if (txtAutoReset) txtAutoReset.textContent = t.autoResetLabel;
         const txtAutoResetUnit = document.getElementById('txt-autoreset-unit'); if (txtAutoResetUnit) txtAutoResetUnit.textContent = t.autoResetUnit;
+        const txtExtra = document.getElementById('txt-label-extra'); if (txtExtra) txtExtra.textContent = t.extraLabel;
+        const txtExtraUnit = document.getElementById('txt-extra-unit'); if (txtExtraUnit) txtExtraUnit.textContent = t.extraUnit;
+        const txtLang = document.getElementById('txt-label-lang'); if (txtLang) txtLang.textContent = t.langLabel;
+        const txtClock = document.getElementById('txt-label-clock'); if (txtClock) txtClock.textContent = t.clockLabel;
+        const optClockNone = document.getElementById('opt-clock-none'); if (optClockNone) optClockNone.textContent = t.clockNone;
+        const optClockDigital = document.getElementById('opt-clock-digital'); if (optClockDigital) optClockDigital.textContent = t.clockDigital;
+        const optClockCff = document.getElementById('opt-clock-cff'); if (optClockCff) optClockCff.textContent = t.clockCff;
+        const optClockBoth = document.getElementById('opt-clock-both'); if (optClockBoth) optClockBoth.textContent = t.clockBoth;
+        // Re-render de l'horloge pour que le title du wrapper cliquable soit traduit
+        appliquerHorloge();
+        const btnStartAll = document.getElementById('btnStartAll');
+        if (btnStartAll) btnStartAll.title = t.startAllTitle;
         document.getElementById('nameInput').placeholder = t.placeholderName;
         document.getElementById('tab-timers-btn').textContent = t.tabTimers;
         document.getElementById('tab-instructions-btn').textContent = t.tabInstructions;
@@ -890,7 +971,7 @@
                 majTitreDuree(d.id);
                 const btnStart = card.querySelector('.btn-start'); if (btnStart) btnStart.textContent = t.start;
                 const btnStop = card.querySelector('.btn-stop'); if (btnStop) btnStop.textContent = `🛑 ${t.stop}`;
-                const btnPlus = card.querySelector('.btn-plus'); if (btnPlus) btnPlus.textContent = t.plus30;
+                const btnPlus = card.querySelector('.btn-plus'); if (btnPlus) btnPlus.textContent = libellePlus();
                 const btnMute = card.querySelector(`[id^="btn-mute-"]`); if (btnMute) btnMute.innerHTML = `${d.muted?'🔇':'🔊'} ${t.mute}`;
                 const btnDup = card.querySelector('.btn-duplicate'); if (btnDup) btnDup.title = t.duplicate;
                 const timeEl = card.querySelector('.time-left'); if (timeEl) timeEl.title = t.toggleSecondsTitle;
@@ -1079,19 +1160,154 @@
         titleEl.textContent = txt;
     }
 
-    // Format compact pour le temps supplémentaire : "30s", "1:30", "2:00"
+    // Format compact pour le temps supplémentaire : "30''", "1:30", "2:00"
     function formaterTempsExtra(s) {
-        if (s < 60) return `${s}s`;
+        if (s < 60) return `${s}''`;
         const m = Math.floor(s/60);
         const sec = s % 60;
-        if (sec === 0) return `${m}min`;
-        return `${m}:${sec.toString().padStart(2,'0')}`;
+        if (sec === 0) return `${m}'`;
+        return `${m}'${sec.toString().padStart(2,'0')}''`;
     }
 
     // Tick global unique : tous les timers sont rafraîchis en même temps,
     // ce qui garantit l'affichage synchrone des timers dupliqués (même start).
     let globalTickInterval = null;
     let activeTickIds = new Set();
+
+    // Démarre tous les timers qui ne sont pas encore démarrés (start === null).
+    // N'affecte ni les timers en cours ni les timers terminés.
+    function demarrerTous() {
+        listeDurees.forEach(d => {
+            if (d.start === null) demarrerDuree(d.id);
+        });
+    }
+    // Deux handles séparés : un pour le setTimeout du digital, un pour le rAF du CFF.
+    // Permet d'avoir les deux en parallèle (mode 'both') et de nettoyer proprement.
+    let digitalClockTimeout = null;
+    let cffClockRaf = null;
+
+    function arreterAnimationsHorloge() {
+        if (digitalClockTimeout !== null) { clearTimeout(digitalClockTimeout); digitalClockTimeout = null; }
+        if (cffClockRaf !== null) { cancelAnimationFrame(cffClockRaf); cffClockRaf = null; }
+    }
+
+    function onClockModeChange() {
+        const sel = document.getElementById('clockModeSelect');
+        if (!sel) return;
+        clockMode = sel.value;
+        appliquerHorloge();
+        sauvegarder();
+    }
+
+    // Clic sur l'horloge : cycler entre les 3 modes visibles (digital → cff → both → digital).
+    // Le mode "none" se règle uniquement via le menu et n'entre pas dans le cycle.
+    function cyclerHorloge() {
+        const cycle = ['digital', 'cff', 'both'];
+        const idx = cycle.indexOf(clockMode);
+        clockMode = cycle[(idx + 1) % cycle.length] || 'digital';
+        const sel = document.getElementById('clockModeSelect');
+        if (sel) sel.value = clockMode;
+        appliquerHorloge();
+        sauvegarder();
+    }
+
+    function appliquerHorloge() {
+        const container = document.getElementById('clockContainer');
+        if (!container) return;
+        arreterAnimationsHorloge();
+        container.classList.remove('cff-mode', 'both-mode');
+        if (clockMode === 'none') {
+            container.innerHTML = '';
+            return;
+        }
+        const t = i18n[currentLang];
+        const titleAttr = t.clockToggleTitle ? ` title="${t.clockToggleTitle}"` : '';
+        if (clockMode === 'digital') {
+            container.innerHTML = `<div class="clock-clickable" onclick="cyclerHorloge()"${titleAttr}><div class="clock-digital" id="clockDigital"></div></div>`;
+            tickHorlogeDigital();
+        } else if (clockMode === 'cff') {
+            container.classList.add('cff-mode');
+            container.innerHTML = `<div class="clock-clickable" onclick="cyclerHorloge()"${titleAttr}>${construireSvgCff()}</div>`;
+            tickHorlogeCff();
+        } else if (clockMode === 'both') {
+            container.classList.add('both-mode');
+            container.innerHTML = `<div class="clock-clickable" onclick="cyclerHorloge()"${titleAttr}>${construireSvgCff()}<div class="clock-digital" id="clockDigital"></div></div>`;
+            tickHorlogeCff();
+            tickHorlogeDigital();
+        }
+    }
+
+    function tickHorlogeDigital() {
+        const el = document.getElementById('clockDigital');
+        if (!el) return;
+        const now = new Date();
+        const h = now.getHours().toString().padStart(2, '0');
+        const m = now.getMinutes().toString().padStart(2, '0');
+        el.textContent = `${h}:${m}`;
+        // Re-planifier au prochain changement de minute
+        const ms = 60000 - (Date.now() % 60000);
+        digitalClockTimeout = setTimeout(tickHorlogeDigital, ms);
+    }
+
+    function construireSvgCff() {
+        // SVG 200x200, centre 100,100, rayon 95
+        // Marques d'heures : 12 traits longs et larges
+        // Marques de minutes : les 60 - 12 = 48 traits fins
+        let ticks = '';
+        for (let i = 0; i < 60; i++) {
+            const angle = (i * 6 - 90) * Math.PI / 180;
+            const isHour = i % 5 === 0;
+            const r1 = isHour ? 70 : 86;
+            const r2 = 92;
+            const x1 = 100 + r1 * Math.cos(angle);
+            const y1 = 100 + r1 * Math.sin(angle);
+            const x2 = 100 + r2 * Math.cos(angle);
+            const y2 = 100 + r2 * Math.sin(angle);
+            ticks += `<line class="${isHour ? 'cff-tick-hour' : 'cff-tick-min'}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+        }
+        return `
+        <svg class="clock-cff" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle class="cff-bg" cx="100" cy="100" r="95"/>
+            ${ticks}
+            <!-- Aiguille des heures : barre arrondie aux extrémités -->
+            <g id="cff-hour-group" style="transform-origin: 100px 100px;">
+                <rect class="cff-hand-hour" x="94" y="46" width="12" height="62" rx="2"/>
+            </g>
+            <!-- Aiguille des minutes -->
+            <g id="cff-min-group" style="transform-origin: 100px 100px;">
+                <rect class="cff-hand-min" x="96" y="20" width="8" height="88" rx="2"/>
+            </g>
+            <!-- Aiguille des secondes : tige + disque rouge à l'extrémité -->
+            <g class="cff-hand-sec" id="cff-sec-group">
+                <rect x="98.5" y="32" width="3" height="74"/>
+                <circle cx="100" cy="40" r="9"/>
+            </g>
+        </svg>`;
+    }
+
+    function tickHorlogeCff() {
+        const hourGroup = document.getElementById('cff-hour-group');
+        const minGroup = document.getElementById('cff-min-group');
+        const secGroup = document.getElementById('cff-sec-group');
+        if (!hourGroup || !minGroup || !secGroup) return;
+        const now = new Date();
+        const h = now.getHours() % 12;
+        const m = now.getMinutes();
+        // Aiguille des heures : bouge en continu selon les minutes (30°/h + 0.5°/min)
+        const hourAngle = h * 30 + m * 0.5;
+        // Aiguille des minutes : saute d'un cran à chaque minute (style CFF)
+        const minAngle = m * 6;
+        hourGroup.style.transform = `rotate(${hourAngle}deg)`;
+        minGroup.style.transform = `rotate(${minAngle}deg)`;
+        // Aiguille des secondes : 360° en 58.5s, puis pause à 360° (=0°) pendant 1.5s
+        // Animation calculée à chaque frame depuis Date.now() → fluide à 60fps sans setInterval
+        const msInMinute = (now.getSeconds() * 1000) + now.getMilliseconds();
+        const ratio = Math.min(msInMinute / 58500, 1);
+        const secAngle = ratio * 360;
+        secGroup.style.transform = `rotate(${secAngle}deg)`;
+        cffClockRaf = requestAnimationFrame(tickHorlogeCff);
+    }
+
 
     function tickGlobal() {
         activeTickIds.forEach(id => {
@@ -1202,6 +1418,30 @@
         sauvegarder();
     }
 
+    function onExtraDelayChange() {
+        const input = document.getElementById('extraDelayInput');
+        if (!input) return;
+        let val = parseInt(input.value);
+        if (isNaN(val) || val < 1) val = 1;
+        if (val > 3600) val = 3600;
+        input.value = val;
+        extraDelay = val;
+        // Mettre à jour le libellé du bouton "+Xs" sur tous les timers actifs
+        document.querySelectorAll('.btn-plus').forEach(btn => {
+            btn.textContent = libellePlus();
+        });
+        sauvegarder();
+    }
+
+    // Génère le libellé du bouton "+Xs" selon la valeur d'extraDelay
+    function libellePlus() {
+        if (extraDelay < 60) return `+ ${extraDelay} ''`;
+        const m = Math.floor(extraDelay / 60);
+        const sec = extraDelay % 60;
+        if (sec === 0) return `+ ${m}'`;
+        return `+ ${m}'${sec.toString().padStart(2,'0')}''`;
+    }
+
     function stopDuree(id) {
         arreterTick(id); clearInterval(soundIntervals[id]); annulerAutoReset(id);
         const obj = listeDurees.find(d => d.id.toString() === id.toString());
@@ -1209,8 +1449,16 @@
         obj.muted = false;
         const card = document.getElementById(`card-${id}`);
         card.classList.remove('active', 'finished');
+        // Reset immédiat de la barre, sans animation (sinon on voit la barre "couler" à 0)
         const fill = document.getElementById(`progress-${id}`);
-        if (fill) fill.style.width = '0%';
+        if (fill) {
+            fill.style.transition = 'none';
+            fill.style.width = '0%';
+            // Forcer reflow puis restaurer la transition par défaut pour les usages futurs
+            // eslint-disable-next-line no-unused-expressions
+            fill.offsetWidth;
+            fill.style.transition = '';
+        }
         document.getElementById(`time-${id}`).textContent = formaterTemps(obj.totalSecs);
         document.getElementById(`endtime-${id}`).textContent = "";
         majTitreDuree(id);
@@ -1222,7 +1470,7 @@
         const t = i18n[currentLang]; const obj = listeDurees.find(d => d.id.toString() === id.toString());
         document.getElementById(`card-${id}`).classList.add('active');
         document.getElementById(`actions-${id}`).innerHTML = `
-            <button class="btn-action btn-plus" onclick="ajouter30s('${id}')">${t.plus30}</button>
+            <button class="btn-action btn-plus" onclick="ajouter30s('${id}')">${libellePlus()}</button>
             <button class="btn-action btn-stop" onclick="stopDuree('${id}')">🛑 ${t.stop}</button>
             <button id="btn-mute-${id}" class="btn-action" onclick="toggleMute('${id}')">${obj.muted?'🔇':'🔊'} ${t.mute}</button>`;
     }
@@ -1236,10 +1484,23 @@
 
     function ajouter30s(id) {
         const obj = listeDurees.find(d => d.id.toString() === id.toString());
-        obj.extraSecs += 30; majHeureFin(id); majTitreDuree(id);
-        if (document.getElementById(`card-${id}`).classList.contains('finished')) {
+        const card = document.getElementById(`card-${id}`);
+        const etaitFini = card.classList.contains('finished');
+        // Si le timer est fini, on doit aussi compenser le retard accumulé pour que les
+        // +30s s'écoulent réellement à partir de maintenant. La compensation est ajoutée à
+        // extraSecs : ainsi le titre "(+X:XX)" reflète la durée totale réellement ajoutée
+        // au-delà de la durée d'origine.
+        if (etaitFini && obj.start) {
+            const ecouleSec = (Date.now() - obj.start) / 1000;
+            const totalActuel = obj.totalSecs + obj.extraSecs;
+            const retardSec = Math.max(0, Math.round(ecouleSec - totalActuel));
+            obj.extraSecs += retardSec;
+        }
+        obj.extraSecs += extraDelay;
+        majHeureFin(id); majTitreDuree(id);
+        if (etaitFini) {
             annulerAutoReset(id);
-            document.getElementById(`card-${id}`).classList.remove('finished');
+            card.classList.remove('finished');
             // Restaurer la barre à sa pleine largeur (l'auto-reset l'avait peut-être déjà rétrécie)
             const fill = document.getElementById(`progress-${id}`);
             if (fill) { fill.style.transition = ''; fill.style.width = '100%'; }
@@ -1569,6 +1830,8 @@
             hideSeconds: hideSeconds,
             secondsThreshold: secondsThreshold,
             autoResetDelay: autoResetDelay,
+            extraDelay: extraDelay,
+            clockMode: clockMode,
             showStartTime: showStartTime,
             richtextZoom: richtextZoom
         };
@@ -1972,6 +2235,8 @@
             hideSeconds = data.hideSeconds !== undefined ? data.hideSeconds : false;
             secondsThreshold = data.secondsThreshold !== undefined ? data.secondsThreshold : 180;
             autoResetDelay = data.autoResetDelay !== undefined ? data.autoResetDelay : 60;
+            extraDelay = data.extraDelay !== undefined ? data.extraDelay : 30;
+            clockMode = data.clockMode || 'digital';
             // Migration : si l'ancienne forme (Set d'IDs) existe, on prend "true" si non vide
             if (data.showStartTime !== undefined) {
                 showStartTime = data.showStartTime;
@@ -2016,6 +2281,10 @@
             if (threshInput) threshInput.value = Math.round(secondsThreshold / 60);
             const autoResetInput = document.getElementById('autoResetInput');
             if (autoResetInput) autoResetInput.value = autoResetDelay;
+            const extraInput = document.getElementById('extraDelayInput');
+            if (extraInput) extraInput.value = extraDelay;
+            const clockSelect = document.getElementById('clockModeSelect');
+            if (clockSelect) clockSelect.value = clockMode;
             applyTheme();
         }
         
@@ -2026,9 +2295,11 @@
             switchTab(savedTab);
         }
         
-        // 6. Initialiser le bouton + flottant selon l'onglet actif
+        // 6. Initialiser les boutons flottants selon l'onglet actif
         const btnAdd = document.getElementById('btnAddFloating');
         if (btnAdd) btnAdd.classList.toggle('hidden', currentTab !== 'timers');
+        const btnStartAll = document.getElementById('btnStartAll');
+        if (btnStartAll) btnStartAll.classList.toggle('hidden', currentTab !== 'timers');
 
         // 7. Initialiser l'éditeur richtext (toolbar + contenu)
         attacherToolbarRichtext();
@@ -2041,6 +2312,9 @@
         // 9. Détecter un éventuel import via paramètre d'URL (?config=... ou ?configUrl=...)
         // (en dernier pour que la langue et l'UI soient déjà initialisées avant la confirmation)
         detecterImportDepuisUrl();
+
+        // 10. Initialiser l'horloge si elle est activée
+        appliquerHorloge();
     };
 
 </script>

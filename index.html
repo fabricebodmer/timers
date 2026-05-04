@@ -3,6 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Top bar color (iOS Safari, Chrome Android, etc.).
+         We declare two colors with media queries to follow the light/dark theme. -->
+    <meta name="theme-color" content="#1e293b" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#020617" media="(prefers-color-scheme: dark)">
+    <!-- Apple tags to enable Add to Home Screen (PWA "iOS-style").
+         The user taps Share > Add to Home Screen; the app then opens in full-screen. -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Timers">
+    <!-- Home screen icon: inline SVG as data URL (self-contained, no external file).
+         iOS rasterizes as needed. We keep a simple design: a stylized blue clock. -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%231e293b'/><circle cx='90' cy='90' r='62' fill='none' stroke='%230ea5e9' stroke-width='10'/><line x1='90' y1='90' x2='90' y2='42' stroke='white' stroke-width='8' stroke-linecap='round'/><line x1='90' y1='90' x2='124' y2='90' stroke='%230ea5e9' stroke-width='6' stroke-linecap='round'/><circle cx='90' cy='90' r='6' fill='white'/></svg>">
     <title>Timers</title>
     <style>
         :root {
@@ -43,7 +55,30 @@
             --shadow-color: rgba(0,0,0,0.3);
         }
 
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text-dark); transition: background-color 0.3s ease, color 0.3s ease; }
+        html, body { 
+            height: 100%; margin: 0; padding: 0; overflow: hidden; 
+            font-family: 'Inter', system-ui, sans-serif; 
+            background: var(--bg); color: var(--text-dark); 
+            transition: background-color 0.3s ease, color 0.3s ease; 
+            touch-action: manipulation;
+            /* Prevent iOS Safari from auto-resizing text (e.g.
+               after orientation change), which can shift the layout. */
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            /* Prevent iOS bounce/rubber-band scrolling which creates a white gap */
+            overscroll-behavior: none;
+        }
+        body {
+            /* Position fixed to stabilize viewport on iOS Safari: prevents
+               white-gap artifacts that can appear after an accidental double-tap zoom
+               or orientation change. */
+            position: fixed;
+            inset: 0;
+            width: 100%;
+        }
+        /* Disable double-tap-to-zoom on iOS/Safari (annoying for interactive apps).
+           'manipulation' also removes the 300ms delay after tap. */
+        button, input, select, textarea, a, .duration-card, .clock-clickable, .tab-btn, .dropdown-item, .dropdown-toggle { touch-action: manipulation; }
         
         .top-bar { background: var(--top-bar-bg); display: flex; justify-content: space-between; align-items: center; padding: 12px 30px; z-index: 100; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: background-color 0.3s ease; }
         .app-title { font-weight: 900; font-size: 1.2rem; letter-spacing: 1px; }
@@ -69,6 +104,14 @@
         .dropdown-item.dropdown-danger { color: var(--danger); }
         .dropdown-item.dropdown-danger:hover { background: var(--danger-bg); }
         .dropdown-divider { height: 1px; background: var(--card-border); margin: 6px 0; }
+        .dropdown-section-title { padding: 10px 14px 4px; font-size: 0.7rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.7; }
+        /* Toggle switch (consistent with a minimal look) */
+        .dropdown-toggle { position: relative; display: inline-block; width: 38px; height: 22px; cursor: pointer; }
+        .dropdown-toggle input { opacity: 0; width: 0; height: 0; }
+        .dropdown-toggle span { position: absolute; inset: 0; background: var(--input-border); border-radius: 22px; transition: background 0.2s; }
+        .dropdown-toggle span::before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .dropdown-toggle input:checked + span { background: var(--primary); }
+        .dropdown-toggle input:checked + span::before { transform: translateX(16px); }
         .dropdown-setting { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 200px; }
         .dropdown-setting label { font-size: 0.75rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
         .dropdown-setting-input { display: flex; align-items: center; gap: 8px; }
@@ -89,10 +132,10 @@
         .btn-add-main { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 1rem; text-transform: uppercase; transition: opacity 0.2s; }
         .btn-add-main:hover { opacity: 0.9; }
 
-        #timers-tab.active { display: flex; flex-direction: column; height: calc(100vh - 60px); overflow-y: auto; }
+        #timers-tab.active { display: flex; flex-direction: column; height: calc(100vh - 60px); overflow-y: auto; overflow-x: hidden; }
         #durationsList { 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, 500px);
+            grid-template-columns: repeat(auto-fit, 500px);
             justify-content: center;
             gap: 30px; padding: 30px; 
             align-content: start;
@@ -123,8 +166,8 @@
         .progress-bar-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 12px; background: var(--progress-line); pointer-events: none; transition: background-color 0.3s ease; overflow: hidden; }
         .progress-bar-fill { height: 100%; width: 0%; background: var(--primary); transition: width 1s linear, background-color 0.3s ease; position: relative; }
         .finished .progress-bar-fill { background: var(--danger); width: 100%; }
-        /* Pendant auto-reset : la barre reste rouge mais width est animée par JS de 100% à 0%.
-           On surcharge le sélecteur .finished sans !important pour laisser le inline style prendre la main. */
+        /* During auto-reset: bar stays red but width is animated by JS from 100% to 0%.
+           We override the .finished selector without !important so the inline style takes precedence. */
         .finished.auto-resetting .progress-bar-fill { background: var(--danger); }
         /* Animation shimmer : un reflet clair traverse la barre quand le timer est actif */
         .active .progress-bar-fill::after {
@@ -154,15 +197,17 @@
         .label-duree-titre::after { content: " ✏️"; opacity: 0; transition: opacity 0.2s ease; font-size: 0.9rem; }
         .label-duree-titre:hover { background: var(--btn-close-bg); color: var(--text-dark); border-color: var(--input-border); }
         .label-duree-titre:hover::after { opacity: 1; }
-        .duration-edit-form { display: flex; gap: 8px; align-items: center; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; padding: 12px 16px; background: var(--bg); border: 2px solid var(--primary); border-radius: 12px; box-shadow: 0 4px 12px var(--shadow-color); }
-        .duration-edit-form input { width: 70px; padding: 8px 10px; font-size: 1.1rem; border: 2px solid var(--input-border); border-radius: 8px; }
+        .duration-edit-form { display: flex; gap: 6px; align-items: center; justify-content: center; margin-bottom: 10px; flex-wrap: nowrap; padding: 10px 12px; background: var(--bg); border: 2px solid var(--primary); border-radius: 12px; box-shadow: 0 4px 12px var(--shadow-color); }
+        .duration-edit-form input { width: 60px; padding: 6px 8px; font-size: 1rem; border: 2px solid var(--input-border); border-radius: 6px; flex-shrink: 0; }
         .duration-edit-form input:focus { border-color: var(--primary); }
-        .duration-edit-form span { font-weight: 700; color: var(--text-light); font-size: 0.9rem; text-transform: uppercase; }
-        .duration-edit-form button { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 800; font-size: 0.95rem; transition: opacity 0.2s; }
+        .duration-edit-form span { font-weight: 700; color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; flex-shrink: 0; }
+        .duration-edit-form button { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 800; font-size: 0.9rem; transition: opacity 0.2s; flex-shrink: 0; white-space: nowrap; }
         .duration-edit-form button:hover { opacity: 0.85; }
         .duration-edit-form button.btn-cancel { background: var(--btn-close-bg); color: var(--text-light); border: 1px solid var(--input-border); }
+        .duration-edit-form button.btn-remove-extra { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.85rem; transition: all 0.2s; flex-shrink: 0; white-space: nowrap; }
+        .duration-edit-form button.btn-remove-extra:hover { background: var(--danger-bg); }
 
-        /* Modal de confirmation (pour ne pas sortir du plein écran) */
+        /* Confirmation modal (so we don't exit full-screen) */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(2px); }
         .modal-overlay.visible { display: flex; }
         .modal-box { background: var(--card-bg); border-radius: 16px; padding: 30px 35px; max-width: 90%; width: 420px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 1px solid var(--card-border); }
@@ -187,7 +232,7 @@
         .name-edit-form button:hover { opacity: 0.85; }
         .name-edit-form button.btn-cancel { background: var(--btn-close-bg); color: var(--text-light); border: 1px solid var(--input-border); }
         
-        .time-left { font-size: 6rem; font-weight: 900; color: var(--input-border); margin: 0; line-height: 1; transition: all 0.2s ease; cursor: pointer; padding: 4px 12px; border-radius: 12px; }
+        .time-left { font-size: 7rem; font-weight: 900; color: var(--input-border); margin: 0; line-height: 1; transition: all 0.2s ease; cursor: pointer; padding: 4px 12px; border-radius: 12px; }
         .time-left:hover { background: var(--btn-close-bg); }
         .active .time-left { color: var(--text-dark); }
         .finished .time-left { color: var(--danger); }
@@ -208,8 +253,19 @@
         /* Quand le timer est actif, l'heure de fin devient cliquable */
         .active .end-time-display { cursor: pointer; padding: 4px 10px; border-radius: 8px; border: 2px dashed transparent; display: inline-block; }
         .active .end-time-display:hover { background: var(--btn-close-bg); border-color: var(--input-border); }
-        .end-time-display .start-time-part { color: var(--text-light); margin-right: 12px; font-weight: 700; }
-        .end-time-display .start-time-part::after { content: " →"; margin-left: 8px; opacity: 0.6; }
+        .end-time-display .start-time-part { color: var(--text-light); margin-right: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+        .end-time-display .start-time-part::after { content: "→"; margin-left: 8px; opacity: 0.6; order: 99; }
+        .btn-edit-start { background: transparent; border: none; cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: background 0.15s ease; font-size: 0.85em; line-height: 1; display: none; }
+        .end-time-display .start-time-part:hover .btn-edit-start { display: inline-flex; }
+        .btn-edit-start:hover { background: var(--btn-close-bg); }
+
+        /* In-place form for start-time edit */
+        .end-time-display.start-edit-form { display: inline-flex !important; gap: 6px; align-items: center; justify-content: center; padding: 10px 12px; background: var(--bg); border: 2px solid var(--primary); border-radius: 12px; box-shadow: 0 4px 12px var(--shadow-color); cursor: default; flex-wrap: nowrap; }
+        .end-time-display.start-edit-form input[type="time"] { padding: 6px 10px; font-size: 1rem; border: 2px solid var(--input-border); border-radius: 6px; background: var(--card-bg); color: var(--text-dark); outline: none; font-weight: 700; font-family: inherit; flex-shrink: 0; }
+        .end-time-display.start-edit-form input[type="time"]:focus { border-color: var(--primary); }
+        .end-time-display.start-edit-form button { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 800; font-size: 0.9rem; transition: opacity 0.2s; flex-shrink: 0; white-space: nowrap; }
+        .end-time-display.start-edit-form button:hover { opacity: 0.85; }
+        .end-time-display.start-edit-form button.btn-cancel { background: var(--btn-close-bg); color: var(--text-light); border: 1px solid var(--input-border); }
 
         .card-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
         .btn-start { background: var(--success); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 1rem; width: 100%; max-width: 200px; transition: opacity 0.2s; }
@@ -226,51 +282,111 @@
         .tab-btn:hover { color: var(--text-dark); }
         .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
 
-        /* Onglets dans la top-bar (à côté du logo) */
+        /* Tabs in the top-bar (next to the logo) */
         .top-tabs { display: flex; gap: 0; margin-left: 20px; flex: 1; }
         .top-tabs .tab-btn { color: rgba(255,255,255,0.6); padding: 12px 18px; font-size: 0.95rem; border-bottom: 3px solid transparent; }
         .top-tabs .tab-btn:hover { color: white; }
         .top-tabs .tab-btn.active { color: white; border-bottom-color: var(--primary); }
 
-        /* Bouton + flottant pour ajouter un timer */
-        .btn-add-floating { position: fixed; bottom: 30px; right: 30px; width: 64px; height: 64px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 2.2rem; font-weight: 900; cursor: pointer; box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4); z-index: 90; transition: all 0.2s; line-height: 1; }
+        /* Floating + button to add a timer */
+        .btn-add-floating { position: fixed; bottom: 30px; right: 30px; width: 64px; height: 64px; border-radius: 50%; background: var(--primary); color: white; border: none; cursor: pointer; box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4); z-index: 90; transition: all 0.2s; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; }
         .btn-add-floating.hidden { display: none; }
         .btn-add-floating:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(14, 165, 233, 0.5); }
         .btn-add-floating:active { transform: scale(0.97); }
 
-        /* Bouton "démarrer tous" flottant à gauche du bouton + */
-        .btn-start-all { position: fixed; bottom: 30px; right: 110px; width: 64px; height: 64px; border-radius: 50%; background: #16a34a; color: white; border: none; font-size: 1.8rem; font-weight: 900; cursor: pointer; box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4); z-index: 90; transition: all 0.2s; line-height: 1; display: flex; align-items: center; justify-content: center; padding-left: 5px; }
+        /* Floating "start all" button to the left of the + button */
+        .btn-start-all { position: fixed; bottom: 30px; right: 110px; width: 64px; height: 64px; border-radius: 50%; background: #16a34a; color: white; border: none; cursor: pointer; box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4); z-index: 90; transition: all 0.2s; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; }
         .btn-start-all.hidden { display: none; }
         .btn-start-all:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(22, 163, 74, 0.5); }
         .btn-start-all:active { transform: scale(0.97); }
         .btn-start-all:disabled { background: #999; cursor: not-allowed; box-shadow: none; opacity: 0.5; }
         .btn-start-all:disabled:hover { transform: none; box-shadow: none; }
 
+        /* Floating "stop all" button to the left of the "start all" button */
+        .btn-stop-all { position: fixed; bottom: 30px; right: 190px; width: 64px; height: 64px; border-radius: 50%; background: #dc2626; color: white; border: none; cursor: pointer; box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4); z-index: 90; transition: all 0.2s; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; }
+        .btn-stop-all.hidden { display: none; }
+        .btn-stop-all:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(220, 38, 38, 0.5); }
+        .btn-stop-all:active { transform: scale(0.97); }
+
+        /* Timer zoom buttons, stacked vertically above the + button */
+        .btn-zoom-timers { position: fixed; right: 38px; width: 48px; height: 48px; border-radius: 50%; background: var(--card-bg); color: var(--text-dark); border: 1px solid var(--card-border); font-size: 1rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px var(--shadow-color); z-index: 90; transition: all 0.2s; line-height: 1; display: flex; align-items: center; justify-content: center; }
+        .btn-zoom-timers.hidden { display: none; }
+        .btn-zoom-timers:hover { transform: scale(1.05); box-shadow: 0 6px 16px var(--shadow-color); background: var(--btn-close-bg); }
+        .btn-zoom-timers:active { transform: scale(0.95); }
+        .btn-zoom-timers:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-zoom-timers:disabled:hover { transform: none; background: var(--card-bg); }
+        .btn-zoom-in { bottom: 110px; }
+        .btn-zoom-reset { bottom: 168px; font-size: 0.7rem; font-weight: 800; }
+        .btn-zoom-out { bottom: 226px; }
+
         /* Modal d'ajout de timer */
         #addTimerModal .modal-box { width: 480px; max-width: 90%; }
         .add-modal-fields { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
         .add-modal-fields .field { display: flex; flex-direction: column; gap: 6px; }
         .add-modal-fields .field label { font-size: 0.8rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
-        .add-modal-fields .field input { padding: 10px 14px; font-size: 1.1rem; border: 1px solid var(--input-border); border-radius: 8px; background: var(--bg); color: var(--text-dark); outline: none; font-weight: 600; }
+        .add-modal-fields .field input { padding: 10px 14px; font-size: 1.1rem; border: 1px solid var(--input-border); border-radius: 8px; background: var(--bg); color: var(--text-dark); outline: none; font-weight: 600; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
         .add-modal-fields .field input:focus { border-color: var(--primary); }
+        /* Required empty field: red border to signal a value is needed */
+        .add-modal-fields .field input.required-empty { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1); }
+        .add-modal-fields .field input.required-empty:focus { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2); }
         .add-modal-time-row { display: flex; gap: 12px; }
         .add-modal-time-row .field { flex: 1; }
 
-        /* Spacer pour pousser des éléments à droite dans une flex */
+        /* Spacer to push elements to the right in a flex */
         .toolbar-spacer { flex: 1; }
+
+        /* File drop overlay (drag-and-drop of a JSON from the desktop) */
+        .file-drop-overlay { position: fixed; inset: 0; background: rgba(14, 165, 233, 0.15); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 9999; display: none; align-items: center; justify-content: center; pointer-events: none; }
+        .file-drop-overlay.visible { display: flex; }
+        .file-drop-message { background: var(--card-bg); border: 4px dashed var(--primary); border-radius: 24px; padding: 60px 80px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2); color: var(--text-dark); pointer-events: none; }
+        .file-drop-icon { font-size: 5rem; margin-bottom: 20px; }
+        .file-drop-text { font-size: 1.4rem; font-weight: 700; }
 
         /* Zone d'horloge en haut de l'onglet timers */
         .clock-container { width: 100%; display: flex; justify-content: center; align-items: center; padding: 20px 30px 10px; }
         .clock-container:empty { display: none; }
         /* Wrapper interne cliquable, juste autour du contenu */
-        .clock-clickable { display: inline-flex; align-items: center; gap: 30px; cursor: pointer; padding: 8px 16px; border-radius: 12px; transition: opacity 0.2s ease, background 0.2s ease; }
+        .clock-clickable { display: inline-flex; align-items: center; gap: 30px; cursor: pointer; padding: 8px 16px; border-radius: 12px; transition: opacity 0.2s ease, background 0.2s ease; position: relative; }
         .clock-clickable:hover { opacity: 0.7; }
+        /* Empty clickable zone when the clock is disabled: lets you return to a visible mode */
+        .clock-empty {
+            width: 80px;
+            height: 50px;
+            border: 2px dashed transparent;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+        .clock-empty:hover {
+            border-color: var(--input-border);
+            background: var(--btn-close-bg);
+            opacity: 1;
+        }
+        /* Resize handle, visible on clock hover */
+        .clock-resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 24px;
+            height: 24px;
+            cursor: nwse-resize;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            background-image: linear-gradient(135deg, transparent 0 50%, var(--text-light) 50% 60%, transparent 60% 75%, var(--text-light) 75% 85%, transparent 85% 100%);
+            border-radius: 0 0 8px 0;
+            z-index: 10;
+            pointer-events: auto;
+            touch-action: none;
+        }
+        .clock-clickable:hover .clock-resize-handle { opacity: 0.7; }
+        .clock-resize-handle:hover { opacity: 1 !important; }
+        /* During drag, the wrapper no longer reacts to hover (no global opacity transition) */
+        .clock-clickable.resizing { opacity: 1 !important; cursor: nwse-resize !important; }
+        .clock-clickable.resizing .clock-resize-handle { opacity: 1; }
         .clock-container.cff-mode { padding: 30px 30px 10px; }
         .clock-container.both-mode { padding: 25px 30px 10px; }
         .clock-container.both-mode .clock-digital { font-size: 6rem; }
 
-        /* Horloge numérique : 1.5x la taille de time-left (6rem -> 9rem) */
-        .clock-digital { font-size: 9rem; font-weight: 900; color: var(--text-dark); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; transition: color 0.3s ease; }
+        /* Digital clock: 1.5x the size of time-left (6rem -> 9rem) */
+        .clock-digital { font-size: 10.5rem; font-weight: 900; color: var(--text-dark); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; transition: color 0.3s ease; }
 
         /* Horloge CFF (SVG) */
         .clock-cff { width: 240px; height: 240px; }
@@ -289,9 +405,9 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        /* Éditeur Markdown */
-        /* Onglet instructions (éditeur richtext WYSIWYG) */
-        #instructions-tab.active { display: flex; flex-direction: column; height: calc(100vh - 60px); }
+        /* Markdown editor */
+        /* Instructions tab (WYSIWYG richtext editor) */
+        #instructions-tab.active { display: flex; flex-direction: column; height: calc(100vh - 60px); overflow-x: hidden; }
         .richtext-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .richtext-toolbar { background: var(--settings-bg); border-bottom: 1px solid var(--card-border); padding: 10px 20px; display: none; gap: 6px; align-items: center; flex-wrap: wrap; }
         .richtext-container.editing .richtext-toolbar { display: flex; }
@@ -302,7 +418,7 @@
         .richtext-toolbar button.rt-zoom-level { font-size: 0.8rem; min-width: 50px; color: var(--text-light); }
         .richtext-toolbar .toolbar-sep { width: 1px; height: 22px; background: var(--card-border); margin: 0 4px; }
         .richtext-editor { flex: 1; padding: 30px 40px; overflow-y: auto; background: var(--bg); color: var(--text-dark); line-height: 1.4; font-size: 1.5rem; outline: none; cursor: text; }
-        /* Hors mode édition, le pointeur reste un text-cursor pour signaler qu'on peut éditer */
+        /* Outside edit mode, the cursor stays a text-cursor to signal you can edit */
         .richtext-container:not(.editing) .richtext-editor { cursor: text; }
         .richtext-container:not(.editing) .richtext-editor:hover { background: var(--btn-close-bg); }
         .richtext-editor:focus { outline: none; }
@@ -498,7 +614,7 @@
         <div class="app-title">TIMERS</div>
         <nav class="top-tabs">
             <button class="tab-btn active" onclick="switchTab('timers')" id="tab-timers-btn">⏱️ Timers</button>
-            <button class="tab-btn" onclick="switchTab('instructions')" id="tab-instructions-btn">📝 Instructions</button>
+            <button class="tab-btn" onclick="switchTab('instructions')" id="tab-instructions-btn">📝 Notes</button>
         </nav>
         <div class="right-controls">
             <button class="btn-theme" onclick="toggleTheme()" title="Basculer mode sombre/clair">
@@ -507,6 +623,7 @@
             <button id="globalSoundBtn" class="btn-sound-global" onclick="toggleGlobalSound()">
                 <span id="globalSoundIcon">🔊</span> <span id="txt-sound">SON</span> : <span id="globalSoundText">ON</span>
             </button>
+            <button class="btn-ctrl" onclick="toggleFullscreen()">⛶</button>
             <div class="menu-wrapper">
                 <button class="btn-ctrl btn-menu" onclick="toggleMenu(event)" title="Plus d'options">⋮</button>
                 <div class="dropdown-menu" id="dropdownMenu">
@@ -538,8 +655,17 @@
                                 <option value="none" id="opt-clock-none">Aucune</option>
                                 <option value="digital" id="opt-clock-digital">Numérique</option>
                                 <option value="cff" id="opt-clock-cff">CFF</option>
-                                <option value="both" id="opt-clock-both">Les deux</option>
+                                <option value="both" id="opt-clock-both">CFF + numérique</option>
                             </select>
+                        </div>
+                    </div>
+                    <div class="dropdown-setting">
+                        <label id="txt-label-global-ctrls">Boutons globaux</label>
+                        <div class="dropdown-setting-input">
+                            <label class="dropdown-toggle">
+                                <input type="checkbox" id="globalCtrlsCheckbox" onchange="onGlobalControlsChange()" onclick="event.stopPropagation()">
+                                <span></span>
+                            </label>
                         </div>
                     </div>
                     <div class="dropdown-setting">
@@ -553,18 +679,24 @@
                         </div>
                     </div>
                     <div class="dropdown-divider"></div>
-                    <button class="dropdown-item" onclick="exporterConfig()">⬇️ <span id="txt-export">Exporter</span></button>
-                    <button class="dropdown-item" onclick="importerConfig()">⬆️ <span id="txt-import">Importer</span></button>
-                    <button class="dropdown-item" onclick="importerDepuisUrl()">🔗 <span id="txt-import-url">Importer depuis URL</span></button>
-                    <button class="dropdown-item" onclick="partagerLien()">📋 <span id="txt-share">Partager le lien</span></button>
-                    <div class="dropdown-divider"></div>
-                    <button class="dropdown-item dropdown-danger" onclick="reinitialiserTout()" id="txt-clear-all">Tout effacer</button>
+                    <div class="dropdown-section-title" id="txt-section-config">Configuration</div>
+                    <button class="dropdown-item" onclick="exportConfig()">⬇️ <span id="txt-export">Exporter</span></button>
+                    <button class="dropdown-item" onclick="importConfig()">⬆️ <span id="txt-import">Importer</span></button>
+                    <button class="dropdown-item" onclick="shareLink()">📋 <span id="txt-share">Partager le lien</span></button>
+                    <button class="dropdown-item dropdown-danger" onclick="resetAll()" id="txt-clear-all">Réinitialiser…</button>
                 </div>
             </div>
-            <button class="btn-ctrl" onclick="toggleFullscreen()">⛶</button>
         </div>
     </div>
     <input type="file" id="importFileInput" accept="application/json,.json" style="display:none">
+
+    <!-- Overlay shown when a file is being dragged from outside -->
+    <div class="file-drop-overlay" id="fileDropOverlay">
+        <div class="file-drop-message">
+            <div class="file-drop-icon">📥</div>
+            <div class="file-drop-text" id="fileDropText">Déposer le fichier JSON pour l'importer</div>
+        </div>
+    </div>
 
     <!-- Modal d'ajout de timer -->
     <div class="modal-overlay" id="addTimerModal">
@@ -578,17 +710,17 @@
                 <div class="add-modal-time-row">
                     <div class="field">
                         <label id="txt-label-min">Min</label>
-                        <input type="number" id="minInput" class="input-time" value="0" min="0">
+                        <input type="number" id="minInput" class="input-time" value="0" min="0" oninput="clearAddModalError()">
                     </div>
                     <div class="field">
                         <label id="txt-label-sec">Sec</label>
-                        <input type="number" id="secInput" class="input-time" value="0" min="0" max="59">
+                        <input type="number" id="secInput" class="input-time" value="0" min="0" max="59" oninput="clearAddModalError()">
                     </div>
                 </div>
             </div>
             <div class="modal-actions">
-                <button class="modal-btn-cancel" onclick="fermerAddModal()" id="txt-modal-cancel">Annuler</button>
-                <button class="modal-btn-confirm" onclick="ajouterDuree()" id="txt-btn-add">Ajouter timer</button>
+                <button class="modal-btn-cancel" onclick="closeAddModal()" id="txt-modal-cancel">Annuler</button>
+                <button class="modal-btn-confirm" onclick="addTimer()" id="txt-btn-add">Ajouter timer</button>
             </div>
         </div>
     </div>
@@ -598,8 +730,12 @@
         <div id="durationsList"></div>
         <div class="drop-indicator" id="dropIndicator"></div>
     </div>
-    <button class="btn-start-all" id="btnStartAll" onclick="demarrerTous()" title="Démarrer tous les timers">▶</button>
-    <button class="btn-add-floating" id="btnAddFloating" onclick="ouvrirAddModal()" title="Ajouter un timer">+</button>
+    <button class="btn-zoom-timers btn-zoom-out" id="btnZoomOut" onclick="zoomTimers(-0.1)" title="Réduire les timers">🔍−</button>
+    <button class="btn-zoom-timers btn-zoom-reset" id="btnZoomReset" onclick="resetZoomTimers()" title="Zoom 100%"><span id="btnZoomResetLabel">100%</span></button>
+    <button class="btn-zoom-timers btn-zoom-in" id="btnZoomIn" onclick="zoomTimers(0.1)" title="Agrandir les timers">🔍＋</button>
+    <button class="btn-stop-all" id="btnStopAll" onclick="stopAll()" title="Arrêter tous les timers"><svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
+    <button class="btn-start-all" id="btnStartAll" onclick="startAll()" title="Démarrer tous les timers"><svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>
+    <button class="btn-add-floating" id="btnAddFloating" onclick="openAddModal()" title="Ajouter un timer"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
 
     <div id="instructions-tab" class="tab-content">
         <div class="richtext-container">
@@ -615,14 +751,13 @@
                 <div class="toolbar-sep"></div>
                 <button type="button" id="rt-ul" title="Liste à puces">• ☰</button>
                 <button type="button" id="rt-ol" title="Liste numérotée">1. ☰</button>
+                <button type="button" id="rt-outdent" title="Désindenter (Shift+Tab)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="11" y2="12"/><line x1="21" y1="18" x2="11" y2="18"/><polyline points="7 8 3 12 7 16"/></svg></button>
+                <button type="button" id="rt-indent" title="Indenter (Tab)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="13" y1="12" x2="21" y2="12"/><line x1="13" y1="18" x2="21" y2="18"/><polyline points="3 8 7 12 3 16"/></svg></button>
                 <button type="button" id="rt-quote" title="Citation">❝</button>
                 <div class="toolbar-sep"></div>
                 <button type="button" id="rt-link" title="Lien">🔗</button>
                 <button type="button" id="rt-clear" title="Effacer le formatage">⎚</button>
                 <div class="toolbar-spacer"></div>
-                <button type="button" id="rt-zoom-out" title="Zoom −">A−</button>
-                <button type="button" id="rt-zoom-reset" title="Zoom 100%" class="rt-zoom-level"><span id="rt-zoom-pct">100%</span></button>
-                <button type="button" id="rt-zoom-in" title="Zoom +">A+</button>
                 <button type="button" class="btn-close-edit" id="rt-close" title="Sortir du mode édition">✕</button>
             </div>
             <div id="richtextEditor" class="richtext-editor" contenteditable="true" data-placeholder="Cliquez ici pour commencer à écrire..."></div>
@@ -631,34 +766,37 @@
 
 <script>
     const i18n = {
-        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informations", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Auto-reset après", autoResetUnit: "sec (0=off)", extraLabel: "Temps supplémentaire", extraUnit: "sec", langLabel: "Langue", clockLabel: "Horloge", clockNone: "Aucune", clockDigital: "Numérique", clockCff: "CFF", clockBoth: "Les deux", clockToggleTitle: "Cliquer pour changer d'horloge", startAllTitle: "Démarrer tous les timers", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes" },
-        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Informationen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Auto-Reset nach", autoResetUnit: "Sek (0=aus)", extraLabel: "Zusätzliche Zeit", extraUnit: "Sek", langLabel: "Sprache", clockLabel: "Uhr", clockNone: "Keine", clockDigital: "Digital", clockCff: "SBB", clockBoth: "Beide", clockToggleTitle: "Klicken, um Uhr zu wechseln", startAllTitle: "Alle Timer starten", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden" },
-        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "ℹ️ Information", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Auto-reset after", autoResetUnit: "sec (0=off)", extraLabel: "Extra time", extraUnit: "sec", langLabel: "Language", clockLabel: "Clock", clockNone: "None", clockDigital: "Digital", clockCff: "SBB", clockBoth: "Both", clockToggleTitle: "Click to switch clock", startAllTitle: "Start all timers", toggleSecondsTitle: "Click to show/hide seconds" }
+        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", editStartTimeTitle: "Modifier l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", fileDropMessage: "Déposer le fichier JSON pour l'importer", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Auto-reset après", autoResetUnit: "sec (0=off)", extraLabel: "Temps supplémentaire", extraUnit: "sec", removeExtraTitle: "Annuler le temps supplémentaire", langLabel: "Langue", configSection: "Configuration", globalCtrlsLabel: "Boutons globaux", clearAll: "Réinitialiser…", clockLabel: "Horloge", clockNone: "Aucune", clockDigital: "Numérique", clockCff: "CFF", clockBoth: "CFF + numérique", clockToggleTitle: "Cliquer pour changer d'horloge", clockResizeTitle: "Glisser pour redimensionner", startAllTitle: "Démarrer tous les timers", stopAllTitle: "Arrêter tous les timers", zoomInTitle: "Agrandir les timers", zoomOutTitle: "Réduire les timers", zoomResetTitle: "Zoom 100% (réinitialiser)", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes" },
+        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notizen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", editStartTimeTitle: "Startzeit ändern", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", fileDropMessage: "JSON-Datei hier ablegen, um sie zu importieren", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Auto-Reset nach", autoResetUnit: "Sek (0=aus)", extraLabel: "Zusätzliche Zeit", extraUnit: "Sek", removeExtraTitle: "Zusätzliche Zeit aufheben", langLabel: "Sprache", configSection: "Konfiguration", globalCtrlsLabel: "Globale Tasten", clearAll: "Zurücksetzen…", clockLabel: "Uhr", clockNone: "Keine", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Klicken, um Uhr zu wechseln", clockResizeTitle: "Ziehen zum Vergrößern", startAllTitle: "Alle Timer starten", stopAllTitle: "Alle Timer stoppen", zoomInTitle: "Timer vergrößern", zoomOutTitle: "Timer verkleinern", zoomResetTitle: "Zoom 100% (zurücksetzen)", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden" },
+        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", editStartTimeTitle: "Edit start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", fileDropMessage: "Drop the JSON file to import it", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Auto-reset after", autoResetUnit: "sec (0=off)", extraLabel: "Extra time", extraUnit: "sec", removeExtraTitle: "Cancel extra time", langLabel: "Language", configSection: "Configuration", globalCtrlsLabel: "Global buttons", clearAll: "Reset…", clockLabel: "Clock", clockNone: "None", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Click to switch clock", clockResizeTitle: "Drag to resize", startAllTitle: "Start all timers", stopAllTitle: "Stop all timers", zoomInTitle: "Make timers bigger", zoomOutTitle: "Make timers smaller", zoomResetTitle: "Zoom 100% (reset)", toggleSecondsTitle: "Click to show/hide seconds" }
     };
 
     let currentLang = 'fr';
-    let listeDurees = [];
+    let timersList = [];
     let intervals = {};
     let soundIntervals = {};
     let globalSoundEnabled = true;
     let dragSrcEl = null;
     let darkMode = false;
     let hideSeconds = false;
-    let secondsThreshold = 180; // En dessous de 3 minutes par défaut, on affiche toujours les secondes
-    let autoResetDelay = 60; // Délai en secondes avant réinitialisation auto d'un timer terminé (0 = désactivé)
-    let extraDelay = 30; // Temps supplémentaire ajouté par le bouton "+Xs" sur un timer (configurable)
+    let secondsThreshold = 180; // Below 3 minutes by default, we always display seconds
+    let autoResetDelay = 60; // Delay in seconds before auto-reset of a finished timer (0 = disabled)
+    let extraDelay = 30; // Extra time added by the "+Xs" button on a timer (configurable)
+    let timersZoom = 1.0; // Zoom applied to the timers grid (0.6 to 2.0)
+    let clockScale = 1.0; // Clock scale (0.5 to 3.0), adjustable via the handle
+    let showGlobalControls = true; // Afficher les boutons globaux play/stop (en plus de + et zoom)
     let clockMode = 'digital'; // 'none' | 'digital' | 'cff' | 'both'
     let currentTab = 'timers';
-    let showStartTime = false; // Affichage global de l'heure de début pour tous les timers actifs
-    let richtextZoom = 1.0; // Niveau de zoom pour l'éditeur d'instructions (1.0 = 100%)
-    let defaultRichtext = `<h1>Informations</h1><p>Cliquez ici pour commencer à écrire...</p>`;
+    let showStartTime = false; // Global display of start time for all active timers
+    let richtextZoom = 1.0; // Zoom level for the instructions editor (1.0 = 100%)
+    let defaultRichtext = `<h1>Notes</h1><p>Cliquez ici pour commencer à écrire...</p>`;
 
 
 // --- LOGIQUE THEME ---
     function toggleTheme() {
         darkMode = !darkMode;
         applyTheme();
-        sauvegarder();
+        save();
     }
 
     function applyTheme() {
@@ -677,30 +815,38 @@
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         
-        // Afficher l'onglet sélectionné
+        // Show the selected tab
         document.getElementById(`${tabName}-tab`).classList.add('active');
         document.getElementById(`tab-${tabName}-btn`).classList.add('active');
         
-        // Mémoriser l'onglet actif
+        // Store the active tab
         currentTab = tabName;
         localStorage.setItem('timers_current_tab', tabName);
         
-        // Boutons flottants uniquement sur l'onglet timers
+        // Add/play/stop buttons: only on the timers tab
         const btnAdd = document.getElementById('btnAddFloating');
         if (btnAdd) btnAdd.classList.toggle('hidden', tabName !== 'timers');
-        const btnStartAll = document.getElementById('btnStartAll');
-        if (btnStartAll) btnStartAll.classList.toggle('hidden', tabName !== 'timers');
+        applyGlobalControlsVisibility();
+        // Zoom buttons: visible on both tabs (act on each tab's content)
+        const btnZoomIn = document.getElementById('btnZoomIn');
+        if (btnZoomIn) btnZoomIn.classList.remove('hidden');
+        const btnZoomOut = document.getElementById('btnZoomOut');
+        if (btnZoomOut) btnZoomOut.classList.remove('hidden');
+        const btnZoomReset = document.getElementById('btnZoomReset');
+        if (btnZoomReset) btnZoomReset.classList.remove('hidden');
+        // Sync the zoom buttons label/state with the active tab
+        syncZoomButtons();
 
-        // Si on affiche l'onglet instructions, charger le richtext
+        // If showing the instructions tab, load the richtext
         if (tabName === 'instructions') {
             loadRichtext();
         }
     }
 
 // --- LOGIQUE EDITEUR WYSIWYG (contenteditable) ---
-    // Convertit du Markdown brut en HTML, utilisé pour migrer l'ancien contenu
-    // stocké en Markdown vers le nouveau format HTML.
-    function markdownVersHtml(text) {
+    // Converts raw Markdown to HTML, used to migrate the old content
+    // stored as Markdown to the new HTML format.
+    function markdownToHtml(text) {
         let html = text
             .replace(/^### (.*$)/gim, '<h3>$1</h3>')
             .replace(/^## (.*$)/gim, '<h2>$1</h2>')
@@ -751,12 +897,12 @@
             editor.innerHTML = savedHtml;
             return;
         }
-        // Migration : si du Markdown a été sauvegardé avec l'ancienne version
+        // Migration: if Markdown was saved with the old version
         const oldMarkdown = localStorage.getItem('timers_markdown');
         if (oldMarkdown) {
-            editor.innerHTML = markdownVersHtml(oldMarkdown);
+            editor.innerHTML = markdownToHtml(oldMarkdown);
             saveRichtext();
-            // On garde l'ancien Markdown pour le moment (au cas où) — il sera nettoyé via "Réinitialiser"
+            // Keep the old Markdown for now (just in case) — will be cleaned via "Reset"
             return;
         }
         editor.innerHTML = defaultRichtext;
@@ -768,7 +914,7 @@
         localStorage.setItem('timers_richtext', editor.innerHTML);
     }
 
-    // Applique une commande de formatage à la sélection courante
+    // Apply a formatting command to the current selection
     function exec(command, value = null) {
         document.execCommand(command, false, value);
         const editor = document.getElementById('richtextEditor');
@@ -789,17 +935,17 @@
         if (url && url.trim()) exec('createLink', url.trim());
     }
 
-    function entrerModeEdition() {
+    function enterEditMode() {
         const container = document.querySelector('.richtext-container');
         if (!container) return;
         if (container.classList.contains('editing')) return;
         container.classList.add('editing');
-        // Mettre le focus dans l'éditeur (sans déplacer le curseur si l'utilisateur a déjà cliqué)
+        // Focus the editor (without moving the cursor if the user has already clicked)
         const editor = document.getElementById('richtextEditor');
         if (editor && document.activeElement !== editor) editor.focus();
     }
 
-    function sortirModeEdition() {
+    function exitEditMode() {
         const container = document.querySelector('.richtext-container');
         if (!container) return;
         container.classList.remove('editing');
@@ -810,18 +956,36 @@
         }
     }
 
-    function attacherToolbarRichtext() {
+    function attachRichtextToolbar() {
         const editor = document.getElementById('richtextEditor');
         if (!editor) return;
-        // Auto-save (debouncé)
+        // Auto-save (debounced)
         let saveTimeout;
         editor.addEventListener('input', () => {
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(saveRichtext, 500);
         });
-        // Entrer en mode édition au clic ou au focus dans l'éditeur
-        editor.addEventListener('mousedown', entrerModeEdition);
-        editor.addEventListener('focus', entrerModeEdition);
+        // Enter edit mode on click or focus in the editor
+        editor.addEventListener('mousedown', enterEditMode);
+        editor.addEventListener('focus', enterEditMode);
+
+        // Tab / Shift+Tab to indent/outdent within lists only.
+        // (Hors liste, on laisse le Tab passer au champ suivant — comportement standard.)
+        editor.addEventListener('keydown', (e) => {
+            if (e.key !== 'Tab') return;
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
+            // Verify the cursor is in an <li> element
+            let node = sel.anchorNode;
+            while (node && node !== editor) {
+                if (node.nodeType === 1 && node.tagName === 'LI') {
+                    e.preventDefault();
+                    document.execCommand(e.shiftKey ? 'outdent' : 'indent', false, null);
+                    return;
+                }
+                node = node.parentNode;
+            }
+        });
 
         const bind = (id, fn) => {
             const btn = document.getElementById(id);
@@ -836,41 +1000,37 @@
         bind('rt-underline', () => exec('underline'));
         bind('rt-ul', () => exec('insertUnorderedList'));
         bind('rt-ol', () => exec('insertOrderedList'));
+        bind('rt-outdent', () => exec('outdent'));
+        bind('rt-indent', () => exec('indent'));
         bind('rt-quote', () => formatBlock('blockquote'));
         bind('rt-link', () => insertLink());
         bind('rt-clear', () => exec('removeFormat'));
-        bind('rt-close', () => sortirModeEdition());
-        // Boutons zoom (n'entrent pas en mode édition pour éviter d'ouvrir la toolbar... attends, elle est déjà ouverte si on les voit)
-        bind('rt-zoom-out', () => changerZoom(-0.1));
-        bind('rt-zoom-in', () => changerZoom(0.1));
-        bind('rt-zoom-reset', () => setZoom(1.0));
-        // Appliquer le zoom restauré
-        appliquerZoom();
+        bind('rt-close', () => exitEditMode());
+        // Apply the restored zoom (buttons are the same floating ones as for the timers)
+        applyZoom();
     }
 
     function setZoom(value) {
-        // Bornes : 0.7× à 2.5× pour rester raisonnable
-        if (value < 0.7) value = 0.7;
-        if (value > 2.5) value = 2.5;
-        // Arrondir à 1 décimale pour éviter les flottants imprécis
+        // Bounds: 0.6× to 2.0× (same bounds as the timers for consistency)
+        if (value < 0.6) value = 0.6;
+        if (value > 2.0) value = 2.0;
+        // Round to 1 decimal to avoid imprecise floats
         richtextZoom = Math.round(value * 10) / 10;
-        appliquerZoom();
-        sauvegarder();
+        applyZoom();
+        save();
     }
 
-    function changerZoom(delta) {
+    function changeZoom(delta) {
         setZoom(richtextZoom + delta);
     }
 
-    function appliquerZoom() {
-        const tab = document.getElementById('instructions-tab');
-        const pct = document.getElementById('rt-zoom-pct');
-        if (tab) {
-            // 'zoom' agit comme un facteur de mise à l'échelle pour tout le contenu (y compris la toolbar)
-            // Supporté par tous les navigateurs modernes (Firefox 126+, Chrome, Safari)
-            tab.style.zoom = richtextZoom;
-        }
-        if (pct) pct.textContent = Math.round(richtextZoom * 100) + '%';
+    function applyZoom() {
+        // Zoom applies only to the editor content, not to the toolbar
+        // (la toolbar garde sa taille fixe pour rester accessible).
+        const editor = document.getElementById('richtextEditor');
+        applyScale(editor, richtextZoom);
+        // If on the notes tab, update the floating buttons
+        if (currentTab === 'instructions') syncZoomButtons();
     }
 
 // --- LOGIQUE AUDIO (IPAD FIX) ---
@@ -890,7 +1050,7 @@
 
     function playBellSound(id) {
         if (!globalSoundEnabled) return;
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         if (obj && obj.muted) return;
 
         try {
@@ -927,18 +1087,19 @@
     function changeLanguage(lang) {
         currentLang = lang;
         document.getElementById('langSelector').value = lang;
-        traduireInterface();
-        sauvegarder();
+        translateInterface();
+        save();
     }
 
-    function traduireInterface() {
+    function translateInterface() {
         const t = i18n[currentLang];
         document.getElementById('txt-sound').textContent = t.sound;
         document.getElementById('globalSoundText').textContent = globalSoundEnabled ? t.on : t.off;
         document.getElementById('txt-clear-all').textContent = t.clearAll;
+        const txtSectionConfig = document.getElementById('txt-section-config'); if (txtSectionConfig) txtSectionConfig.textContent = t.configSection;
+        const txtGlobalCtrls = document.getElementById('txt-label-global-ctrls'); if (txtGlobalCtrls) txtGlobalCtrls.textContent = t.globalCtrlsLabel;
         const txtExport = document.getElementById('txt-export'); if (txtExport) txtExport.textContent = t.export;
         const txtImport = document.getElementById('txt-import'); if (txtImport) txtImport.textContent = t.import;
-        const txtImportUrl = document.getElementById('txt-import-url'); if (txtImportUrl) txtImportUrl.textContent = t.importUrl;
         const txtShare = document.getElementById('txt-share'); if (txtShare) txtShare.textContent = t.share;
         document.getElementById('txt-label-name').textContent = t.labelName;
         document.getElementById('txt-label-min').textContent = t.labelMin;
@@ -957,36 +1118,46 @@
         const optClockCff = document.getElementById('opt-clock-cff'); if (optClockCff) optClockCff.textContent = t.clockCff;
         const optClockBoth = document.getElementById('opt-clock-both'); if (optClockBoth) optClockBoth.textContent = t.clockBoth;
         // Re-render de l'horloge pour que le title du wrapper cliquable soit traduit
-        appliquerHorloge();
+        applyClock();
         const btnStartAll = document.getElementById('btnStartAll');
         if (btnStartAll) btnStartAll.title = t.startAllTitle;
+        const btnStopAll = document.getElementById('btnStopAll');
+        if (btnStopAll) btnStopAll.title = t.stopAllTitle;
+        const btnZoomIn = document.getElementById('btnZoomIn');
+        if (btnZoomIn) btnZoomIn.title = t.zoomInTitle;
+        const btnZoomOut = document.getElementById('btnZoomOut');
+        if (btnZoomOut) btnZoomOut.title = t.zoomOutTitle;
+        const btnZoomReset = document.getElementById('btnZoomReset');
+        if (btnZoomReset) btnZoomReset.title = t.zoomResetTitle;
+        const fileDropTextEl = document.getElementById('fileDropText');
+        if (fileDropTextEl) fileDropTextEl.textContent = t.fileDropMessage;
         document.getElementById('nameInput').placeholder = t.placeholderName;
         document.getElementById('tab-timers-btn').textContent = t.tabTimers;
         document.getElementById('tab-instructions-btn').textContent = t.tabInstructions;
         const txtAddTitle = document.getElementById('txt-add-modal-title'); if (txtAddTitle) txtAddTitle.textContent = t.addTimerTitle || (t.addTimer || t.btnAdd);
         const txtModalCancel = document.getElementById('txt-modal-cancel'); if (txtModalCancel) txtModalCancel.textContent = t.cancel;
-        listeDurees.forEach(d => {
+        timersList.forEach(d => {
             const card = document.getElementById(`card-${d.id}`);
             if (card) {
-                majTitreDuree(d.id);
+                updateTimerTitle(d.id);
                 const btnStart = card.querySelector('.btn-start'); if (btnStart) btnStart.textContent = t.start;
                 const btnStop = card.querySelector('.btn-stop'); if (btnStop) btnStop.textContent = `🛑 ${t.stop}`;
-                const btnPlus = card.querySelector('.btn-plus'); if (btnPlus) btnPlus.textContent = libellePlus();
+                const btnPlus = card.querySelector('.btn-plus'); if (btnPlus) btnPlus.textContent = extraLabel();
                 const btnMute = card.querySelector(`[id^="btn-mute-"]`); if (btnMute) btnMute.innerHTML = `${d.muted?'🔇':'🔊'} ${t.mute}`;
                 const btnDup = card.querySelector('.btn-duplicate'); if (btnDup) btnDup.title = t.duplicate;
                 const timeEl = card.querySelector('.time-left'); if (timeEl) timeEl.title = t.toggleSecondsTitle;
-                // Mettre à jour le placeholder "Sans titre" pour les timers sans nom
+                // Update the "Untitled" placeholder for timers without a name
                 const nomEl = card.querySelector('.label-nom');
                 if (nomEl && nomEl.hasAttribute('data-empty')) {
                     nomEl.textContent = t.untiteld || 'Sans titre';
                 }
                 if (nomEl) nomEl.title = t.editNameTitle;
-                majHeureFin(d.id);
+                updateEndTime(d.id);
             }
         });
     }
 
-    function formaterTemps(s) { 
+    function formatTime(s) { 
         const minutes = Math.floor(s/60);
         const secondes = s % 60;
         // On masque les secondes UNIQUEMENT si hideSeconds est actif ET qu'on est au-dessus du seuil
@@ -995,18 +1166,20 @@
         }
         return `${minutes}:${secondes.toString().padStart(2,'0')}`; 
     }
-    function formaterHeure(date) { return date.toLocaleTimeString(currentLang === 'en'?'en-US':(currentLang==='de'?'de-DE':'fr-FR'), {hour:'2-digit', minute:'2-digit'}); }
+    function formatClock(date) { return date.toLocaleTimeString(currentLang === 'en'?'en-US':(currentLang==='de'?'de-DE':'fr-FR'), {hour:'2-digit', minute:'2-digit'}); }
 
-    function majHeureFin(id) {
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+    function updateEndTime(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         const display = document.getElementById(`endtime-${id}`);
         if (obj?.start && display) {
             const finMs = obj.start + ((obj.totalSecs + obj.extraSecs) * 1000);
             const t = i18n[currentLang];
-            const heureFin = formaterHeure(new Date(finMs));
+            const heureFin = formatClock(new Date(finMs));
             if (showStartTime) {
-                const heureDebut = formaterHeure(new Date(obj.start));
-                display.innerHTML = `<span class="start-time-part">${t.startedAt} ${heureDebut}</span>${t.finishAt} ${heureFin}`;
+                const heureDebut = formatClock(new Date(obj.start));
+                // Le bouton crayon n'est visible qu'au hover (CSS) et stoppe la propagation
+                // so the parent div's showStartTime toggle is not triggered.
+                display.innerHTML = `<span class="start-time-part"><button type="button" class="btn-edit-start" onclick="event.stopPropagation(); editStartTime('${id}')" title="${t.editStartTimeTitle}">✏️</button>${t.startedAt} ${heureDebut}</span>${t.finishAt} ${heureFin}`;
             } else {
                 display.textContent = `${t.finishAt} ${heureFin}`;
             }
@@ -1019,12 +1192,82 @@
 
     function toggleStartTime() {
         showStartTime = !showStartTime;
-        // Rafraîchir tous les timers actifs
-        listeDurees.forEach(d => majHeureFin(d.id));
-        sauvegarder();
+        // Refresh all active timers
+        timersList.forEach(d => updateEndTime(d.id));
+        save();
     }
 
-    function toggleGlobalSound() { globalSoundEnabled = !globalSoundEnabled; updateGlobalSoundUI(); sauvegarder(); }
+    // Edit the start time of a running timer via an in-place mini-form
+    // (consistent with editing the duration and the name).
+    function editStartTime(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
+        if (!obj || !obj.start) return;
+        const display = document.getElementById(`endtime-${id}`);
+        if (!display) return;
+        // If already editing, do nothing
+        if (display.querySelector('input[type="time"]')) return;
+        const t = i18n[currentLang];
+        const startDate = new Date(obj.start);
+        const hh = startDate.getHours().toString().padStart(2, '0');
+        const mm = startDate.getMinutes().toString().padStart(2, '0');
+        // Save the parent onclick and remove it during edit so it doesn't
+        // trigger the showStartTime toggle on clicks within the form.
+        const oldOnclick = display.onclick;
+        display.onclick = null;
+        display.classList.add('start-edit-form');
+        display.innerHTML = `
+            <input type="time" id="edit-start-${id}" value="${hh}:${mm}" step="60" />
+            <button type="button" id="edit-start-ok-${id}" title="${t.save}">✓</button>
+            <button type="button" class="btn-cancel" id="edit-start-cancel-${id}" title="${t.cancel}">✕</button>
+        `;
+        const input = document.getElementById(`edit-start-${id}`);
+        const btnOk = document.getElementById(`edit-start-ok-${id}`);
+        const btnCancel = document.getElementById(`edit-start-cancel-${id}`);
+
+        const restore = () => {
+            display.classList.remove('start-edit-form');
+            display.onclick = oldOnclick;
+            updateEndTime(id);
+        };
+        const valider = () => {
+            const val = input.value;
+            // If the user validates without modifying, we don't touch obj.start
+            // (otherwise we'd overwrite seconds/milliseconds to 0 needlessly).
+            if (val === `${hh}:${mm}`) {
+                restore();
+                return;
+            }
+            if (val && /^\d{2}:\d{2}$/.test(val)) {
+                const [h, m] = val.split(':').map(Number);
+                const newStart = new Date(obj.start);
+                newStart.setHours(h, m, 0, 0);
+                obj.start = newStart.getTime();
+                save();
+            }
+            restore();
+        };
+        const annuler = () => restore();
+
+        btnOk.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); valider(); });
+        btnCancel.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); annuler(); });
+        input.addEventListener('click', (e) => e.stopPropagation());
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); valider(); }
+            else if (e.key === 'Escape') { e.preventDefault(); annuler(); }
+        });
+        // Try to directly open the native picker for a clearer UX than focus().
+        // showPicker() is supported on Chrome/Edge 99+, Safari 16+, Firefox 101+.
+        setTimeout(() => {
+            try {
+                if (typeof input.showPicker === 'function') input.showPicker();
+                else input.focus();
+            } catch (e) {
+                input.focus();
+            }
+        }, 0);
+    }
+
+    function toggleGlobalSound() { globalSoundEnabled = !globalSoundEnabled; updateGlobalSoundUI(); save(); }
     function updateGlobalSoundUI() {
         const btn = document.getElementById('globalSoundBtn');
         btn.classList.toggle('is-off', !globalSoundEnabled);
@@ -1034,12 +1277,12 @@
 
     function toggleHideSeconds() { 
         hideSeconds = !hideSeconds; 
-        rafraichirTousAffichages();
-        sauvegarder(); 
+        refreshAllDisplays();
+        save(); 
     }
 
-    function rafraichirAffichageTimer(id) {
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+    function refreshTimerDisplay(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj) return;
         const timeDisplay = document.getElementById(`time-${id}`);
         if (!timeDisplay) return;
@@ -1048,17 +1291,17 @@
             const total = (obj.totalSecs + obj.extraSecs) * 1000;
             const restant = total - ecoule;
             if (restant > 0) {
-                timeDisplay.textContent = formaterTemps(Math.ceil(restant/1000));
+                timeDisplay.textContent = formatTime(Math.ceil(restant/1000));
             }
         } else {
-            timeDisplay.textContent = formaterTemps(obj.totalSecs);
+            timeDisplay.textContent = formatTime(obj.totalSecs);
         }
-        majTitreDuree(id);
+        updateTimerTitle(id);
     }
 
-    // Helper : rafraîchir l'affichage de tous les timers (utilisé par toggle SEC et changement de seuil)
-    function rafraichirTousAffichages() {
-        listeDurees.forEach(d => rafraichirAffichageTimer(d.id));
+    // Helper: refresh display of all timers (used by SEC toggle and threshold change)
+    function refreshAllDisplays() {
+        timersList.forEach(d => refreshTimerDisplay(d.id));
     }
 
     function onThresholdChange() {
@@ -1069,124 +1312,195 @@
         if (val > 60) val = 60;
         input.value = val;
         secondsThreshold = val * 60;
-        rafraichirTousAffichages();
-        sauvegarder();
+        refreshAllDisplays();
+        save();
     }
 
-    function ouvrirAddModal() {
+    function openAddModal() {
         const modal = document.getElementById('addTimerModal');
         if (!modal) return;
-        // Reset des champs
+        // Reset fields
         document.getElementById('nameInput').value = '';
         document.getElementById('minInput').value = '0';
         document.getElementById('secInput').value = '0';
+        // Clear any error state from a previous opening
+        document.getElementById('minInput').classList.remove('required-empty');
+        document.getElementById('secInput').classList.remove('required-empty');
         modal.classList.add('visible');
-        // Focus sur le nom
+        // Focus on the name
         setTimeout(() => document.getElementById('nameInput').focus(), 50);
-        // Échap pour fermer
+        // Escape to close
         const onKey = (e) => {
-            if (e.key === 'Escape') { e.preventDefault(); fermerAddModal(); document.removeEventListener('keydown', onKey); }
+            if (e.key === 'Escape') { e.preventDefault(); closeAddModal(); document.removeEventListener('keydown', onKey); }
             else if (e.key === 'Enter' && (e.target.id === 'nameInput' || e.target.id === 'minInput' || e.target.id === 'secInput')) {
-                e.preventDefault(); ajouterDuree();
+                e.preventDefault(); addTimer();
             }
         };
         document.addEventListener('keydown', onKey);
         modal._onKey = onKey;
     }
 
-    function fermerAddModal() {
+    // Clears the "required field" error state on Min/Sec fields as soon as the user
+    // starts typing again. The red validation only appears on add attempt.
+    function clearAddModalError() {
+        document.getElementById('minInput').classList.remove('required-empty');
+        document.getElementById('secInput').classList.remove('required-empty');
+    }
+
+    function closeAddModal() {
         const modal = document.getElementById('addTimerModal');
         if (!modal) return;
         modal.classList.remove('visible');
         if (modal._onKey) { document.removeEventListener('keydown', modal._onKey); modal._onKey = null; }
     }
 
-    function ajouterDuree() {
+    function addTimer() {
         const nomInput = document.getElementById('nameInput').value.trim();
         const nom = nomInput || '';
         const totalSecs = (parseInt(document.getElementById('minInput').value)||0)*60 + (parseInt(document.getElementById('secInput').value)||0);
-        if (totalSecs <= 0) return;
+        if (totalSecs <= 0) {
+            // Mark Min/Sec fields red and focus them to signal the error
+            document.getElementById('minInput').classList.add('required-empty');
+            document.getElementById('secInput').classList.add('required-empty');
+            document.getElementById('minInput').focus();
+            return;
+        }
         const id = Date.now();
         const nouvelle = { id, nom, totalSecs, start: null, extraSecs: 0, muted: false };
-        listeDurees.push(nouvelle);
-        creerCarteHTML(nouvelle);
-        sauvegarder();
-        fermerAddModal();
+        timersList.push(nouvelle);
+        createCardHTML(nouvelle);
+        save();
+        closeAddModal();
     }
 
-    function creerCarteHTML(obj) {
+    function createCardHTML(obj) {
         const t = i18n[currentLang];
         const card = document.createElement('div');
         card.className = 'duration-card'; card.id = `card-${obj.id}`; card.draggable = true;
-        // Le champ nom est TOUJOURS présent (même vide) pour pouvoir être cliqué/renommé.
+        // The name field is ALWAYS present (even empty) so it can be clicked/renamed.
         // Si vide on affiche un placeholder visuel via CSS (data-empty="1").
         const nomTexte = obj.nom || t.untiteld || 'Sans titre';
         const nomDataEmpty = obj.nom ? '' : 'data-empty="1"';
         card.innerHTML = `<div class="drag-handle"><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div></div>
-            <button class="btn-duplicate" onclick="dupliquerDuree('${obj.id}')" title="${t.duplicate}">⎘</button>
-            <button class="btn-close" onclick="supprimerDuree('${obj.id}')">×</button>
-            <div class="label-duree-titre" id="title-${obj.id}" onclick="editerDuree('${obj.id}')" title="${t.editDurationTitle}">${t.duration} — ${formaterTemps(obj.totalSecs)}</div>
-            <div class="label-nom" id="nom-${obj.id}" ${nomDataEmpty} onclick="editerNom('${obj.id}')" title="${t.editNameTitle || 'Cliquer pour renommer'}">${escaperHtml(nomTexte)}</div>
-            <div class="time-left" id="time-${obj.id}" onclick="toggleHideSeconds()" title="${t.toggleSecondsTitle}">${formaterTemps(obj.totalSecs)}</div>
+            <button class="btn-duplicate" onclick="duplicateTimer('${obj.id}')" title="${t.duplicate}">⎘</button>
+            <button class="btn-close" onclick="deleteTimer('${obj.id}')">×</button>
+            <div class="label-duree-titre" id="title-${obj.id}" onclick="editTimer('${obj.id}')" title="${t.editDurationTitle}">${t.duration} — ${formatTime(obj.totalSecs)}</div>
+            <div class="label-nom" id="nom-${obj.id}" ${nomDataEmpty} onclick="editName('${obj.id}')" title="${t.editNameTitle || 'Cliquer pour renommer'}">${escapeHtml(nomTexte)}</div>
+            <div class="time-left" id="time-${obj.id}" onclick="toggleHideSeconds()" title="${t.toggleSecondsTitle}">${formatTime(obj.totalSecs)}</div>
             <div class="end-time-display" id="endtime-${obj.id}" onclick="toggleStartTime()"></div>
-            <div class="card-actions" id="actions-${obj.id}"><button class="btn-start" onclick="demarrerDuree('${obj.id}')">${t.start}</button></div>
+            <div class="card-actions" id="actions-${obj.id}"><button class="btn-start" onclick="startTimer('${obj.id}')">${t.start}</button></div>
             <div class="progress-bar-container"><div class="progress-bar-fill" id="progress-${obj.id}"></div></div>`;
         document.getElementById('durationsList').appendChild(card);
-        attacherEvenementsDrag(card);
+        attachDragEvents(card);
     }
 
-    function demarrerDuree(id) {
+    function startTimer(id) {
         unlockAudio();
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         if(!obj) return;
         obj.start = Date.now();
-        obj.extraSecs = 0;  // Réinitialiser le temps supplémentaire au démarrage
-        majInterfaceActive(id); majHeureFin(id); majTitreDuree(id); lancerTick(id); sauvegarder();
+        obj.extraSecs = 0;  // Reset extra time on start
+        updateActiveUI(id); updateEndTime(id); updateTimerTitle(id); startTick(id); save();
     }
 
-    // Met à jour le texte du titre "DURÉE — X:XX" ou "DURÉE — X:XX (+30s)" si extraSecs > 0
-    function majTitreDuree(id) {
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+    // Updates the title text "DURATION — X:XX" or "DURATION — X:XX (+30s)" if extraSecs > 0
+    function updateTimerTitle(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj) return;
         const titleEl = document.getElementById(`title-${id}`);
         if (!titleEl) return;
-        // Ne pas écraser si l'utilisateur est en mode édition
+        // Don't overwrite if the user is in edit mode
         if (titleEl.classList.contains('duration-edit-form')) return;
         const t = i18n[currentLang];
-        let txt = `${t.duration} — ${formaterTemps(obj.totalSecs)}`;
+        let txt = `${t.duration} — ${formatTime(obj.totalSecs)}`;
         if (obj.extraSecs > 0) {
-            txt += ` (+${formaterTempsExtra(obj.extraSecs)})`;
+            txt += ` (+${formatExtraTime(obj.extraSecs)})`;
         }
         titleEl.textContent = txt;
     }
 
-    // Format compact pour le temps supplémentaire : "30''", "1:30", "2:00"
-    function formaterTempsExtra(s) {
-        if (s < 60) return `${s}''`;
+    // Compact format for extra time: "0:30", "1:00", "1:30"
+    function formatExtraTime(s) {
         const m = Math.floor(s/60);
         const sec = s % 60;
-        if (sec === 0) return `${m}'`;
-        return `${m}'${sec.toString().padStart(2,'0')}''`;
+        return `${m}:${sec.toString().padStart(2,'0')}`;
     }
 
-    // Tick global unique : tous les timers sont rafraîchis en même temps,
-    // ce qui garantit l'affichage synchrone des timers dupliqués (même start).
+    // Single global tick: all timers are refreshed at the same time,
+    // which guarantees synchronous display for duplicated timers (same start).
     let globalTickInterval = null;
     let activeTickIds = new Set();
 
-    // Démarre tous les timers qui ne sont pas encore démarrés (start === null).
-    // N'affecte ni les timers en cours ni les timers terminés.
-    function demarrerTous() {
-        listeDurees.forEach(d => {
-            if (d.start === null) demarrerDuree(d.id);
+    // Starts all timers that are not yet started (start === null).
+    // Does not affect running or finished timers.
+    function startAll() {
+        timersList.forEach(d => {
+            if (d.start === null) startTimer(d.id);
         });
     }
-    // Deux handles séparés : un pour le setTimeout du digital, un pour le rAF du CFF.
-    // Permet d'avoir les deux en parallèle (mode 'both') et de nettoyer proprement.
+
+    // Stops all running or finished timers (resets them to initial state).
+    function stopAll() {
+        timersList.forEach(d => {
+            if (d.start !== null) stopTimer(d.id);
+        });
+    }
+
+    // Changes the zoom level of the timers grid (all cards and their contents,
+    // including in-place edit forms created on the fly, are affected).
+    // Bounds: 0.6 (60%) to 2.0 (200%).
+    // Dispatch zoom according to the active tab:
+    // - on the timers tab, modifies timersZoom and applies to #durationsList
+    // - on the notes tab, modifies richtextZoom and applies to #richtextEditor
+    function zoomTimers(delta) {
+        if (currentTab === 'instructions') {
+            changeZoom(delta);
+            return;
+        }
+        const newZoom = Math.round((timersZoom + delta) * 10) / 10;
+        if (newZoom < 0.6 || newZoom > 2.0) return;
+        timersZoom = newZoom;
+        applyTimersZoom();
+        save();
+    }
+
+    function resetZoomTimers() {
+        if (currentTab === 'instructions') {
+            setZoom(1.0);
+            return;
+        }
+        timersZoom = 1.0;
+        applyTimersZoom();
+        save();
+    }
+
+    function applyTimersZoom() {
+        const list = document.getElementById('durationsList');
+        applyScale(list, timersZoom);
+        // Synchroniser les boutons UNIQUEMENT si on est sur l'onglet timers
+        // (otherwise they reflect richtextZoom applied via applyZoom)
+        if (currentTab === 'timers') syncZoomButtons();
+    }
+
+    // Updates the % label and the disabled state of the floating zoom buttons
+    // according to the currently displayed tab.
+    function syncZoomButtons() {
+        const zoom = currentTab === 'instructions' ? richtextZoom : timersZoom;
+        const btnIn = document.getElementById('btnZoomIn');
+        const btnOut = document.getElementById('btnZoomOut');
+        const btnReset = document.getElementById('btnZoomReset');
+        const lbl = document.getElementById('btnZoomResetLabel');
+        if (btnIn) btnIn.disabled = zoom >= 2.0;
+        if (btnOut) btnOut.disabled = zoom <= 0.6;
+        if (btnReset) btnReset.disabled = Math.abs(zoom - 1.0) < 0.01;
+        if (lbl) lbl.textContent = Math.round(zoom * 100) + '%';
+    }
+    // Two separate handles: one for the digital setTimeout, one for the CFF rAF.
+    // Allows having both in parallel ('both' mode) and cleaning up properly.
     let digitalClockTimeout = null;
     let cffClockRaf = null;
 
-    function arreterAnimationsHorloge() {
+    function stopClockAnimations() {
         if (digitalClockTimeout !== null) { clearTimeout(digitalClockTimeout); digitalClockTimeout = null; }
         if (cffClockRaf !== null) { cancelAnimationFrame(cffClockRaf); cffClockRaf = null; }
     }
@@ -1195,49 +1509,111 @@
         const sel = document.getElementById('clockModeSelect');
         if (!sel) return;
         clockMode = sel.value;
-        appliquerHorloge();
-        sauvegarder();
+        applyClock();
+        save();
     }
 
     // Clic sur l'horloge : cycler entre les 3 modes visibles (digital → cff → both → digital).
-    // Le mode "none" se règle uniquement via le menu et n'entre pas dans le cycle.
-    function cyclerHorloge() {
-        const cycle = ['digital', 'cff', 'both'];
+    // The "none" mode is set only via the menu and doesn't enter the cycle.
+    function cycleClock() {
+        const cycle = ['digital', 'cff', 'both', 'none'];
         const idx = cycle.indexOf(clockMode);
         clockMode = cycle[(idx + 1) % cycle.length] || 'digital';
         const sel = document.getElementById('clockModeSelect');
         if (sel) sel.value = clockMode;
-        appliquerHorloge();
-        sauvegarder();
+        applyClock();
+        save();
     }
 
-    function appliquerHorloge() {
+    function applyClock() {
         const container = document.getElementById('clockContainer');
         if (!container) return;
-        arreterAnimationsHorloge();
+        stopClockAnimations();
         container.classList.remove('cff-mode', 'both-mode');
-        if (clockMode === 'none') {
-            container.innerHTML = '';
-            return;
-        }
         const t = i18n[currentLang];
         const titleAttr = t.clockToggleTitle ? ` title="${t.clockToggleTitle}"` : '';
+        // Resize handle, visible on wrapper hover.
+        const handle = `<div class="clock-resize-handle" onmousedown="event.stopPropagation(); startClockResize(event)" ontouchstart="event.stopPropagation(); startClockResize(event)" title="${t.clockResizeTitle || 'Glisser pour redimensionner'}"></div>`;
+        if (clockMode === 'none') {
+            // Empty but clickable zone to allow returning to a visible mode.
+            // Height reserved to stay consistent with other modes.
+            container.innerHTML = `<div class="clock-clickable clock-empty" onclick="cycleClock()"${titleAttr}></div>`;
+            return;
+        }
         if (clockMode === 'digital') {
-            container.innerHTML = `<div class="clock-clickable" onclick="cyclerHorloge()"${titleAttr}><div class="clock-digital" id="clockDigital"></div></div>`;
-            tickHorlogeDigital();
+            container.innerHTML = `<div class="clock-clickable" onclick="cycleClock()"${titleAttr}><div class="clock-digital" id="clockDigital"></div>${handle}</div>`;
+            tickDigitalClock();
         } else if (clockMode === 'cff') {
             container.classList.add('cff-mode');
-            container.innerHTML = `<div class="clock-clickable" onclick="cyclerHorloge()"${titleAttr}>${construireSvgCff()}</div>`;
-            tickHorlogeCff();
+            container.innerHTML = `<div class="clock-clickable" onclick="cycleClock()"${titleAttr}>${buildCffSvg()}${handle}</div>`;
+            tickCffClock();
         } else if (clockMode === 'both') {
             container.classList.add('both-mode');
-            container.innerHTML = `<div class="clock-clickable" onclick="cyclerHorloge()"${titleAttr}>${construireSvgCff()}<div class="clock-digital" id="clockDigital"></div></div>`;
-            tickHorlogeCff();
-            tickHorlogeDigital();
+            container.innerHTML = `<div class="clock-clickable" onclick="cycleClock()"${titleAttr}>${buildCffSvg()}<div class="clock-digital" id="clockDigital"></div>${handle}</div>`;
+            tickCffClock();
+            tickDigitalClock();
         }
+        // Apply the persisted scale
+        applyClockScale();
     }
 
-    function tickHorlogeDigital() {
+    function applyClockScale() {
+        const wrapper = document.querySelector('.clock-clickable');
+        applyScale(wrapper, clockScale);
+    }
+
+    // --- Drag & drop to resize the clock via the handle ---
+    function startClockResize(e) {
+        const wrapper = document.querySelector('.clock-clickable');
+        if (!wrapper) return;
+        e.preventDefault();
+        // Initial coordinates (mouse or touch)
+        const point = e.touches ? e.touches[0] : e;
+        const startX = point.clientX;
+        const startY = point.clientY;
+        const startScale = clockScale;
+        wrapper.classList.add('resizing');
+        let aBouge = false;
+
+        const onMove = (ev) => {
+            const p = ev.touches ? ev.touches[0] : ev;
+            const dx = p.clientX - startX;
+            const dy = p.clientY - startY;
+            if (Math.abs(dx) + Math.abs(dy) > 3) aBouge = true;
+            // Average of horizontal and vertical movement (positive = bottom-right = larger)
+            const delta = (dx + dy) / 2;
+            // Sensitivity: 100 px of movement = +1.0 scale
+            let newScale = startScale + delta / 100;
+            if (newScale < 0.5) newScale = 0.5;
+            if (newScale > 3.0) newScale = 3.0;
+            clockScale = Math.round(newScale * 100) / 100;
+            applyClockScale();
+        };
+        const onEnd = () => {
+            wrapper.classList.remove('resizing');
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onEnd);
+            // If the user actually moved, block the click following the mouseup
+            // (otherwise cycleClock would be triggered by mistake)
+            if (aBouge) {
+                const blockClick = (ev) => {
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                    document.removeEventListener('click', blockClick, true);
+                };
+                document.addEventListener('click', blockClick, true);
+            }
+            save();
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onEnd);
+    }
+
+    function tickDigitalClock() {
         const el = document.getElementById('clockDigital');
         if (!el) return;
         const now = new Date();
@@ -1246,10 +1622,10 @@
         el.textContent = `${h}:${m}`;
         // Re-planifier au prochain changement de minute
         const ms = 60000 - (Date.now() % 60000);
-        digitalClockTimeout = setTimeout(tickHorlogeDigital, ms);
+        digitalClockTimeout = setTimeout(tickDigitalClock, ms);
     }
 
-    function construireSvgCff() {
+    function buildCffSvg() {
         // SVG 200x200, centre 100,100, rayon 95
         // Marques d'heures : 12 traits longs et larges
         // Marques de minutes : les 60 - 12 = 48 traits fins
@@ -1269,7 +1645,7 @@
         <svg class="clock-cff" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
             <circle class="cff-bg" cx="100" cy="100" r="95"/>
             ${ticks}
-            <!-- Aiguille des heures : barre arrondie aux extrémités -->
+            <!-- Hour hand: bar rounded at ends -->
             <g id="cff-hour-group" style="transform-origin: 100px 100px;">
                 <rect class="cff-hand-hour" x="94" y="46" width="12" height="62" rx="2"/>
             </g>
@@ -1277,7 +1653,7 @@
             <g id="cff-min-group" style="transform-origin: 100px 100px;">
                 <rect class="cff-hand-min" x="96" y="20" width="8" height="88" rx="2"/>
             </g>
-            <!-- Aiguille des secondes : tige + disque rouge à l'extrémité -->
+            <!-- Second hand: stem + red disk at the end -->
             <g class="cff-hand-sec" id="cff-sec-group">
                 <rect x="98.5" y="32" width="3" height="74"/>
                 <circle cx="100" cy="40" r="9"/>
@@ -1285,7 +1661,7 @@
         </svg>`;
     }
 
-    function tickHorlogeCff() {
+    function tickCffClock() {
         const hourGroup = document.getElementById('cff-hour-group');
         const minGroup = document.getElementById('cff-min-group');
         const secGroup = document.getElementById('cff-sec-group');
@@ -1295,23 +1671,23 @@
         const m = now.getMinutes();
         // Aiguille des heures : bouge en continu selon les minutes (30°/h + 0.5°/min)
         const hourAngle = h * 30 + m * 0.5;
-        // Aiguille des minutes : saute d'un cran à chaque minute (style CFF)
+        // Minute hand: jumps one notch each minute (CFF style)
         const minAngle = m * 6;
         hourGroup.style.transform = `rotate(${hourAngle}deg)`;
         minGroup.style.transform = `rotate(${minAngle}deg)`;
-        // Aiguille des secondes : 360° en 58.5s, puis pause à 360° (=0°) pendant 1.5s
-        // Animation calculée à chaque frame depuis Date.now() → fluide à 60fps sans setInterval
+        // Second hand: 360° in 58.5s, then pause at 360° (=0°) for 1.5s
+        // Animation computed each frame from Date.now() → smooth at 60fps without setInterval
         const msInMinute = (now.getSeconds() * 1000) + now.getMilliseconds();
         const ratio = Math.min(msInMinute / 58500, 1);
         const secAngle = ratio * 360;
         secGroup.style.transform = `rotate(${secAngle}deg)`;
-        cffClockRaf = requestAnimationFrame(tickHorlogeCff);
+        cffClockRaf = requestAnimationFrame(tickCffClock);
     }
 
 
-    function tickGlobal() {
+    function globalTick() {
         activeTickIds.forEach(id => {
-            const obj = listeDurees.find(d => d.id.toString() === id.toString());
+            const obj = timersList.find(d => d.id.toString() === id.toString());
             if (!obj?.start) { activeTickIds.delete(id); return; }
             const ecoule = Date.now() - obj.start;
             const total = (obj.totalSecs + obj.extraSecs) * 1000;
@@ -1323,31 +1699,31 @@
             if (restant <= 0) {
                 timeEl.textContent = "0:00";
                 progressEl.style.width = "100%";
-                if (!card.classList.contains('finished')) { marquerFini(id); }
+                if (!card.classList.contains('finished')) { markFinished(id); }
                 activeTickIds.delete(id);
                 return;
             }
-            timeEl.textContent = formaterTemps(Math.ceil(restant/1000));
+            timeEl.textContent = formatTime(Math.ceil(restant/1000));
             progressEl.style.width = (ecoule/total*100) + "%";
         });
-        // Plus aucun timer actif → arrêter l'horloge
+        // No more active timers → stop the clock
         if (activeTickIds.size === 0 && globalTickInterval !== null) {
             clearInterval(globalTickInterval);
             globalTickInterval = null;
         }
     }
 
-    function lancerTick(id) {
+    function startTick(id) {
         activeTickIds.add(id.toString());
-        // Démarrer le tick global s'il n'est pas déjà actif
+        // Start the global tick if not already active
         if (globalTickInterval === null) {
-            globalTickInterval = setInterval(tickGlobal, 250);
+            globalTickInterval = setInterval(globalTick, 250);
         }
-        // Rafraîchissement immédiat pour que la carte affiche tout de suite la bonne valeur
-        tickGlobal();
+        // Immediate refresh so the card displays the correct value right away
+        globalTick();
     }
 
-    function arreterTick(id) {
+    function stopTick(id) {
         activeTickIds.delete(id.toString());
         if (activeTickIds.size === 0 && globalTickInterval !== null) {
             clearInterval(globalTickInterval);
@@ -1355,29 +1731,29 @@
         }
     }
 
-    function lancerAlarme(id) { playBellSound(id); soundIntervals[id] = setInterval(() => playBellSound(id), 3000); }
+    function playAlarm(id) { playBellSound(id); soundIntervals[id] = setInterval(() => playBellSound(id), 3000); }
 
-    // Map id → setTimeout pour les compte à rebours d'auto-reset
+    // Map id → setTimeout for auto-reset countdowns
     let autoResetTimeouts = {};
 
-    // Marque un timer comme terminé : ajoute la classe finished, lance l'alarme, et démarre
-    // éventuellement l'auto-reset selon le réglage. Centralisé pour éviter de répéter la logique.
-    function marquerFini(id) {
+    // Marks a timer as finished: adds the finished class, plays the alarm, and starts
+    // possibly the auto-reset depending on the setting. Centralized to avoid duplicating logic.
+    function markFinished(id) {
         const card = document.getElementById(`card-${id}`);
         if (!card || card.classList.contains('finished')) return;
         card.classList.add('finished');
-        lancerAlarme(id);
-        if (autoResetDelay > 0) lancerAutoReset(id);
+        playAlarm(id);
+        if (autoResetDelay > 0) startAutoReset(id);
     }
 
-    function lancerAutoReset(id) {
-        // Annuler tout reset précédemment programmé pour ce timer
-        annulerAutoReset(id);
+    function startAutoReset(id) {
+        // Cancel any previously scheduled reset for this timer
+        cancelAutoReset(id);
         const card = document.getElementById(`card-${id}`);
         const fill = document.getElementById(`progress-${id}`);
         if (!card || !fill) return;
-        // Animer la barre rouge de droite à gauche : on inverse le sens via une classe,
-        // puis on déclenche la transition vers width:0 sur la durée autoResetDelay.
+        // Animate the red bar from right to left: invert direction via a class,
+        // then trigger the transition to width:0 over the autoResetDelay duration.
         card.classList.add('auto-resetting');
         // Forcer reflow pour que la transition prenne effet (sinon le navigateur peut
         // grouper les changements de style et zapper la transition).
@@ -1386,14 +1762,14 @@
         fill.offsetWidth;
         fill.style.transition = `width ${autoResetDelay}s linear`;
         fill.style.width = '0%';
-        // Au bout du délai, réinitialiser le timer
+        // At the end of the delay, reset the timer
         autoResetTimeouts[id] = setTimeout(() => {
             delete autoResetTimeouts[id];
-            stopDuree(id);
+            stopTimer(id);
         }, autoResetDelay * 1000);
     }
 
-    function annulerAutoReset(id) {
+    function cancelAutoReset(id) {
         if (autoResetTimeouts[id]) {
             clearTimeout(autoResetTimeouts[id]);
             delete autoResetTimeouts[id];
@@ -1402,9 +1778,75 @@
         const fill = document.getElementById(`progress-${id}`);
         if (card) card.classList.remove('auto-resetting');
         if (fill) {
-            // Restaurer la transition par défaut (1s linear comme dans le CSS de base)
+            // Restore the default transition (1s linear like in the base CSS)
             fill.style.transition = '';
         }
+    }
+
+    function onGlobalControlsChange() {
+        const checkbox = document.getElementById('globalCtrlsCheckbox');
+        if (!checkbox) return;
+        showGlobalControls = checkbox.checked;
+        applyGlobalControlsVisibility();
+        save();
+    }
+
+    // Updates the visibility of global play/stop buttons according to showGlobalControls
+    // AND according to the current tab (they should only appear on the timers tab).
+    function applyGlobalControlsVisibility() {
+        const masquer = !showGlobalControls || currentTab !== 'timers';
+        const btnStartAll = document.getElementById('btnStartAll');
+        if (btnStartAll) btnStartAll.classList.toggle('hidden', masquer);
+        const btnStopAll = document.getElementById('btnStopAll');
+        if (btnStopAll) btnStopAll.classList.toggle('hidden', masquer);
+    }
+
+    // Detect browsers that correctly support the CSS 'zoom' property.
+    // Exclude Safari/iOS which has buggy support (only applies to the visual box, not to rem).
+    // Firefox 126+, Chrome, Edge support it correctly.
+    const supportsCssZoom = (() => {
+        const ua = navigator.userAgent;
+        const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isSafariDesktop = /Safari/.test(ua) && !/Chrome/.test(ua) && !/Edg/.test(ua) && !isIOS;
+        // iOS and Safari desktop: avoid 'zoom' (inconsistent rendering)
+        return !isIOS && !isSafariDesktop;
+    })();
+
+    // Applies a visual scaling factor to an element, in a compatible way.
+    // Strategy:
+    //   - On Firefox/Chrome/Edge: 'zoom' (clean rendering, layout handled automatically)
+    //   - On Safari/iOS: 'transform: scale' with centered transform-origin and compensating margin
+    function applyScale(el, scale) {
+        if (!el) return;
+        // Reset if scale = 1 (default case)
+        if (Math.abs(scale - 1.0) < 0.001) {
+            el.style.transform = '';
+            el.style.transformOrigin = '';
+            el.style.marginBottom = '';
+            el.style.zoom = '';
+            return;
+        }
+        if (supportsCssZoom) {
+            // Main path (desktop except Safari): native zoom
+            el.style.zoom = scale;
+            el.style.transform = '';
+            el.style.transformOrigin = '';
+            el.style.marginBottom = '';
+            return;
+        }
+        // Safari/iOS path: transform: scale + vertical compensation
+        el.style.zoom = '';
+        el.style.transformOrigin = '50% 0';
+        el.style.transform = `scale(${scale})`;
+        // Reserve additional vertical space if scale > 1
+        requestAnimationFrame(() => {
+            const naturalHeight = el.offsetHeight;
+            if (scale > 1) {
+                el.style.marginBottom = (naturalHeight * (scale - 1)) + 'px';
+            } else {
+                el.style.marginBottom = '';
+            }
+        });
     }
 
     function onAutoResetChange() {
@@ -1415,7 +1857,7 @@
         if (val > 3600) val = 3600;
         input.value = val;
         autoResetDelay = val;
-        sauvegarder();
+        save();
     }
 
     function onExtraDelayChange() {
@@ -1426,70 +1868,68 @@
         if (val > 3600) val = 3600;
         input.value = val;
         extraDelay = val;
-        // Mettre à jour le libellé du bouton "+Xs" sur tous les timers actifs
+        // Update the label of the "+Xs" button on all active timers
         document.querySelectorAll('.btn-plus').forEach(btn => {
-            btn.textContent = libellePlus();
+            btn.textContent = extraLabel();
         });
-        sauvegarder();
+        save();
     }
 
-    // Génère le libellé du bouton "+Xs" selon la valeur d'extraDelay
-    function libellePlus() {
-        if (extraDelay < 60) return `+ ${extraDelay} ''`;
+    // Generates the label of the "+Xs" button based on the extraDelay value
+    function extraLabel() {
         const m = Math.floor(extraDelay / 60);
         const sec = extraDelay % 60;
-        if (sec === 0) return `+ ${m}'`;
-        return `+ ${m}'${sec.toString().padStart(2,'0')}''`;
+        return `+ ${m}:${sec.toString().padStart(2,'0')}`;
     }
 
-    function stopDuree(id) {
-        arreterTick(id); clearInterval(soundIntervals[id]); annulerAutoReset(id);
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+    function stopTimer(id) {
+        stopTick(id); clearInterval(soundIntervals[id]); cancelAutoReset(id);
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         obj.start = null; obj.extraSecs = 0;
         obj.muted = false;
         const card = document.getElementById(`card-${id}`);
         card.classList.remove('active', 'finished');
-        // Reset immédiat de la barre, sans animation (sinon on voit la barre "couler" à 0)
+        // Immediate bar reset, without animation (otherwise we'd see the bar "flow" to 0)
         const fill = document.getElementById(`progress-${id}`);
         if (fill) {
             fill.style.transition = 'none';
             fill.style.width = '0%';
-            // Forcer reflow puis restaurer la transition par défaut pour les usages futurs
+            // Force reflow then restore the default transition for future uses
             // eslint-disable-next-line no-unused-expressions
             fill.offsetWidth;
             fill.style.transition = '';
         }
-        document.getElementById(`time-${id}`).textContent = formaterTemps(obj.totalSecs);
+        document.getElementById(`time-${id}`).textContent = formatTime(obj.totalSecs);
         document.getElementById(`endtime-${id}`).textContent = "";
-        majTitreDuree(id);
-        document.getElementById(`actions-${id}`).innerHTML = `<button class="btn-start" onclick="demarrerDuree('${id}')">${i18n[currentLang].start}</button>`;
-        sauvegarder();
+        updateTimerTitle(id);
+        document.getElementById(`actions-${id}`).innerHTML = `<button class="btn-start" onclick="startTimer('${id}')">${i18n[currentLang].start}</button>`;
+        save();
     }
 
-    function majInterfaceActive(id) {
-        const t = i18n[currentLang]; const obj = listeDurees.find(d => d.id.toString() === id.toString());
+    function updateActiveUI(id) {
+        const t = i18n[currentLang]; const obj = timersList.find(d => d.id.toString() === id.toString());
         document.getElementById(`card-${id}`).classList.add('active');
         document.getElementById(`actions-${id}`).innerHTML = `
-            <button class="btn-action btn-plus" onclick="ajouter30s('${id}')">${libellePlus()}</button>
-            <button class="btn-action btn-stop" onclick="stopDuree('${id}')">🛑 ${t.stop}</button>
+            <button class="btn-action btn-plus" onclick="addExtraTime('${id}')">${extraLabel()}</button>
+            <button class="btn-action btn-stop" onclick="stopTimer('${id}')">🛑 ${t.stop}</button>
             <button id="btn-mute-${id}" class="btn-action" onclick="toggleMute('${id}')">${obj.muted?'🔇':'🔊'} ${t.mute}</button>`;
     }
 
     function toggleMute(id) { 
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         obj.muted = !obj.muted; 
         document.getElementById(`btn-mute-${id}`).innerHTML = `${obj.muted?'🔇':'🔊'} ${i18n[currentLang].mute}`;
-        sauvegarder();
+        save();
     }
 
-    function ajouter30s(id) {
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+    function addExtraTime(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         const card = document.getElementById(`card-${id}`);
         const etaitFini = card.classList.contains('finished');
-        // Si le timer est fini, on doit aussi compenser le retard accumulé pour que les
-        // +30s s'écoulent réellement à partir de maintenant. La compensation est ajoutée à
-        // extraSecs : ainsi le titre "(+X:XX)" reflète la durée totale réellement ajoutée
-        // au-delà de la durée d'origine.
+        // If the timer is finished, we also need to compensate for accumulated delay so that
+        // +30s actually elapses from now. The compensation is added to
+        // extraSecs: this way the title "(+X:XX)" reflects the total time actually added
+        // beyond the original duration.
         if (etaitFini && obj.start) {
             const ecouleSec = (Date.now() - obj.start) / 1000;
             const totalActuel = obj.totalSecs + obj.extraSecs;
@@ -1497,30 +1937,30 @@
             obj.extraSecs += retardSec;
         }
         obj.extraSecs += extraDelay;
-        majHeureFin(id); majTitreDuree(id);
+        updateEndTime(id); updateTimerTitle(id);
         if (etaitFini) {
-            annulerAutoReset(id);
+            cancelAutoReset(id);
             card.classList.remove('finished');
-            // Restaurer la barre à sa pleine largeur (l'auto-reset l'avait peut-être déjà rétrécie)
+            // Restore the bar to full width (auto-reset may have already shrunk it)
             const fill = document.getElementById(`progress-${id}`);
             if (fill) { fill.style.transition = ''; fill.style.width = '100%'; }
-            clearInterval(soundIntervals[id]); lancerTick(id);
+            clearInterval(soundIntervals[id]); startTick(id);
         }
-        sauvegarder();
+        save();
     }
 
-    async function supprimerDuree(id) {
+    async function deleteTimer(id) {
         if (!document.getElementById(`card-${id}`).classList.contains('finished')) {
             const ok = await confirmDialog(i18n[currentLang].confirmDelete);
             if (!ok) return;
         }
-        arreterTick(id); clearInterval(soundIntervals[id]); annulerAutoReset(id);
+        stopTick(id); clearInterval(soundIntervals[id]); cancelAutoReset(id);
         document.getElementById(`card-${id}`).remove();
-        listeDurees = listeDurees.filter(d => d.id.toString() !== id.toString());
-        sauvegarder();
+        timersList = timersList.filter(d => d.id.toString() !== id.toString());
+        save();
     }
 
-    // Modal de confirmation custom (préserve le plein écran, contrairement à window.confirm)
+    // Custom confirmation modal (preserves full-screen, unlike window.confirm)
     function confirmDialog(message, options = {}) {
         return new Promise((resolve) => {
             const overlay = document.getElementById('confirmModal');
@@ -1552,7 +1992,7 @@
                 else if (e.key === 'Escape') { e.preventDefault(); cleanup(alertMode ? true : false); }
             };
             const onOverlayClick = (e) => {
-                // Clic sur le fond (pas sur la boîte) = annuler (ou OK en mode alerte)
+                // Click on the backdrop (not the box) = cancel (or OK in alert mode)
                 if (e.target === overlay) cleanup(alertMode ? true : false);
             };
             btnOk.addEventListener('click', onOk);
@@ -1564,62 +2004,62 @@
         });
     }
 
-    function dupliquerDuree(id) {
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+    function duplicateTimer(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj) return;
-        // Garantir un id unique même en cas de clics rapides
+        // Guarantee a unique id even with rapid clicks
         let nouvelId = Date.now();
-        while (listeDurees.some(d => d.id === nouvelId)) nouvelId++;
-        // On copie TOUTES les propriétés du timer source
+        while (timersList.some(d => d.id === nouvelId)) nouvelId++;
+        // Copy ALL properties from the source timer
         const sourceLancee = obj.start !== null;
         const copie = {
             id: nouvelId,
             nom: obj.nom,
             totalSecs: obj.totalSecs,
-            start: obj.start,           // même heure de départ exacte (synchro à la ms)
-            extraSecs: obj.extraSecs,   // même temps supplémentaire
-            muted: obj.muted            // même état muet
+            start: obj.start,           // same exact start time (millisecond-synced)
+            extraSecs: obj.extraSecs,   // same extra time
+            muted: obj.muted            // same mute state
         };
-        // Insérer juste après l'original dans la liste de données
-        const index = listeDurees.findIndex(d => d.id.toString() === id.toString());
-        listeDurees.splice(index + 1, 0, copie);
-        // Créer la carte HTML et l'insérer juste après l'original dans le DOM
-        creerCarteHTML(copie);
+        // Insert right after the original in the data list
+        const index = timersList.findIndex(d => d.id.toString() === id.toString());
+        timersList.splice(index + 1, 0, copie);
+        // Create the HTML card and insert it right after the original in the DOM
+        createCardHTML(copie);
         const cardOriginale = document.getElementById(`card-${id}`);
         const cardCopie = document.getElementById(`card-${nouvelId}`);
         cardOriginale.after(cardCopie);
-        // Si le timer source était en cours, refléter l'état d'exécution sur la copie
+        // If the source timer was running, reflect the running state on the copy
         if (sourceLancee) {
             const ecoule = Date.now() - copie.start;
             const total = (copie.totalSecs + copie.extraSecs) * 1000;
             if (ecoule < total) {
-                majInterfaceActive(nouvelId);
-                majHeureFin(nouvelId);
-                majTitreDuree(nouvelId);
-                lancerTick(nouvelId);
+                updateActiveUI(nouvelId);
+                updateEndTime(nouvelId);
+                updateTimerTitle(nouvelId);
+                startTick(nouvelId);
             } else {
-                // Timer déjà terminé au moment de la duplication → reproduire l'état "fini"
-                majInterfaceActive(nouvelId);
-                majTitreDuree(nouvelId);
+                // Timer already finished at duplication time → reproduce the "finished" state
+                updateActiveUI(nouvelId);
+                updateTimerTitle(nouvelId);
                 document.getElementById(`time-${nouvelId}`).textContent = "0:00";
                 document.getElementById(`progress-${nouvelId}`).style.width = "100%";
-                marquerFini(nouvelId);
+                markFinished(nouvelId);
             }
         }
-        sauvegarder();
+        save();
     }
 
-    function editerDuree(id) {
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+    function editTimer(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj) return;
         const titleEl = document.getElementById(`title-${id}`);
         if (!titleEl) return;
-        // Si déjà en mode édition, ne rien faire
+        // If already in edit mode, do nothing
         if (titleEl.querySelector('input')) return;
-        // Fermer toute autre édition en cours
+        // Close any other ongoing edit
         document.querySelectorAll('.duration-edit-form').forEach(el => {
             const otherId = el.id.replace('title-', '');
-            if (otherId !== id.toString()) annulerEditionDuree(otherId);
+            if (otherId !== id.toString()) cancelTimerEdit(otherId);
         });
         const t = i18n[currentLang];
         const min = Math.floor(obj.totalSecs / 60);
@@ -1627,71 +2067,84 @@
         titleEl.classList.remove('label-duree-titre');
         titleEl.classList.add('duration-edit-form');
         titleEl.onclick = null;
+        // "Cancel extra time" button only if extraSecs > 0
+        const btnRemoveExtra = obj.extraSecs > 0
+            ? `<button type="button" class="btn-remove-extra" id="edit-remove-extra-${id}" title="${t.removeExtraTitle}">↩ ${formatExtraTime(obj.extraSecs)}</button>`
+            : '';
         titleEl.innerHTML = `
             <input type="number" id="edit-min-${id}" value="${min}" min="0" />
             <span>${t.labelMin}</span>
             <input type="number" id="edit-sec-${id}" value="${sec}" min="0" max="59" />
             <span>${t.labelSec}</span>
-            <button type="button" id="edit-ok-${id}">${t.save}</button>
-            <button type="button" class="btn-cancel" id="edit-cancel-${id}">${t.cancel}</button>
+            <button type="button" id="edit-ok-${id}" title="${t.save}">✓</button>
+            <button type="button" class="btn-cancel" id="edit-cancel-${id}" title="${t.cancel}">✕</button>
+            ${btnRemoveExtra}
         `;
         const minInput = document.getElementById(`edit-min-${id}`);
         const secInput = document.getElementById(`edit-sec-${id}`);
         const btnOk = document.getElementById(`edit-ok-${id}`);
         const btnCancel = document.getElementById(`edit-cancel-${id}`);
+        const btnRemove = document.getElementById(`edit-remove-extra-${id}`);
 
-        // Attacher les handlers via addEventListener pour plus de fiabilité
-        // stopPropagation pour qu'un éventuel onclick parent ne se déclenche pas
+        // Attach handlers via addEventListener for better reliability
+        // stopPropagation so any parent onclick doesn't fire
         btnOk.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            validerEditionDuree(id);
+            confirmTimerEdit(id);
         });
         btnCancel.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            annulerEditionDuree(id);
+            cancelTimerEdit(id);
         });
-        // Empêcher que le clic sur les inputs ferme/ré-ouvre quoi que ce soit
+        if (btnRemove) {
+            btnRemove.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                cancelExtraTime(id);
+            });
+        }
+        // Prevent clicks on the inputs from closing/reopening anything
         [minInput, secInput].forEach(el => {
             el.addEventListener('click', (e) => e.stopPropagation());
         });
 
         minInput.focus();
         minInput.select();
-        // Empêcher le drag pendant l'édition
+        // Prevent drag during edit
         const card = document.getElementById(`card-${id}`);
         if (card) card.draggable = false;
-        // Valider avec Entrée, annuler avec Échap
+        // Validate with Enter, cancel with Escape
         const handler = (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); validerEditionDuree(id); }
-            else if (e.key === 'Escape') { e.preventDefault(); annulerEditionDuree(id); }
+            if (e.key === 'Enter') { e.preventDefault(); confirmTimerEdit(id); }
+            else if (e.key === 'Escape') { e.preventDefault(); cancelTimerEdit(id); }
         };
         minInput.addEventListener('keydown', handler);
         secInput.addEventListener('keydown', handler);
     }
 
-    function validerEditionDuree(id) {
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+    function confirmTimerEdit(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj) return;
         const minInput = document.getElementById(`edit-min-${id}`);
         const secInput = document.getElementById(`edit-sec-${id}`);
         if (!minInput || !secInput) return;
         const nouveauTotal = (parseInt(minInput.value) || 0) * 60 + (parseInt(secInput.value) || 0);
         if (nouveauTotal <= 0) {
-            // Durée invalide, on annule
-            annulerEditionDuree(id);
+            // Invalid duration, cancel
+            cancelTimerEdit(id);
             return;
         }
-        // IMPORTANT : on ne touche PAS à obj.start si le timer tourne.
-        // On modifie uniquement la durée totale ; le tick recalculera automatiquement.
+        // IMPORTANT: we do NOT touch obj.start if the timer is running.
+        // We only modify the total duration; the tick will recalculate automatically.
         obj.totalSecs = nouveauTotal;
 
         // Restaurer le titre
-        restaurerTitreDuree(id);
+        restoreTimerTitle(id);
 
-        // Si le timer tournait et qu'on a une nouvelle durée plus longue que le temps écoulé,
-        // il faut potentiellement le sortir de l'état "fini" et relancer le tick.
+        // If the timer was running and we have a new duration longer than elapsed time,
+        // we may need to take it out of the "finished" state and restart the tick.
         const card = document.getElementById(`card-${id}`);
         if (obj.start) {
             const ecoule = Date.now() - obj.start;
@@ -1702,30 +2155,59 @@
                     card.classList.remove('finished');
                     clearInterval(soundIntervals[id]);
                 }
-                lancerTick(id);
-                majHeureFin(id);
+                startTick(id);
+                updateEndTime(id);
             } else {
-                // La nouvelle durée est dépassée → forcer l'état fini si pas déjà
+                // The new duration is exceeded → force the finished state if not already
                 document.getElementById(`time-${id}`).textContent = "0:00";
                 document.getElementById(`progress-${id}`).style.width = "100%";
                 if (!card.classList.contains('finished')) {
-                    marquerFini(id);
+                    markFinished(id);
                 }
-                arreterTick(id);
+                stopTick(id);
             }
         } else {
-            // Timer pas démarré : juste rafraîchir l'affichage du temps restant
-            document.getElementById(`time-${id}`).textContent = formaterTemps(obj.totalSecs);
+            // Timer not started: just refresh the remaining-time display
+            document.getElementById(`time-${id}`).textContent = formatTime(obj.totalSecs);
         }
-        sauvegarder();
+        save();
     }
 
-    function annulerEditionDuree(id) {
-        restaurerTitreDuree(id);
+    function cancelTimerEdit(id) {
+        restoreTimerTitle(id);
     }
 
-    function restaurerTitreDuree(id) {
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+    // Sets extraSecs back to 0 (timer shortened by the extra time added via +Xs).
+    // If the result puts the timer behind, it transitions to finished like in confirmTimerEdit.
+    function cancelExtraTime(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        obj.extraSecs = 0;
+        // Close the edit form
+        restoreTimerTitle(id);
+        // If the timer is running, check if the new duration is exceeded
+        const card = document.getElementById(`card-${id}`);
+        if (obj.start && card) {
+            const ecoule = Date.now() - obj.start;
+            const total = obj.totalSecs * 1000;
+            if (ecoule >= total) {
+                // Duration exceeded → mark finished if not already
+                document.getElementById(`time-${id}`).textContent = "0:00";
+                document.getElementById(`progress-${id}`).style.width = "100%";
+                if (!card.classList.contains('finished')) {
+                    markFinished(id);
+                }
+                stopTick(id);
+            } else {
+                // The timer continues with its original duration, update the end time
+                updateEndTime(id);
+            }
+        }
+        save();
+    }
+
+    function restoreTimerTitle(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj) return;
         const titleEl = document.getElementById(`title-${id}`);
         if (!titleEl) return;
@@ -1733,15 +2215,15 @@
         titleEl.classList.remove('duration-edit-form');
         titleEl.classList.add('label-duree-titre');
         titleEl.title = t.editDurationTitle;
-        titleEl.onclick = () => editerDuree(id);
+        titleEl.onclick = () => editTimer(id);
         const card = document.getElementById(`card-${id}`);
         if (card) card.draggable = true;
         // Recalculer le texte avec extraSecs si pertinent
-        majTitreDuree(id);
+        updateTimerTitle(id);
     }
 
-    // Échappe les caractères HTML pour éviter des injections via le nom de timer
-    function escaperHtml(str) {
+    // Escape HTML characters to avoid injections via timer name
+    function escapeHtml(str) {
         return String(str)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -1750,57 +2232,57 @@
             .replace(/'/g, '&#39;');
     }
 
-    // --- ÉDITION DU NOM D'UN TIMER ---
-    function editerNom(id) {
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+    // --- TIMER NAME EDITING ---
+    function editName(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj) return;
         const nomEl = document.getElementById(`nom-${id}`);
         if (!nomEl) return;
-        if (nomEl.querySelector('input')) return; // déjà en édition
+        if (nomEl.querySelector('input')) return; // already editing
         const t = i18n[currentLang];
         nomEl.classList.remove('label-nom');
         nomEl.classList.add('name-edit-form');
         nomEl.removeAttribute('data-empty');
         nomEl.onclick = null;
         nomEl.innerHTML = `
-            <input type="text" id="edit-nom-${id}" value="${escaperHtml(obj.nom || '')}" placeholder="${t.placeholderName}">
-            <button type="button" id="edit-nom-ok-${id}">${t.save}</button>
-            <button type="button" class="btn-cancel" id="edit-nom-cancel-${id}">${t.cancel}</button>
+            <input type="text" id="edit-nom-${id}" value="${escapeHtml(obj.nom || '')}" placeholder="${t.placeholderName}">
+            <button type="button" id="edit-nom-ok-${id}" title="${t.save}">✓</button>
+            <button type="button" class="btn-cancel" id="edit-nom-cancel-${id}" title="${t.cancel}">✕</button>
         `;
         const input = document.getElementById(`edit-nom-${id}`);
         const btnOk = document.getElementById(`edit-nom-ok-${id}`);
         const btnCancel = document.getElementById(`edit-nom-cancel-${id}`);
-        btnOk.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); validerEditionNom(id); });
-        btnCancel.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); annulerEditionNom(id); });
+        btnOk.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); confirmNameEdit(id); });
+        btnCancel.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); cancelNameEdit(id); });
         input.addEventListener('click', (e) => e.stopPropagation());
         input.focus();
         input.select();
         const card = document.getElementById(`card-${id}`);
         if (card) card.draggable = false;
         const handler = (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); validerEditionNom(id); }
-            else if (e.key === 'Escape') { e.preventDefault(); annulerEditionNom(id); }
+            if (e.key === 'Enter') { e.preventDefault(); confirmNameEdit(id); }
+            else if (e.key === 'Escape') { e.preventDefault(); cancelNameEdit(id); }
         };
         input.addEventListener('keydown', handler);
     }
 
-    function validerEditionNom(id) {
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+    function confirmNameEdit(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj) return;
         const input = document.getElementById(`edit-nom-${id}`);
         if (!input) return;
         const nouveau = input.value.trim();
         obj.nom = nouveau;
-        restaurerNom(id);
-        sauvegarder();
+        restoreName(id);
+        save();
     }
 
-    function annulerEditionNom(id) {
-        restaurerNom(id);
+    function cancelNameEdit(id) {
+        restoreName(id);
     }
 
-    function restaurerNom(id) {
-        const obj = listeDurees.find(d => d.id.toString() === id.toString());
+    function restoreName(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj) return;
         const nomEl = document.getElementById(`nom-${id}`);
         if (!nomEl) return;
@@ -1808,7 +2290,7 @@
         nomEl.classList.remove('name-edit-form');
         nomEl.classList.add('label-nom');
         nomEl.title = t.editNameTitle || 'Cliquer pour renommer';
-        nomEl.onclick = () => editerNom(id);
+        nomEl.onclick = () => editName(id);
         const nomTexte = obj.nom || t.untiteld || 'Sans titre';
         nomEl.textContent = nomTexte;
         if (obj.nom) nomEl.removeAttribute('data-empty');
@@ -1817,13 +2299,13 @@
         if (card) card.draggable = true;
     }
 
-    function sauvegarder() {
-        if (listeDurees.length === 0 && !localStorage.getItem('timers_v17_data')) {
-            // Ne rien faire si aucune donnée à sauvegarder
+    function save() {
+        if (timersList.length === 0 && !localStorage.getItem('timers_v17_data')) {
+            // Do nothing if no data to save
         }
         
         const dataToSave = {
-            timers: listeDurees,
+            timers: timersList,
             globalSound: globalSoundEnabled,
             lang: currentLang,
             darkMode: darkMode,
@@ -1831,6 +2313,9 @@
             secondsThreshold: secondsThreshold,
             autoResetDelay: autoResetDelay,
             extraDelay: extraDelay,
+            timersZoom: timersZoom,
+            clockScale: clockScale,
+            showGlobalControls: showGlobalControls,
             clockMode: clockMode,
             showStartTime: showStartTime,
             richtextZoom: richtextZoom
@@ -1845,19 +2330,19 @@
     }
 
     function handleDragEnter(e) {
-        // (rien : on gère tout dans dragover pour avoir la position du curseur)
+        // (nothing: we handle everything in dragover to have the cursor position)
     }
 
     function handleDragLeave(e) {
-        // (rien : on cache l'indicateur seulement à dragend ou drop)
+        // (nothing: we hide the indicator only on dragend or drop)
     }
 
     function handleDragOver(e) {
         if (e.preventDefault) e.preventDefault();
         if (this === dragSrcEl) return false;
         const rect = this.getBoundingClientRect();
-        // Détection du layout : si le voisin direct est à droite (même rangée), on est en mode multi-colonnes
-        // → utiliser X pour décider du sens d'insertion. Sinon (mono-colonne), utiliser Y.
+        // Layout detection: if the direct neighbor is to the right (same row), we're in multi-column mode
+        // → use X to decide insertion side. Otherwise (single-column), use Y.
         const list = document.getElementById('durationsList');
         const cards = Array.from(list.querySelectorAll('.duration-card'));
         const idx = cards.indexOf(this);
@@ -1870,26 +2355,46 @@
         const insererAvant = memeRangee
             ? (e.clientX < rect.left + rect.width / 2)
             : (e.clientY < rect.top + rect.height / 2);
-        positionnerIndicateurDrop(this, insererAvant, memeRangee);
+        positionDropIndicator(this, insererAvant, memeRangee);
         return false;
     }
 
-    function positionnerIndicateurDrop(targetCard, insererAvant, vertical) {
+    function positionDropIndicator(targetCard, insererAvant, vertical) {
         const indicator = document.getElementById('dropIndicator');
         if (!indicator) return;
+        const list = document.getElementById('durationsList');
+        const cards = Array.from(list.querySelectorAll('.duration-card'));
+        const idx = cards.indexOf(targetCard);
+        // Find the neighbor card on the insertion side (may be null at the edges)
+        const voisin = insererAvant ? cards[idx - 1] : cards[idx + 1];
         const targetRect = targetCard.getBoundingClientRect();
+        const voisinRect = voisin ? voisin.getBoundingClientRect() : null;
+
         if (vertical) {
-            // Barre verticale entre deux colonnes
-            const left = insererAvant ? targetRect.left - 6 : targetRect.right - 2;
-            indicator.style.left = (left + window.scrollX) + 'px';
+            // Barre verticale dans le gap horizontal entre deux cartes voisines
+            // If no neighbor (edge), place right next to the target card
+            let centerX;
+            if (voisinRect) {
+                if (insererAvant) centerX = (voisinRect.right + targetRect.left) / 2;
+                else centerX = (targetRect.right + voisinRect.left) / 2;
+            } else {
+                centerX = insererAvant ? targetRect.left - 8 : targetRect.right + 8;
+            }
+            indicator.style.left = (centerX - 3 + window.scrollX) + 'px';
             indicator.style.top = (targetRect.top + window.scrollY) + 'px';
             indicator.style.width = '6px';
             indicator.style.height = targetRect.height + 'px';
         } else {
-            // Barre horizontale au-dessus/en-dessous (mono-colonne)
-            const top = insererAvant ? targetRect.top - 6 : targetRect.bottom - 2;
+            // Horizontal bar in the vertical gap between two cards (single-column or different rows)
+            let centerY;
+            if (voisinRect) {
+                if (insererAvant) centerY = (voisinRect.bottom + targetRect.top) / 2;
+                else centerY = (targetRect.bottom + voisinRect.top) / 2;
+            } else {
+                centerY = insererAvant ? targetRect.top - 8 : targetRect.bottom + 8;
+            }
             indicator.style.left = (targetRect.left + window.scrollX) + 'px';
-            indicator.style.top = (top + window.scrollY) + 'px';
+            indicator.style.top = (centerY - 3 + window.scrollY) + 'px';
             indicator.style.width = targetRect.width + 'px';
             indicator.style.height = '6px';
         }
@@ -1898,7 +2403,7 @@
         indicator.dataset.before = insererAvant ? '1' : '0';
     }
 
-    function cacherIndicateurDrop() {
+    function hideDropIndicator() {
         const indicator = document.getElementById('dropIndicator');
         if (indicator) {
             indicator.classList.remove('visible');
@@ -1913,18 +2418,18 @@
         const indicator = document.getElementById('dropIndicator');
         const targetId = indicator?.dataset.targetId;
         const before = indicator?.dataset.before === '1';
-        cacherIndicateurDrop();
+        hideDropIndicator();
         if (!dragSrcEl || !targetId) return false;
         const target = document.getElementById(targetId);
         if (!target || target === dragSrcEl) return false;
         if (before) target.before(dragSrcEl);
         else target.after(dragSrcEl);
-        reindexerListe();
+        reindexList();
         return false;
     }
 
     function handleDragEnd(e) {
-        cacherIndicateurDrop();
+        hideDropIndicator();
         const cards = document.querySelectorAll('.duration-card');
         cards.forEach(card => {
             card.classList.remove('over');
@@ -1932,28 +2437,146 @@
         });
     }
 
-    function reindexerListe() {
+    function reindexList() {
         const nouvellesCartes = document.querySelectorAll('.duration-card');
         const nouvelleListe = [];
         nouvellesCartes.forEach(carte => {
             const id = carte.id.replace('card-', '');
-            const timerObj = listeDurees.find(d => d.id.toString() === id.toString());
+            const timerObj = timersList.find(d => d.id.toString() === id.toString());
             if (timerObj) nouvelleListe.push(timerObj);
         });
-        listeDurees = nouvelleListe;
-        sauvegarder();
+        timersList = nouvelleListe;
+        save();
     }
 
-    function attacherEvenementsDrag(el) {
+    function attachDragEvents(el) {
         el.addEventListener('dragstart', handleDragStart, false);
         el.addEventListener('dragenter', handleDragEnter, false);
         el.addEventListener('dragover', handleDragOver, false);
         el.addEventListener('dragleave', handleDragLeave, false);
         el.addEventListener('drop', handleDrop, false);
         el.addEventListener('dragend', handleDragEnd, false);
+        // Touch support (iOS/Android): HTML5 drag events don't work on Safari iOS,
+        // so we simulate via touchstart/move/end with a long-press to activate.
+        el.addEventListener('touchstart', handleTouchStart, { passive: true });
     }
 
-    async function reinitialiserTout() { fermerMenu(); if(await confirmDialog(i18n[currentLang].confirmReset)) { localStorage.clear(); location.reload(); } }
+    // --- DRAG TACTILE (iPad/Android) ---
+    let touchDragState = null;
+
+    function handleTouchStart(e) {
+        // Ignore if already dragging, or if touching a button/input/link inside the card
+        // (we don't want to start a drag when the user taps START, +30s, the pencil, etc.)
+        const target = e.target;
+        if (target.closest('button, input, select, textarea, a, .btn-edit-start, .duration-edit-form, .name-edit-form, .end-time-display.start-edit-form')) return;
+        if (touchDragState) return;
+        const card = e.currentTarget;
+        const touch = e.touches[0];
+        touchDragState = {
+            card,
+            startX: touch.clientX,
+            startY: touch.clientY,
+            longPressTimer: null,
+            active: false,
+            cancelled: false
+        };
+        // Start a 400ms long-press; if the user moves before that, it's a scroll so we cancel.
+        touchDragState.longPressTimer = setTimeout(() => activateTouchDrag(), 400);
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd, { passive: true });
+        document.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+    }
+
+    function activateTouchDrag() {
+        if (!touchDragState || touchDragState.cancelled) return;
+        touchDragState.active = true;
+        const card = touchDragState.card;
+        card.classList.add('dragging');
+        dragSrcEl = card;
+        // Light vibration to indicate the drag is armed (if supported)
+        if (navigator.vibrate) navigator.vibrate(30);
+    }
+
+    function handleTouchMove(e) {
+        if (!touchDragState) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - touchDragState.startX;
+        const dy = touch.clientY - touchDragState.startY;
+
+        if (!touchDragState.active) {
+            // Not yet in drag mode: if the user moves significantly, it's a scroll.
+            // Cancel the long-press to let the natural scroll happen.
+            if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                clearTimeout(touchDragState.longPressTimer);
+                touchDragState.cancelled = true;
+            }
+            return;
+        }
+        // Active drag mode: prevent page scroll while moving
+        e.preventDefault();
+        // Find the card under the finger
+        const targetCard = findCardUnder(touch.clientX, touch.clientY);
+        if (!targetCard || targetCard === touchDragState.card) {
+            hideDropIndicator();
+            return;
+        }
+        // Reuses the same logic as handleDragOver to position the indicator
+        const rect = targetCard.getBoundingClientRect();
+        const list = document.getElementById('durationsList');
+        const cards = Array.from(list.querySelectorAll('.duration-card'));
+        const idx = cards.indexOf(targetCard);
+        const voisinDroite = cards[idx + 1];
+        const voisinGauche = cards[idx - 1];
+        const memeRangee = (
+            (voisinDroite && Math.abs(voisinDroite.getBoundingClientRect().top - rect.top) < 10) ||
+            (voisinGauche && Math.abs(voisinGauche.getBoundingClientRect().top - rect.top) < 10)
+        );
+        const insererAvant = memeRangee
+            ? (touch.clientX < rect.left + rect.width / 2)
+            : (touch.clientY < rect.top + rect.height / 2);
+        positionDropIndicator(targetCard, insererAvant, memeRangee);
+    }
+
+    function handleTouchEnd(e) {
+        if (!touchDragState) return;
+        clearTimeout(touchDragState.longPressTimer);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleTouchEnd);
+        document.removeEventListener('touchcancel', handleTouchEnd);
+
+        if (touchDragState.active) {
+            // Perform the drop if we have a valid indicator
+            const indicator = document.getElementById('dropIndicator');
+            const targetId = indicator?.dataset.targetId;
+            const before = indicator?.dataset.before === '1';
+            const card = touchDragState.card;
+            card.classList.remove('dragging');
+            hideDropIndicator();
+            if (targetId && dragSrcEl) {
+                const target = document.getElementById(targetId);
+                if (target && target !== dragSrcEl) {
+                    if (before) target.before(dragSrcEl);
+                    else target.after(dragSrcEl);
+                    reindexList();
+                }
+            }
+            dragSrcEl = null;
+        }
+        touchDragState = null;
+    }
+
+    // Helper: find the card under (clientX, clientY) coordinates, even if multiple
+    // elements overlap. We look for the first .duration-card in the stack.
+    function findCardUnder(x, y) {
+        const els = document.elementsFromPoint(x, y);
+        for (const el of els) {
+            const card = el.closest('.duration-card');
+            if (card) return card;
+        }
+        return null;
+    }
+
+    async function resetAll() { closeMenu(); if(await confirmDialog(i18n[currentLang].confirmReset)) { localStorage.clear(); location.reload(); } }
     function toggleFullscreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
 
     // --- MENU DROPDOWN ---
@@ -1967,7 +2590,7 @@
             setTimeout(() => {
                 const handler = (ev) => {
                     if (!menu.contains(ev.target)) {
-                        fermerMenu();
+                        closeMenu();
                         document.removeEventListener('click', handler);
                     }
                 };
@@ -1975,21 +2598,21 @@
             }, 0);
         }
     }
-    function fermerMenu() {
+    function closeMenu() {
         const menu = document.getElementById('dropdownMenu');
         if (menu) menu.classList.remove('visible');
     }
 
     // --- EXPORT / IMPORT ---
-    function exporterConfig() {
-        fermerMenu();
+    function exportConfig() {
+        closeMenu();
         const data = {
             version: 1,
             exportedAt: new Date().toISOString(),
             data: {
                 timers_v17_data: localStorage.getItem('timers_v17_data'),
                 timers_richtext: localStorage.getItem('timers_richtext'),
-                timers_markdown: localStorage.getItem('timers_markdown'), // legacy, pour les anciens utilisateurs pas encore migrés
+                timers_markdown: localStorage.getItem('timers_markdown'), // legacy, for older users not yet migrated
                 timers_current_tab: localStorage.getItem('timers_current_tab')
             }
         };
@@ -2006,16 +2629,16 @@
         URL.revokeObjectURL(url);
     }
 
-    function importerConfig() {
-        fermerMenu();
+    function importConfig() {
+        closeMenu();
         const input = document.getElementById('importFileInput');
         if (!input) return;
-        // Reset value pour pouvoir réimporter le même fichier deux fois de suite
+        // Reset value to allow re-importing the same file twice in a row
         input.value = '';
         input.click();
     }
 
-    // Modal de saisie texte (utilisé pour Importer depuis URL)
+    // Text input modal (used for Import from URL)
     function promptDialog(message, defaultValue = '', placeholder = '') {
         return new Promise((resolve) => {
             const overlay = document.getElementById('promptModal');
@@ -2056,9 +2679,9 @@
         });
     }
 
-    // Applique un objet d'import déjà parsé (utilisé par fichier et URL).
-    // Renvoie true si l'import a été appliqué et la page va recharger.
-    async function appliquerImport(parsed) {
+    // Applies an already-parsed import object (used by file and URL).
+    // Returns true if the import was applied and the page will reload.
+    async function applyImport(parsed) {
         if (!parsed || typeof parsed !== 'object' || !parsed.data || typeof parsed.data !== 'object') {
             throw new Error('Structure invalide');
         }
@@ -2079,47 +2702,91 @@
         return true;
     }
 
-    async function gererFichierImport(event) {
+    async function handleFileImport(event) {
         const file = event.target.files && event.target.files[0];
         if (!file) return;
+        await importJsonFile(file);
+    }
+
+    // Common function to import a JSON file (used by <input type="file">
+    // and by file drag&drop from the desktop).
+    async function importJsonFile(file) {
         try {
             const text = await file.text();
             const parsed = JSON.parse(text);
-            await appliquerImport(parsed);
+            await applyImport(parsed);
         } catch (e) {
             console.error('Import error:', e);
             await confirmDialog(i18n[currentLang].importError, { alertMode: true });
         }
     }
 
-    async function importerDepuisUrl() {
-        fermerMenu();
-        const t = i18n[currentLang];
-        const url = await promptDialog(t.promptUrlMessage, '', 'https://...');
-        if (!url) return;
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            const text = await response.text();
-            const parsed = JSON.parse(text);
-            await appliquerImport(parsed);
-        } catch (e) {
-            console.error('Import URL error:', e);
-            // Distinguer erreur réseau/CORS d'une erreur de format
-            const isFetchError = e instanceof TypeError || e.message.startsWith('HTTP');
-            const msg = isFetchError ? t.urlFetchError : t.importError;
-            await confirmDialog(msg, { alertMode: true });
-        }
+    // Installs global listeners to allow drag&drop of a JSON file
+    // from the desktop directly onto the window.
+    function installGlobalFileDrop() {
+        const overlay = document.getElementById('fileDropOverlay');
+        if (!overlay) return;
+        // dragenter/dragleave counter: these events fire on each traversal
+        // of a child element, so we count to know when we really leave.
+        let dragCounter = 0;
+
+        // Detection: dragging a file (not an internal timer card drag)?
+        const hasFiles = (e) => {
+            if (!e.dataTransfer) return false;
+            const types = e.dataTransfer.types;
+            // types can be a DOMStringList or an array depending on the browser
+            if (!types) return false;
+            for (let i = 0; i < types.length; i++) {
+                if (types[i] === 'Files') return true;
+            }
+            return false;
+        };
+
+        document.addEventListener('dragenter', (e) => {
+            if (!hasFiles(e)) return;
+            dragCounter++;
+            overlay.classList.add('visible');
+        });
+        document.addEventListener('dragover', (e) => {
+            if (!hasFiles(e)) return;
+            // preventDefault is required to allow the drop
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        });
+        document.addEventListener('dragleave', (e) => {
+            if (!hasFiles(e)) return;
+            dragCounter--;
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                overlay.classList.remove('visible');
+            }
+        });
+        document.addEventListener('drop', async (e) => {
+            if (!hasFiles(e)) return;
+            e.preventDefault();
+            dragCounter = 0;
+            overlay.classList.remove('visible');
+            const files = e.dataTransfer.files;
+            if (!files || files.length === 0) return;
+            const file = files[0];
+            // Filter on extension/type to reject obviously incorrect files
+            const isJson = /\.json$/i.test(file.name) || file.type === 'application/json';
+            if (!isJson) {
+                await confirmDialog(i18n[currentLang].importError, { alertMode: true });
+                return;
+            }
+            await importJsonFile(file);
+        });
     }
 
-    // --- PARTAGE PAR URL (config encodée en base64 URL-safe) ---
-    function encoderBase64UrlSafe(str) {
+    // --- URL SHARING (config encoded as URL-safe base64) ---
+    function encodeBase64UrlSafe(str) {
         const bytes = new TextEncoder().encode(str);
         let bin = '';
         for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
         return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     }
-    function decoderBase64UrlSafe(b64) {
+    function decodeBase64UrlSafe(b64) {
         let s = b64.replace(/-/g, '+').replace(/_/g, '/');
         while (s.length % 4) s += '=';
         const bin = atob(s);
@@ -2128,7 +2795,7 @@
         return new TextDecoder().decode(bytes);
     }
 
-    function construireConfigExport() {
+    function buildExportConfig() {
         return {
             version: 1,
             exportedAt: new Date().toISOString(),
@@ -2141,12 +2808,12 @@
         };
     }
 
-    async function partagerLien() {
-        fermerMenu();
+    async function shareLink() {
+        closeMenu();
         const t = i18n[currentLang];
-        const config = construireConfigExport();
+        const config = buildExportConfig();
         const json = JSON.stringify(config);
-        const encoded = encoderBase64UrlSafe(json);
+        const encoded = encodeBase64UrlSafe(json);
         const base = location.origin + location.pathname;
         const lien = `${base}?config=${encoded}`;
         let copied = false;
@@ -2174,8 +2841,8 @@
         }
     }
 
-    // Détection d'un import au chargement via les paramètres URL (?config=... ou ?configUrl=...)
-    async function detecterImportDepuisUrl() {
+    // Detect import on load via URL params (?config=... or ?configUrl=...)
+    async function detectImportFromUrl() {
         const params = new URLSearchParams(location.search);
         const configParam = params.get('config');
         const configUrlParam = params.get('configUrl');
@@ -2184,7 +2851,7 @@
         try {
             let parsed;
             if (configParam) {
-                const json = decoderBase64UrlSafe(configParam);
+                const json = decodeBase64UrlSafe(configParam);
                 parsed = JSON.parse(json);
             } else {
                 const response = await fetch(configUrlParam);
@@ -2218,7 +2885,7 @@
     document.addEventListener('dragend', (e) => {
         if (e.target.classList.contains('duration-card')) {
             e.target.classList.remove('dragging');
-            reindexerListe();
+            reindexList();
         }
     });
 
@@ -2228,7 +2895,7 @@
         if (savedData) {
             const data = JSON.parse(savedData);
             
-            // 1. Restaurer les réglages
+            // 1. Restore settings
             currentLang = data.lang || 'fr';
             globalSoundEnabled = data.globalSound !== undefined ? data.globalSound : true;
             darkMode = data.darkMode !== undefined ? data.darkMode : false;
@@ -2236,6 +2903,9 @@
             secondsThreshold = data.secondsThreshold !== undefined ? data.secondsThreshold : 180;
             autoResetDelay = data.autoResetDelay !== undefined ? data.autoResetDelay : 60;
             extraDelay = data.extraDelay !== undefined ? data.extraDelay : 30;
+            timersZoom = data.timersZoom !== undefined ? data.timersZoom : 1.0;
+            clockScale = data.clockScale !== undefined ? data.clockScale : 1.0;
+            showGlobalControls = data.showGlobalControls !== undefined ? data.showGlobalControls : true;
             clockMode = data.clockMode || 'digital';
             // Migration : si l'ancienne forme (Set d'IDs) existe, on prend "true" si non vide
             if (data.showStartTime !== undefined) {
@@ -2248,23 +2918,23 @@
             richtextZoom = data.richtextZoom !== undefined ? data.richtextZoom : 1.0;
             
             // 2. Vider la liste actuelle avant de recharger
-            listeDurees = [];
+            timersList = [];
             document.getElementById('durationsList').innerHTML = "";
 
             // 3. Recharger les timers
             if (data.timers && data.timers.length > 0) {
                 data.timers.forEach(d => {
-                    listeDurees.push(d);
-                    creerCarteHTML(d);
+                    timersList.push(d);
+                    createCardHTML(d);
                     
                     if (d.start) {
                         const ecoule = Date.now() - d.start;
                         const total = (d.totalSecs + d.extraSecs) * 1000;
                         
                         if (ecoule < total) {
-                            majInterfaceActive(d.id);
-                            majHeureFin(d.id);
-                            lancerTick(d.id);
+                            updateActiveUI(d.id);
+                            updateEndTime(d.id);
+                            startTick(d.id);
                         } else {
                             d.start = null; 
                             d.extraSecs = 0;
@@ -2274,7 +2944,7 @@
                 });
             }
             
-            // 4. Appliquer la langue, le son, le thème et le seuil de secondes
+            // 4. Apply language, sound, theme and seconds threshold
             changeLanguage(currentLang);
             updateGlobalSoundUI();
             const threshInput = document.getElementById('thresholdInput');
@@ -2287,6 +2957,9 @@
             if (clockSelect) clockSelect.value = clockMode;
             applyTheme();
         }
+        // Init UI fields that must always reflect values (default or restored)
+        const globalCtrlsCheckbox = document.getElementById('globalCtrlsCheckbox');
+        if (globalCtrlsCheckbox) globalCtrlsCheckbox.checked = showGlobalControls;
         
         // 5. Restaurer l'onglet actif
         const savedTab = localStorage.getItem('timers_current_tab');
@@ -2295,26 +2968,32 @@
             switchTab(savedTab);
         }
         
-        // 6. Initialiser les boutons flottants selon l'onglet actif
+        // 6. Initialize floating buttons according to the active tab
         const btnAdd = document.getElementById('btnAddFloating');
         if (btnAdd) btnAdd.classList.toggle('hidden', currentTab !== 'timers');
-        const btnStartAll = document.getElementById('btnStartAll');
-        if (btnStartAll) btnStartAll.classList.toggle('hidden', currentTab !== 'timers');
+        applyGlobalControlsVisibility();
+        // Boutons zoom visibles sur les deux onglets
+        syncZoomButtons();
+        // Apply the restored zoom
+        applyTimersZoom();
 
-        // 7. Initialiser l'éditeur richtext (toolbar + contenu)
-        attacherToolbarRichtext();
+        // 7. Initialize the richtext editor (toolbar + content)
+        attachRichtextToolbar();
         loadRichtext();
 
         // 8. Attacher le gestionnaire d'import de fichier
         const importInput = document.getElementById('importFileInput');
-        if (importInput) importInput.addEventListener('change', gererFichierImport);
+        if (importInput) importInput.addEventListener('change', handleFileImport);
 
-        // 9. Détecter un éventuel import via paramètre d'URL (?config=... ou ?configUrl=...)
-        // (en dernier pour que la langue et l'UI soient déjà initialisées avant la confirmation)
-        detecterImportDepuisUrl();
+        // 8b. Drag-and-drop a JSON file from the desktop (onto the window)
+        installGlobalFileDrop();
 
-        // 10. Initialiser l'horloge si elle est activée
-        appliquerHorloge();
+        // 9. Detect any import via URL parameter (?config=... or ?configUrl=...)
+        // (last so that language and UI are already initialized before confirmation)
+        detectImportFromUrl();
+
+        // 10. Initialize the clock if enabled
+        applyClock();
     };
 
 </script>

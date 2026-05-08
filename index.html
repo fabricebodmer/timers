@@ -265,6 +265,8 @@
         .end-time-display.start-edit-form input[type="time"]:focus { border-color: var(--primary); }
         .end-time-display.start-edit-form button { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 800; font-size: 0.9rem; transition: opacity 0.2s; flex-shrink: 0; white-space: nowrap; }
         .end-time-display.start-edit-form button:hover { opacity: 0.85; }
+        .end-time-display.start-edit-form button:disabled { background: var(--card-bg); color: var(--text-light); cursor: not-allowed; opacity: 0.7; }
+        .end-time-display.start-edit-form button:disabled:hover { opacity: 0.7; }
         .end-time-display.start-edit-form button.btn-cancel { background: var(--btn-close-bg); color: var(--text-light); border: 1px solid var(--input-border); }
 
         .card-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
@@ -343,10 +345,14 @@
         .file-drop-text { font-size: 1.4rem; font-weight: 700; }
 
         /* Zone d'horloge en haut de l'onglet timers */
-        .clock-container { width: 100%; display: flex; justify-content: center; align-items: center; padding: 20px 30px 10px; }
+        .clock-container { width: 100%; display: block; text-align: center; padding: 20px 30px 10px; box-sizing: border-box; }
         .clock-container:empty { display: none; }
-        /* Wrapper interne cliquable, juste autour du contenu */
-        .clock-clickable { display: inline-flex; align-items: center; gap: 30px; cursor: pointer; padding: 8px 16px; border-radius: 12px; transition: opacity 0.2s ease, background 0.2s ease; position: relative; }
+        /* Wrapper interne cliquable, juste autour du contenu.
+           inline-flex + text-align: center sur le parent => centrage robuste sur tous les navigateurs.
+           On évite 'gap' (qui se recalcule mal sous 'zoom' rapide sur Safari) au profit
+           d'un margin-right sur le premier enfant. */
+        .clock-clickable { display: inline-flex; align-items: center; cursor: pointer; padding: 8px 24px; border-radius: 12px; transition: opacity 0.2s ease, background 0.2s ease; position: relative; vertical-align: middle; }
+        .clock-clickable > svg + .clock-digital { margin-left: 30px; }
         .clock-clickable:hover { opacity: 0.7; }
         /* Empty clickable zone when the clock is disabled: lets you return to a visible mode */
         .clock-empty {
@@ -394,7 +400,7 @@
         .clock-cff .cff-tick-hour { stroke: #000; stroke-width: 8; stroke-linecap: butt; }
         .clock-cff .cff-tick-min { stroke: #000; stroke-width: 2; stroke-linecap: butt; }
         .clock-cff .cff-hand-hour, .clock-cff .cff-hand-min { fill: #000; }
-        .clock-cff .cff-hand-sec { fill: #d8262a; transform-origin: 100px 100px; }
+        .clock-cff .cff-hand-sec { fill: #d8262a; }
 
         @media (max-width: 768px) {
             .clock-digital { font-size: 5rem; }
@@ -408,7 +414,7 @@
         /* Markdown editor */
         /* Instructions tab (WYSIWYG richtext editor) */
         #instructions-tab.active { display: flex; flex-direction: column; height: calc(100vh - 60px); overflow-x: hidden; }
-        .richtext-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .richtext-container { flex: 1; width: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .richtext-toolbar { background: var(--settings-bg); border-bottom: 1px solid var(--card-border); padding: 10px 20px; display: none; gap: 6px; align-items: center; flex-wrap: wrap; }
         .richtext-container.editing .richtext-toolbar { display: flex; }
         .richtext-toolbar button { background: var(--card-bg); color: var(--text-dark); border: 1px solid var(--card-border); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.9rem; transition: all 0.2s; min-width: 36px; }
@@ -417,7 +423,7 @@
         .richtext-toolbar button.btn-close-edit:hover { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
         .richtext-toolbar button.rt-zoom-level { font-size: 0.8rem; min-width: 50px; color: var(--text-light); }
         .richtext-toolbar .toolbar-sep { width: 1px; height: 22px; background: var(--card-border); margin: 0 4px; }
-        .richtext-editor { flex: 1; padding: 30px 40px; overflow-y: auto; background: var(--bg); color: var(--text-dark); line-height: 1.4; font-size: 1.5rem; outline: none; cursor: text; }
+        .richtext-editor { flex: 1; width: 100%; box-sizing: border-box; padding: 30px 40px; overflow-y: auto; background: var(--bg); color: var(--text-dark); line-height: 1.4; font-size: 1.5rem; outline: none; cursor: text; }
         /* Outside edit mode, the cursor stays a text-cursor to signal you can edit */
         .richtext-container:not(.editing) .richtext-editor { cursor: text; }
         .richtext-container:not(.editing) .richtext-editor:hover { background: var(--btn-close-bg); }
@@ -766,9 +772,9 @@
 
 <script>
     const i18n = {
-        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", editStartTimeTitle: "Modifier l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", fileDropMessage: "Déposer le fichier JSON pour l'importer", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Auto-reset après", autoResetUnit: "sec (0=off)", extraLabel: "Temps supplémentaire", extraUnit: "sec", removeExtraTitle: "Annuler le temps supplémentaire", langLabel: "Langue", configSection: "Configuration", globalCtrlsLabel: "Boutons globaux", clearAll: "Réinitialiser…", clockLabel: "Horloge", clockNone: "Aucune", clockDigital: "Numérique", clockCff: "CFF", clockBoth: "CFF + numérique", clockToggleTitle: "Cliquer pour changer d'horloge", clockResizeTitle: "Glisser pour redimensionner", startAllTitle: "Démarrer tous les timers", stopAllTitle: "Arrêter tous les timers", zoomInTitle: "Agrandir les timers", zoomOutTitle: "Réduire les timers", zoomResetTitle: "Zoom 100% (réinitialiser)", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes" },
-        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notizen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", editStartTimeTitle: "Startzeit ändern", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", fileDropMessage: "JSON-Datei hier ablegen, um sie zu importieren", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Auto-Reset nach", autoResetUnit: "Sek (0=aus)", extraLabel: "Zusätzliche Zeit", extraUnit: "Sek", removeExtraTitle: "Zusätzliche Zeit aufheben", langLabel: "Sprache", configSection: "Konfiguration", globalCtrlsLabel: "Globale Tasten", clearAll: "Zurücksetzen…", clockLabel: "Uhr", clockNone: "Keine", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Klicken, um Uhr zu wechseln", clockResizeTitle: "Ziehen zum Vergrößern", startAllTitle: "Alle Timer starten", stopAllTitle: "Alle Timer stoppen", zoomInTitle: "Timer vergrößern", zoomOutTitle: "Timer verkleinern", zoomResetTitle: "Zoom 100% (zurücksetzen)", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden" },
-        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", editStartTimeTitle: "Edit start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", fileDropMessage: "Drop the JSON file to import it", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Auto-reset after", autoResetUnit: "sec (0=off)", extraLabel: "Extra time", extraUnit: "sec", removeExtraTitle: "Cancel extra time", langLabel: "Language", configSection: "Configuration", globalCtrlsLabel: "Global buttons", clearAll: "Reset…", clockLabel: "Clock", clockNone: "None", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Click to switch clock", clockResizeTitle: "Drag to resize", startAllTitle: "Start all timers", stopAllTitle: "Stop all timers", zoomInTitle: "Make timers bigger", zoomOutTitle: "Make timers smaller", zoomResetTitle: "Zoom 100% (reset)", toggleSecondsTitle: "Click to show/hide seconds" }
+        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", editStartTimeTitle: "Modifier l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", fileDropMessage: "Déposer le fichier JSON pour l'importer", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Auto-reset après", autoResetUnit: "sec (0=off)", extraLabel: "Temps supplémentaire", extraUnit: "sec", removeExtraTitle: "Annuler le temps supplémentaire", langLabel: "Langue", configSection: "Configuration", globalCtrlsLabel: "Boutons globaux", clearAll: "Réinitialiser…", clockLabel: "Horloge", clockNone: "Aucune", clockDigital: "Numérique", clockCff: "CFF", clockBoth: "CFF + numérique", clockToggleTitle: "Cliquer pour changer d'horloge", clockResizeTitle: "Glisser pour redimensionner", startAllTitle: "Démarrer tous les timers", stopAllTitle: "Arrêter tous les timers", zoomInTitle: "Agrandir les timers", zoomOutTitle: "Réduire les timers", zoomResetTitle: "Zoom 100% (réinitialiser)", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes", startTimeTooEarly: "Impossible de placer le départ plus loin dans le passé que la durée du timer", startTimeTooLate: "Impossible de placer le départ plus tard que le temps déjà écoulé", invalidTimeFormat: "Format d'heure invalide" },
+        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notizen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", editStartTimeTitle: "Startzeit ändern", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", fileDropMessage: "JSON-Datei hier ablegen, um sie zu importieren", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Auto-Reset nach", autoResetUnit: "Sek (0=aus)", extraLabel: "Zusätzliche Zeit", extraUnit: "Sek", removeExtraTitle: "Zusätzliche Zeit aufheben", langLabel: "Sprache", configSection: "Konfiguration", globalCtrlsLabel: "Globale Tasten", clearAll: "Zurücksetzen…", clockLabel: "Uhr", clockNone: "Keine", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Klicken, um Uhr zu wechseln", clockResizeTitle: "Ziehen zum Vergrößern", startAllTitle: "Alle Timer starten", stopAllTitle: "Alle Timer stoppen", zoomInTitle: "Timer vergrößern", zoomOutTitle: "Timer verkleinern", zoomResetTitle: "Zoom 100% (zurücksetzen)", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden", startTimeTooEarly: "Der Start kann nicht weiter in der Vergangenheit liegen als die Timer-Dauer", startTimeTooLate: "Der Start kann nicht später liegen als die bereits verstrichene Zeit", invalidTimeFormat: "Ungültiges Zeitformat" },
+        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", editStartTimeTitle: "Edit start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", fileDropMessage: "Drop the JSON file to import it", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Auto-reset after", autoResetUnit: "sec (0=off)", extraLabel: "Extra time", extraUnit: "sec", removeExtraTitle: "Cancel extra time", langLabel: "Language", configSection: "Configuration", globalCtrlsLabel: "Global buttons", clearAll: "Reset…", clockLabel: "Clock", clockNone: "None", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Click to switch clock", clockResizeTitle: "Drag to resize", startAllTitle: "Start all timers", stopAllTitle: "Stop all timers", zoomInTitle: "Make timers bigger", zoomOutTitle: "Make timers smaller", zoomResetTitle: "Zoom 100% (reset)", toggleSecondsTitle: "Click to show/hide seconds", startTimeTooEarly: "Cannot place the start further in the past than the timer duration", startTimeTooLate: "Cannot place the start later than the time already elapsed", invalidTimeFormat: "Invalid time format" }
     };
 
     let currentLang = 'fr';
@@ -1166,7 +1172,7 @@
         }
         return `${minutes}:${secondes.toString().padStart(2,'0')}`; 
     }
-    function formatClock(date) { return date.toLocaleTimeString(currentLang === 'en'?'en-US':(currentLang==='de'?'de-DE':'fr-FR'), {hour:'2-digit', minute:'2-digit'}); }
+    function formatClock(date) { return date.toLocaleTimeString(currentLang === 'en'?'en-US':(currentLang==='de'?'de-DE':'fr-FR'), {hour:'2-digit', minute:'2-digit', second:'2-digit'}); }
 
     function updateEndTime(id) {
         const obj = timersList.find(d => d.id.toString() === id.toString());
@@ -1210,13 +1216,14 @@
         const startDate = new Date(obj.start);
         const hh = startDate.getHours().toString().padStart(2, '0');
         const mm = startDate.getMinutes().toString().padStart(2, '0');
+        const ss = startDate.getSeconds().toString().padStart(2, '0');
         // Save the parent onclick and remove it during edit so it doesn't
         // trigger the showStartTime toggle on clicks within the form.
         const oldOnclick = display.onclick;
         display.onclick = null;
         display.classList.add('start-edit-form');
         display.innerHTML = `
-            <input type="time" id="edit-start-${id}" value="${hh}:${mm}" step="60" />
+            <input type="time" id="edit-start-${id}" value="${hh}:${mm}:${ss}" step="1" />
             <button type="button" id="edit-start-ok-${id}" title="${t.save}">✓</button>
             <button type="button" class="btn-cancel" id="edit-start-cancel-${id}" title="${t.cancel}">✕</button>
         `;
@@ -1224,25 +1231,120 @@
         const btnOk = document.getElementById(`edit-start-ok-${id}`);
         const btnCancel = document.getElementById(`edit-start-cancel-${id}`);
 
+        // Compute the allowed window for the new start time:
+        //   - earliest: now - totalSecs (timer that just finished — no time remaining)
+        //   - latest:   now (timer that just starts now)
+        // The user can't move start outside this window: too far in the past would mean
+        // the timer is "more than finished", too far in the future means it hasn't started.
+        // Note: extraSecs is added to totalSecs in the elapsed calculation, so we use
+        // (totalSecs + extraSecs) for the lower bound.
+        const computeBounds = () => {
+            const now = Date.now();
+            return {
+                min: now - (obj.totalSecs + obj.extraSecs) * 1000,
+                max: now
+            };
+        };
+        // Parse the input value to a Date object based on the day of obj.start.
+        // Returns null if the format is invalid.
+        const parseInputToDate = (val) => {
+            const match = val.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
+            if (!match) return null;
+            const h = parseInt(match[1]);
+            const m = parseInt(match[2]);
+            const s = match[3] ? parseInt(match[3]) : 0;
+            const d = new Date(obj.start);
+            d.setHours(h, m, s, 0);
+            return d;
+        };
+        // Update the OK button state based on whether the input is in the allowed window.
+        const updateValidationState = () => {
+            const val = input.value;
+            // Empty value: leave button enabled (validation will be a no-op)
+            if (!val) {
+                btnOk.disabled = false;
+                btnOk.textContent = '✓';
+                btnOk.title = t.save;
+                return;
+            }
+            const candidate = parseInputToDate(val);
+            if (!candidate) {
+                btnOk.disabled = true;
+                btnOk.textContent = '🚫';
+                btnOk.title = t.invalidTimeFormat || 'Format invalide';
+                return;
+            }
+            const { min, max } = computeBounds();
+            const t_ms = candidate.getTime();
+            if (t_ms < min) {
+                btnOk.disabled = true;
+                btnOk.textContent = '🚫';
+                btnOk.title = t.startTimeTooEarly || 'Trop loin dans le passé';
+                return;
+            }
+            if (t_ms > max) {
+                btnOk.disabled = true;
+                btnOk.textContent = '🚫';
+                btnOk.title = t.startTimeTooLate || 'Trop loin dans le futur';
+                return;
+            }
+            btnOk.disabled = false;
+            btnOk.textContent = '✓';
+            btnOk.title = t.save;
+        };
+        // Initial validation (in case obj.start is itself out of bounds, which shouldn't
+        // happen but is harmless — and to set the default state cleanly)
+        updateValidationState();
+        input.addEventListener('input', updateValidationState);
+
         const restore = () => {
             display.classList.remove('start-edit-form');
             display.onclick = oldOnclick;
             updateEndTime(id);
         };
         const valider = () => {
+            // Don't validate if the OK button is disabled (out-of-range or invalid format).
+            if (btnOk.disabled) return;
             const val = input.value;
             // If the user validates without modifying, we don't touch obj.start
-            // (otherwise we'd overwrite seconds/milliseconds to 0 needlessly).
-            if (val === `${hh}:${mm}`) {
+            // (otherwise we'd overwrite milliseconds to 0 needlessly).
+            if (val === `${hh}:${mm}:${ss}` || val === `${hh}:${mm}`) {
                 restore();
                 return;
             }
-            if (val && /^\d{2}:\d{2}$/.test(val)) {
-                const [h, m] = val.split(':').map(Number);
-                const newStart = new Date(obj.start);
-                newStart.setHours(h, m, 0, 0);
+            const newStart = parseInputToDate(val);
+            if (newStart) {
                 obj.start = newStart.getTime();
                 save();
+                // Re-evaluate the timer's state: the new start may put it in or out of
+                // the finished state.
+                const card = document.getElementById(`card-${id}`);
+                const total = (obj.totalSecs + obj.extraSecs) * 1000;
+                const elapsed = Date.now() - obj.start;
+                if (elapsed >= total) {
+                    // Should be finished — mark it (markFinished is idempotent).
+                    if (card && !card.classList.contains('finished')) {
+                        markFinished(id);
+                    }
+                } else {
+                    // Should be active — un-finish if needed and ensure the tick is running.
+                    if (card && card.classList.contains('finished')) {
+                        card.classList.remove('finished');
+                        card.classList.add('active');
+                        cancelAutoReset(id);
+                        // Restore the progress bar (auto-reset may have shrunk it)
+                        const fill = document.getElementById(`progress-${id}`);
+                        if (fill) {
+                            fill.style.transition = 'none';
+                            fill.style.width = '0%';
+                            // eslint-disable-next-line no-unused-expressions
+                            fill.offsetWidth;
+                            fill.style.transition = '';
+                        }
+                    }
+                    startTick(id);
+                }
+                refreshTimerDisplay(id);
             }
             restore();
         };
@@ -1587,6 +1689,8 @@
             if (newScale < 0.5) newScale = 0.5;
             if (newScale > 3.0) newScale = 3.0;
             clockScale = Math.round(newScale * 100) / 100;
+            // Apply scale in real-time (uses 'zoom' on browsers that support it,
+            // which triggers proper layout reflow so timers below adjust their position).
             applyClockScale();
         };
         const onEnd = () => {
@@ -1646,11 +1750,11 @@
             <circle class="cff-bg" cx="100" cy="100" r="95"/>
             ${ticks}
             <!-- Hour hand: bar rounded at ends -->
-            <g id="cff-hour-group" style="transform-origin: 100px 100px;">
+            <g id="cff-hour-group">
                 <rect class="cff-hand-hour" x="94" y="46" width="12" height="62" rx="2"/>
             </g>
             <!-- Aiguille des minutes -->
-            <g id="cff-min-group" style="transform-origin: 100px 100px;">
+            <g id="cff-min-group">
                 <rect class="cff-hand-min" x="96" y="20" width="8" height="88" rx="2"/>
             </g>
             <!-- Second hand: stem + red disk at the end -->
@@ -1673,14 +1777,17 @@
         const hourAngle = h * 30 + m * 0.5;
         // Minute hand: jumps one notch each minute (CFF style)
         const minAngle = m * 6;
-        hourGroup.style.transform = `rotate(${hourAngle}deg)`;
-        minGroup.style.transform = `rotate(${minAngle}deg)`;
+        // SVG-native rotation around the clock center (cx=100, cy=100). This is the only
+        // way to get a stable rotation point under CSS 'zoom' on Safari, which doesn't
+        // honor CSS 'transform-origin' values in SVG user-space coordinates.
+        hourGroup.setAttribute('transform', `rotate(${hourAngle} 100 100)`);
+        minGroup.setAttribute('transform', `rotate(${minAngle} 100 100)`);
         // Second hand: 360° in 58.5s, then pause at 360° (=0°) for 1.5s
         // Animation computed each frame from Date.now() → smooth at 60fps without setInterval
         const msInMinute = (now.getSeconds() * 1000) + now.getMilliseconds();
         const ratio = Math.min(msInMinute / 58500, 1);
         const secAngle = ratio * 360;
-        secGroup.style.transform = `rotate(${secAngle}deg)`;
+        secGroup.setAttribute('transform', `rotate(${secAngle} 100 100)`);
         cffClockRaf = requestAnimationFrame(tickCffClock);
     }
 
@@ -1735,6 +1842,9 @@
 
     // Map id → setTimeout for auto-reset countdowns
     let autoResetTimeouts = {};
+    // Track when each auto-reset started, to be able to compute remaining time after
+    // a DOM reorganization (drag&drop) which interrupts the CSS transition.
+    let autoResetStartedAt = {};
 
     // Marks a timer as finished: adds the finished class, plays the alarm, and starts
     // possibly the auto-reset depending on the setting. Centralized to avoid duplicating logic.
@@ -1762,9 +1872,11 @@
         fill.offsetWidth;
         fill.style.transition = `width ${autoResetDelay}s linear`;
         fill.style.width = '0%';
+        autoResetStartedAt[id] = Date.now();
         // At the end of the delay, reset the timer
         autoResetTimeouts[id] = setTimeout(() => {
             delete autoResetTimeouts[id];
+            delete autoResetStartedAt[id];
             stopTimer(id);
         }, autoResetDelay * 1000);
     }
@@ -1774,6 +1886,7 @@
             clearTimeout(autoResetTimeouts[id]);
             delete autoResetTimeouts[id];
         }
+        delete autoResetStartedAt[id];
         const card = document.getElementById(`card-${id}`);
         const fill = document.getElementById(`progress-${id}`);
         if (card) card.classList.remove('auto-resetting');
@@ -1802,14 +1915,19 @@
     }
 
     // Detect browsers that correctly support the CSS 'zoom' property.
-    // Exclude Safari/iOS which has buggy support (only applies to the visual box, not to rem).
-    // Firefox 126+, Chrome, Edge support it correctly.
+    // Safari desktop and mobile both support 'zoom' (since Safari 4) but iPad OS 13+ has
+    // a bug where 'zoom' doesn't scale text correctly on certain elements (rem units stay).
+    // Firefox supports 'zoom' since 126; older Firefox parses and discards it.
+    // Strategy: use 'zoom' everywhere EXCEPT on iPad OS where we fall back to transform.
+    // (Note: iPhone iOS Safari seems to handle 'zoom' correctly, but iPad OS doesn't —
+    // we lump them together to be safe, since they share the same WebKit engine.)
     const supportsCssZoom = (() => {
         const ua = navigator.userAgent;
         const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        const isSafariDesktop = /Safari/.test(ua) && !/Chrome/.test(ua) && !/Edg/.test(ua) && !isIOS;
-        // iOS and Safari desktop: avoid 'zoom' (inconsistent rendering)
-        return !isIOS && !isSafariDesktop;
+        // Old Firefox (< 126) doesn't support zoom either
+        const ffMatch = ua.match(/Firefox\/(\d+)/);
+        const isOldFirefox = ffMatch && parseInt(ffMatch[1]) < 126;
+        return !isIOS && !isOldFirefox;
     })();
 
     // Applies a visual scaling factor to an element, in a compatible way.
@@ -2446,6 +2564,38 @@
             if (timerObj) nouvelleListe.push(timerObj);
         });
         timersList = nouvelleListe;
+        // After a DOM move, the CSS transition on .progress-bar-fill is interrupted.
+        // For each finished card, we restore the visual state correctly:
+        //  - Not in auto-reset: bar stays at 100% (full red).
+        //  - In auto-reset: compute how far the animation has progressed and resume
+        //    the transition from that point with the remaining time.
+        document.querySelectorAll('.duration-card.finished').forEach(card => {
+            const id = card.id.replace('card-', '');
+            const fill = card.querySelector('.progress-bar-fill');
+            if (!fill) return;
+            if (card.classList.contains('auto-resetting') && autoResetStartedAt[id]) {
+                // Compute remaining auto-reset time and current bar percentage
+                const elapsed = (Date.now() - autoResetStartedAt[id]) / 1000;
+                const remaining = Math.max(0, autoResetDelay - elapsed);
+                const currentPct = Math.max(0, Math.min(100, 100 * remaining / autoResetDelay));
+                // Restore the bar to its current visual position, then continue animating to 0%
+                fill.style.transition = 'none';
+                fill.style.width = currentPct + '%';
+                // eslint-disable-next-line no-unused-expressions
+                fill.offsetWidth;
+                if (remaining > 0) {
+                    fill.style.transition = `width ${remaining}s linear`;
+                    fill.style.width = '0%';
+                }
+            } else {
+                // Plain finished: restore to 100%
+                fill.style.transition = 'none';
+                fill.style.width = '100%';
+                // eslint-disable-next-line no-unused-expressions
+                fill.offsetWidth;
+                fill.style.transition = '';
+            }
+        });
         save();
     }
 
@@ -2620,9 +2770,13 @@
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const today = new Date().toISOString().slice(0, 10);
+        // Format YYYY-MM-DD_HH-MM-SS based on local time (avoiding ':' which is invalid
+        // in filenames on Windows and iOS).
+        const now = new Date();
+        const pad = (n) => n.toString().padStart(2, '0');
+        const stamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
         a.href = url;
-        a.download = `timers-backup-${today}.json`;
+        a.download = `timers-config-${stamp}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -2681,15 +2835,18 @@
 
     // Applies an already-parsed import object (used by file and URL).
     // Returns true if the import was applied and the page will reload.
-    async function applyImport(parsed) {
+    async function applyImport(parsed, options = {}) {
         if (!parsed || typeof parsed !== 'object' || !parsed.data || typeof parsed.data !== 'object') {
             throw new Error('Structure invalide');
         }
         const knownKeys = ['timers_v17_data', 'timers_richtext', 'timers_markdown', 'timers_current_tab'];
         const hasAnyKey = knownKeys.some(k => k in parsed.data);
         if (!hasAnyKey) throw new Error('Aucune donnée reconnue');
-        const ok = await confirmDialog(i18n[currentLang].confirmImport);
-        if (!ok) return false;
+        // skipConfirm: bypass the confirmation dialog (used for ?force=1 in shared URLs).
+        if (!options.skipConfirm) {
+            const ok = await confirmDialog(i18n[currentLang].confirmImport);
+            if (!ok) return false;
+        }
         knownKeys.forEach(k => {
             const v = parsed.data[k];
             if (v === null || v === undefined) {
@@ -2842,10 +2999,12 @@
     }
 
     // Detect import on load via URL params (?config=... or ?configUrl=...)
+    // Optional &force=1 bypasses the confirmation dialog (manual addition by the user).
     async function detectImportFromUrl() {
         const params = new URLSearchParams(location.search);
         const configParam = params.get('config');
         const configUrlParam = params.get('configUrl');
+        const forceParam = params.get('force') === '1';
         if (!configParam && !configUrlParam) return;
         const t = i18n[currentLang];
         try {
@@ -2863,8 +3022,12 @@
             const hasAnyKey = knownKeys.some(k => k in parsed.data);
             if (!hasAnyKey) throw new Error('Aucune donnée reconnue');
 
-            const ok = await confirmDialog(t.confirmSharedImport);
-            // Nettoyer l'URL dans tous les cas pour ne pas redemander au prochain rechargement
+            // Clean the URL whether or not the user accepts (so we don't re-ask on next reload).
+            // With force=1, skip the confirmation entirely.
+            let ok = true;
+            if (!forceParam) {
+                ok = await confirmDialog(t.confirmSharedImport);
+            }
             history.replaceState(null, '', location.pathname);
             if (!ok) return;
             knownKeys.forEach(k => {

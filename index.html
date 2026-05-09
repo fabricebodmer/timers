@@ -162,6 +162,14 @@
             align-content: start;
             width: 100%; margin: 0 auto; box-sizing: border-box;
         }
+        /* Touch-screen devices (iPad, phones): the rendering of large rem text
+           (time-left, duration title) is slightly wider than on desktop, which can push
+           the duration onto two lines. Bump the card width a bit to give it more room. */
+        @media (pointer: coarse) {
+            #durationsList {
+                grid-template-columns: repeat(auto-fit, 540px);
+            }
+        }
         
         .duration-card { 
             background: var(--card-bg); border-radius: 35px; padding: 40px 40px 50px 40px; 
@@ -644,6 +652,36 @@
                 font-size: 1.08em;
             }
         }
+
+        /* "Buttons hover only" mode: when body has .buttons-hover-only, all floating
+           buttons (add, play/stop, zoom) are dimmed by default and only visible on hover
+           or after a tap (touch devices). They remain CLICKABLE even when invisible so a
+           tap on their position always works. */
+        /* In hover-only mode, fade the buttons but keep them clickable */
+        body.buttons-hover-only .btn-add-floating,
+        body.buttons-hover-only .btn-start-all,
+        body.buttons-hover-only .btn-stop-all,
+        body.buttons-hover-only .btn-zoom-timers {
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        /* Reveal on direct hover of a button (mouse) — buttons sit close enough that
+           hovering one effectively reveals all of them via the .buttons-temp-revealed
+           class set by the global mousemove handler. */
+        body.buttons-hover-only .btn-add-floating:hover,
+        body.buttons-hover-only .btn-start-all:hover,
+        body.buttons-hover-only .btn-stop-all:hover,
+        body.buttons-hover-only .btn-zoom-timers:hover {
+            opacity: 1;
+        }
+        /* When body has .buttons-temp-revealed (set by tap on touch devices, or by
+           proximity hover on desktop), all buttons become fully visible. */
+        body.buttons-hover-only.buttons-temp-revealed .btn-add-floating,
+        body.buttons-hover-only.buttons-temp-revealed .btn-start-all,
+        body.buttons-hover-only.buttons-temp-revealed .btn-stop-all,
+        body.buttons-hover-only.buttons-temp-revealed .btn-zoom-timers {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -651,6 +689,16 @@
     <audio id="beepAudio" preload="auto">
         <source src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YV9vT19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f" type="audio/wav">
     </audio>
+
+    <!-- Hidden video element used as a wake-lock fallback on iOS Safari < 16.4 (where the
+         Screen Wake Lock API isn't supported). A looping silent video keeps iOS from
+         dimming/locking the screen. We start it when a timer becomes active, pause it
+         when none are active. The element is positioned off-screen but must remain in
+         the DOM and "visible" to the layout (display:none would prevent playback). -->
+    <video id="wakeLockVideo" muted loop playsinline webkit-playsinline preload="auto"
+           style="position:fixed; width:1px; height:1px; opacity:0; pointer-events:none; bottom:0; right:0; z-index:-1;">
+        <source src="data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAh9tZGF0AAACoQYF//+d3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE1NSByMjkwMSA3ZDBmZjIyIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxOCAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTAgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MToweDExMSBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MCBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTQyIGxvb2thaGVhZF90aHJlYWRzPTYgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRlPTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9MCB3ZWlnaHRwPTAga2V5aW50PTI1MCBrZXlpbnRfbWluPTEzIHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yOC4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAAVGWIhAAQ/8ltlOe+cTZuGkKg+aRtuivcDLZaqyUg6flGbLG7sa1Z748uXsM/QkTBzwpcRYVyAAADAAADAAADAjt0OKkmUKJtABNcAAFRAAAATG1vb3YAAABsbXZoZAAAAAAAAAAAAAAAAAAAA+gAAAJYAAEAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAABcXRyYWsAAABcdGtoZAAAAAMAAAAAAAAAAAAAAAEAAAAAAAACWAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAEAAAACWAAAAAAAJG1kaWEAAAAgbWRoZAAAAAAAAAAAAAAAAAAAQAAAACAAVcQAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABV21pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAARdzdGJsAAAAt3N0c2QAAAAAAAAAAQAAAKdhdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAQABAEgAAABIAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY//8AAAA1YXZjQwFkAAr/4QAYZ2QACqzZQQQAAAMABAAAAwBQPFi2WAEABmjr48siwAAAGGN0dHMAAAAAAAAAAQAAAAEAAEAAAAAAFHN0c3oAAAAAAAACoAAAAAEAAAAUc3RjbwAAAAAAAAABAAAAMAAAABh1ZHRhAAAAEHRpdGwAAAAACgAA" type="video/mp4">
+    </video>
 
     <div class="modal-overlay" id="confirmModal">
         <div class="modal-box">
@@ -724,10 +772,10 @@
                         </div>
                     </div>
                     <div class="dropdown-setting">
-                        <label id="txt-label-global-ctrls">Boutons globaux</label>
+                        <label id="txt-label-buttons">Masquage des boutons</label>
                         <div class="dropdown-setting-input">
                             <label class="dropdown-toggle">
-                                <input type="checkbox" id="globalCtrlsCheckbox" onchange="onGlobalControlsChange()" onclick="event.stopPropagation()">
+                                <input type="checkbox" id="buttonsHoverOnlyCheckbox" onchange="onButtonsHoverOnlyChange()" onclick="event.stopPropagation()">
                                 <span></span>
                             </label>
                         </div>
@@ -755,6 +803,7 @@
                     <div class="dropdown-section-title" id="txt-section-config">Configuration</div>
                     <button class="dropdown-item" onclick="exportConfig()">⬇️ <span id="txt-export">Exporter</span></button>
                     <button class="dropdown-item" onclick="importConfig()">⬆️ <span id="txt-import">Importer</span></button>
+                    <button class="dropdown-item" id="revertImportBtn" onclick="revertToLastImport()" style="display: none;">↩️ <span id="txt-revert-import">Revenir au dernier import</span></button>
                     <button class="dropdown-item" onclick="shareLink()">📋 <span id="txt-share">Partager le lien</span></button>
                     <button class="dropdown-item dropdown-danger" onclick="resetAll()" id="txt-clear-all">Réinitialiser…</button>
                 </div>
@@ -839,9 +888,9 @@
 
 <script>
     const i18n = {
-        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", durationLabel: "Durée (h:m:s)", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", editStartTimeTitle: "Modifier l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", fileDropMessage: "Déposer le fichier JSON pour l'importer", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Auto-reset après", autoResetUnit: "sec (0=off)", extraLabel: "Temps supplémentaire", extraUnit: "sec", removeExtraTitle: "Annuler le temps supplémentaire", langLabel: "Langue", configSection: "Configuration", globalCtrlsLabel: "Boutons globaux", visualTimerLabel: "Timer visuel", visualTimerResizeTitle: "Glisser pour redimensionner ce timer visuel", toggleHideTimeTitle: "Cliquer pour afficher/masquer le temps restant", clearAll: "Réinitialiser…", clockLabel: "Horloge", clockNone: "Aucune", clockDigital: "Numérique", clockCff: "CFF", clockBoth: "CFF + numérique", clockToggleTitle: "Cliquer pour changer d'horloge", clockResizeTitle: "Glisser pour redimensionner", startAllTitle: "Démarrer tous les timers", stopAllTitle: "Arrêter tous les timers", zoomInTitle: "Agrandir les timers", zoomOutTitle: "Réduire les timers", zoomResetTitle: "Zoom 100% (réinitialiser)", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes", startTimeTooEarly: "Impossible de placer le départ plus loin dans le passé que la durée du timer", startTimeTooLate: "Impossible de placer le départ plus tard que le temps déjà écoulé", invalidTimeFormat: "Format d'heure invalide" },
-        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", durationLabel: "Dauer (h:m:s)", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notizen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", editStartTimeTitle: "Startzeit ändern", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", fileDropMessage: "JSON-Datei hier ablegen, um sie zu importieren", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Auto-Reset nach", autoResetUnit: "Sek (0=aus)", extraLabel: "Zusätzliche Zeit", extraUnit: "Sek", removeExtraTitle: "Zusätzliche Zeit aufheben", langLabel: "Sprache", configSection: "Konfiguration", globalCtrlsLabel: "Globale Tasten", visualTimerLabel: "Visueller Timer", visualTimerResizeTitle: "Ziehen, um diesen visuellen Timer zu skalieren", toggleHideTimeTitle: "Klicken, um die Restzeit ein-/auszublenden", clearAll: "Zurücksetzen…", clockLabel: "Uhr", clockNone: "Keine", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Klicken, um Uhr zu wechseln", clockResizeTitle: "Ziehen zum Vergrößern", startAllTitle: "Alle Timer starten", stopAllTitle: "Alle Timer stoppen", zoomInTitle: "Timer vergrößern", zoomOutTitle: "Timer verkleinern", zoomResetTitle: "Zoom 100% (zurücksetzen)", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden", startTimeTooEarly: "Der Start kann nicht weiter in der Vergangenheit liegen als die Timer-Dauer", startTimeTooLate: "Der Start kann nicht später liegen als die bereits verstrichene Zeit", invalidTimeFormat: "Ungültiges Zeitformat" },
-        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", durationLabel: "Duration (h:m:s)", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", editStartTimeTitle: "Edit start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", fileDropMessage: "Drop the JSON file to import it", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Auto-reset after", autoResetUnit: "sec (0=off)", extraLabel: "Extra time", extraUnit: "sec", removeExtraTitle: "Cancel extra time", langLabel: "Language", configSection: "Configuration", globalCtrlsLabel: "Global buttons", visualTimerLabel: "Visual Timer", visualTimerResizeTitle: "Drag to resize this visual timer", toggleHideTimeTitle: "Click to show/hide remaining time", clearAll: "Reset…", clockLabel: "Clock", clockNone: "None", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Click to switch clock", clockResizeTitle: "Drag to resize", startAllTitle: "Start all timers", stopAllTitle: "Stop all timers", zoomInTitle: "Make timers bigger", zoomOutTitle: "Make timers smaller", zoomResetTitle: "Zoom 100% (reset)", toggleSecondsTitle: "Click to show/hide seconds", startTimeTooEarly: "Cannot place the start further in the past than the timer duration", startTimeTooLate: "Cannot place the start later than the time already elapsed", invalidTimeFormat: "Invalid time format" }
+        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", durationLabel: "Durée (h:m:s)", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", editStartTimeTitle: "Modifier l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", fileDropMessage: "Déposer le fichier JSON pour l'importer", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Auto-reset après", autoResetUnit: "sec (0=off)", extraLabel: "Temps supplémentaire", extraUnit: "sec", removeExtraTitle: "Annuler le temps supplémentaire", langLabel: "Langue", configSection: "Configuration", buttonsLabel: "Masquage des boutons", visualTimerLabel: "Timer visuel", visualTimerResizeTitle: "Glisser pour redimensionner ce timer visuel", toggleHideTimeTitle: "Cliquer pour afficher/masquer le temps restant", clearAll: "Réinitialiser…", clockLabel: "Horloge", clockNone: "Aucune", clockDigital: "Numérique", clockCff: "CFF", clockBoth: "CFF + numérique", clockToggleTitle: "Cliquer pour changer d'horloge", clockResizeTitle: "Glisser pour redimensionner", startAllTitle: "Démarrer tous les timers", stopAllTitle: "Arrêter tous les timers", zoomInTitle: "Agrandir les timers", zoomOutTitle: "Réduire les timers", zoomResetTitle: "Zoom 100% (réinitialiser)", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes", startTimeTooEarly: "Impossible de placer le départ plus loin dans le passé que la durée du timer", startTimeTooLate: "Impossible de placer le départ plus tard que le temps déjà écoulé", invalidTimeFormat: "Format d'heure invalide", revertImportLabel: "Revenir au dernier import", confirmRevertImport: "Réappliquer la dernière configuration importée ? Vos modifications actuelles seront écrasées." },
+        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", durationLabel: "Dauer (h:m:s)", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notizen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", editStartTimeTitle: "Startzeit ändern", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", fileDropMessage: "JSON-Datei hier ablegen, um sie zu importieren", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Auto-Reset nach", autoResetUnit: "Sek (0=aus)", extraLabel: "Zusätzliche Zeit", extraUnit: "Sek", removeExtraTitle: "Zusätzliche Zeit aufheben", langLabel: "Sprache", configSection: "Konfiguration", buttonsLabel: "Tasten ausblenden", visualTimerLabel: "Visueller Timer", visualTimerResizeTitle: "Ziehen, um diesen visuellen Timer zu skalieren", toggleHideTimeTitle: "Klicken, um die Restzeit ein-/auszublenden", clearAll: "Zurücksetzen…", clockLabel: "Uhr", clockNone: "Keine", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Klicken, um Uhr zu wechseln", clockResizeTitle: "Ziehen zum Vergrößern", startAllTitle: "Alle Timer starten", stopAllTitle: "Alle Timer stoppen", zoomInTitle: "Timer vergrößern", zoomOutTitle: "Timer verkleinern", zoomResetTitle: "Zoom 100% (zurücksetzen)", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden", startTimeTooEarly: "Der Start kann nicht weiter in der Vergangenheit liegen als die Timer-Dauer", startTimeTooLate: "Der Start kann nicht später liegen als die bereits verstrichene Zeit", invalidTimeFormat: "Ungültiges Zeitformat", revertImportLabel: "Zum letzten Import zurückkehren", confirmRevertImport: "Die letzte importierte Konfiguration erneut anwenden? Ihre aktuellen Änderungen werden überschrieben." },
+        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", durationLabel: "Duration (h:m:s)", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", editStartTimeTitle: "Edit start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", fileDropMessage: "Drop the JSON file to import it", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Auto-reset after", autoResetUnit: "sec (0=off)", extraLabel: "Extra time", extraUnit: "sec", removeExtraTitle: "Cancel extra time", langLabel: "Language", configSection: "Configuration", buttonsLabel: "Hide buttons", visualTimerLabel: "Visual Timer", visualTimerResizeTitle: "Drag to resize this visual timer", toggleHideTimeTitle: "Click to show/hide remaining time", clearAll: "Reset…", clockLabel: "Clock", clockNone: "None", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Click to switch clock", clockResizeTitle: "Drag to resize", startAllTitle: "Start all timers", stopAllTitle: "Stop all timers", zoomInTitle: "Make timers bigger", zoomOutTitle: "Make timers smaller", zoomResetTitle: "Zoom 100% (reset)", toggleSecondsTitle: "Click to show/hide seconds", startTimeTooEarly: "Cannot place the start further in the past than the timer duration", startTimeTooLate: "Cannot place the start later than the time already elapsed", invalidTimeFormat: "Invalid time format", revertImportLabel: "Revert to last import", confirmRevertImport: "Re-apply the last imported configuration? Your current changes will be overwritten." }
     };
 
     let currentLang = 'fr';
@@ -857,9 +906,12 @@
     let extraDelay = 30; // Extra time added by the "+Xs" button on a timer (configurable)
     let timersZoom = 1.0; // Zoom applied to the timers grid (0.6 to 2.0)
     let clockScale = 1.0; // Clock scale (0.5 to 3.0), adjustable via the handle
-    let showGlobalControls = true; // Afficher les boutons globaux play/stop (en plus de + et zoom)
+    let buttonsHoverOnly = false; // When true, all floating buttons (add/play/stop/zoom) are hidden until the user hovers near them.
     let showVisualTimer = false; // Display a Visual Timer-style disc on each timer card
     let hideTimeWithVisualTimer = false; // When true (and Visual Timer is on), hide the numeric time-left display
+    // Wake lock: automatically held while at least one timer is running. No user setting —
+    // there's no good reason to want the screen to sleep while a timer is counting down.
+    let wakeLockSentinel = null;
     let visualTimerScale = 1.0; // Global scale of the Visual Timer disc on every timer card
     let clockMode = 'digital'; // 'none' | 'digital' | 'cff' | 'both'
     let currentTab = 'timers';
@@ -902,7 +954,10 @@
         // Add/play/stop buttons: only on the timers tab
         const btnAdd = document.getElementById('btnAddFloating');
         if (btnAdd) btnAdd.classList.toggle('hidden', tabName !== 'timers');
-        applyGlobalControlsVisibility();
+        const btnStartAll = document.getElementById('btnStartAll');
+        if (btnStartAll) btnStartAll.classList.toggle('hidden', tabName !== 'timers');
+        const btnStopAll = document.getElementById('btnStopAll');
+        if (btnStopAll) btnStopAll.classList.toggle('hidden', tabName !== 'timers');
         // Zoom buttons: visible on both tabs (act on each tab's content)
         const btnZoomIn = document.getElementById('btnZoomIn');
         if (btnZoomIn) btnZoomIn.classList.remove('hidden');
@@ -1125,18 +1180,54 @@
 
 // --- LOGIQUE AUDIO (IPAD FIX) ---
     const beep = document.getElementById('beepAudio');
+    // Single shared AudioContext for all sound playback. iPad/iOS Safari requires the
+    // context to be created or resumed inside a user-gesture handler, otherwise it stays
+    // suspended and silent. We unlock it on any tap/click anywhere on the page.
     let audioCtx = null;
-    let globalAudioCtx = null;
+
+    function getAudioCtx() {
+        if (!audioCtx) {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.warn('AudioContext creation failed:', e);
+                return null;
+            }
+        }
+        // Resume if suspended (can happen after page-visibility change or prolonged silence)
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+        }
+        return audioCtx;
+    }
 
     function unlockAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        getAudioCtx();
+        // Also "prime" the <audio> element so iOS allows future programmatic play().
+        if (beep) {
+            beep.play().then(() => { beep.pause(); beep.currentTime = 0; }).catch(() => {});
         }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-        beep.play().then(() => { beep.pause(); beep.currentTime = 0; }).catch(() => {});
     }
+
+    // Unlock audio on the FIRST user gesture (tap, click, keypress) anywhere on the page.
+    // iPad/iOS won't let any audio play until this happens. We attach once and remove
+    // ourselves after firing.
+    let audioUnlocked = false;
+    function firstGestureUnlock() {
+        if (audioUnlocked) return;
+        audioUnlocked = true;
+        unlockAudio();
+    }
+    document.addEventListener('touchstart', firstGestureUnlock, { once: false, passive: true });
+    document.addEventListener('click', firstGestureUnlock, { once: false });
+    document.addEventListener('keydown', firstGestureUnlock, { once: false });
+    // Also resume on visibility change — iOS suspends AudioContext when the tab/PWA is
+    // backgrounded; we need to resume it when the user comes back.
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+        }
+    });
 
     function playBellSound(id) {
         if (!globalSoundEnabled) return;
@@ -1144,32 +1235,27 @@
         if (obj && obj.muted) return;
 
         try {
-            if (!globalAudioCtx) {
-                globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            
-            if (globalAudioCtx.state === 'suspended') {
-                globalAudioCtx.resume();
-            }
+            const ctx = getAudioCtx();
+            if (!ctx) return;
 
-            const osc = globalAudioCtx.createOscillator();
-            const g = globalAudioCtx.createGain();
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
 
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, globalAudioCtx.currentTime);
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
 
-            g.gain.setValueAtTime(0, globalAudioCtx.currentTime);
-            g.gain.linearRampToValueAtTime(0.4, globalAudioCtx.currentTime + 0.1);
-            g.gain.exponentialRampToValueAtTime(0.01, globalAudioCtx.currentTime + 1);
+            g.gain.setValueAtTime(0, ctx.currentTime);
+            g.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.1);
+            g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
 
             osc.connect(g);
-            g.connect(globalAudioCtx.destination);
+            g.connect(ctx.destination);
 
             osc.start();
-            osc.stop(globalAudioCtx.currentTime + 1);
-            
+            osc.stop(ctx.currentTime + 1);
+
         } catch(e) {
-            console.log("Erreur audio répétition");
+            console.log("Erreur audio répétition", e);
         }
     }
 
@@ -1187,10 +1273,14 @@
         document.getElementById('globalSoundText').textContent = globalSoundEnabled ? t.on : t.off;
         document.getElementById('txt-clear-all').textContent = t.clearAll;
         const txtSectionConfig = document.getElementById('txt-section-config'); if (txtSectionConfig) txtSectionConfig.textContent = t.configSection;
-        const txtGlobalCtrls = document.getElementById('txt-label-global-ctrls'); if (txtGlobalCtrls) txtGlobalCtrls.textContent = t.globalCtrlsLabel;
+        const txtButtons = document.getElementById('txt-label-buttons'); if (txtButtons) txtButtons.textContent = t.buttonsLabel;
         const txtVisualTimer = document.getElementById('txt-label-visual-timer'); if (txtVisualTimer) txtVisualTimer.textContent = t.visualTimerLabel;
         const txtExport = document.getElementById('txt-export'); if (txtExport) txtExport.textContent = t.export;
         const txtImport = document.getElementById('txt-import'); if (txtImport) txtImport.textContent = t.import;
+        const txtRevertImport = document.getElementById('txt-revert-import'); if (txtRevertImport) txtRevertImport.textContent = t.revertImportLabel;
+        // Show the "Revert to last imported configuration" button only if a last-import snapshot exists.
+        const revertBtn = document.getElementById('revertImportBtn');
+        if (revertBtn) revertBtn.style.display = localStorage.getItem(LAST_IMPORT_KEY) ? '' : 'none';
         const txtShare = document.getElementById('txt-share'); if (txtShare) txtShare.textContent = t.share;
         document.getElementById('txt-label-name').textContent = t.labelName;
         const lblDuration = document.getElementById('txt-label-duration');
@@ -1855,6 +1945,61 @@
         document.documentElement.style.setProperty('--vt-scale', visualTimerScale);
     }
 
+    // --- WAKE LOCK (keep screen on while at least one timer is running) ---
+    // Uses the Screen Wake Lock API where supported (Chrome/Edge/Android, Safari iOS 16.4+).
+    // For older iOS Safari, falls back to playing a tiny silent looping video, which keeps
+    // the screen awake (a documented technique used by web video apps before Wake Lock API).
+    // The lock is acquired automatically when a timer becomes active and released when no
+    // timer is running — there's no user setting because it makes no sense to want the
+    // screen to sleep during a countdown.
+
+    function ensureWakeLock() {
+        // Prefer the modern Wake Lock API. If unsupported (iOS Safari < 16.4), fall back
+        // to playing a hidden silent looping video which keeps the screen awake.
+        // The video.play() must happen synchronously inside the user-gesture chain (e.g.
+        // a click on START), so we attempt it first; the async wakeLock.request comes after.
+        const video = document.getElementById('wakeLockVideo');
+        if (video && video.paused && !('wakeLock' in navigator)) {
+            video.play().catch(() => {});
+        }
+        if ('wakeLock' in navigator && !wakeLockSentinel) {
+            navigator.wakeLock.request('screen').then(s => {
+                wakeLockSentinel = s;
+                s.addEventListener('release', () => { wakeLockSentinel = null; });
+            }).catch(e => {
+                // Wake Lock API exists but request failed (e.g. page hidden, or in some
+                // Safari iOS edge cases). Fall back to the video as a safety net.
+                if (video && video.paused) video.play().catch(() => {});
+                console.log('Wake lock request failed:', e.message);
+            });
+        }
+    }
+
+    async function dropWakeLock() {
+        // Called when no timer is active anymore. Release the wake lock.
+        if (wakeLockSentinel) {
+            try { await wakeLockSentinel.release(); } catch (e) {}
+            wakeLockSentinel = null;
+        }
+        const video = document.getElementById('wakeLockVideo');
+        if (video && !video.paused) video.pause();
+    }
+
+    // Call this whenever a timer starts or stops to refresh the wake-lock state.
+    function refreshWakeLock() {
+        const anyActive = activeTickIds && activeTickIds.size > 0;
+        if (anyActive) ensureWakeLock();
+        else dropWakeLock();
+    }
+
+    // Re-acquire the wake lock when the page becomes visible again (it gets auto-released
+    // when the page is hidden, e.g. when the user switches tabs or backgrounds the app).
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            refreshWakeLock();
+        }
+    });
+
     // Toggle the visibility of the numeric time-left when the Visual Timer is shown.
     // Triggered by clicking the disc itself.
     function toggleHideTimeWithVisualTimer() {
@@ -2240,6 +2385,8 @@
         }
         // Immediate refresh so the card displays the correct value right away
         globalTick();
+        // Keep the screen on while a timer is running.
+        refreshWakeLock();
     }
 
     function stopTick(id) {
@@ -2248,6 +2395,8 @@
             clearInterval(globalTickInterval);
             globalTickInterval = null;
         }
+        // Drop the wake lock if no timer is running anymore.
+        refreshWakeLock();
     }
 
     function playAlarm(id) { playBellSound(id); soundIntervals[id] = setInterval(() => playBellSound(id), 3000); }
@@ -2308,11 +2457,11 @@
         }
     }
 
-    function onGlobalControlsChange() {
-        const checkbox = document.getElementById('globalCtrlsCheckbox');
+    function onButtonsHoverOnlyChange() {
+        const checkbox = document.getElementById('buttonsHoverOnlyCheckbox');
         if (!checkbox) return;
-        showGlobalControls = checkbox.checked;
-        applyGlobalControlsVisibility();
+        buttonsHoverOnly = checkbox.checked;
+        applyButtonsVisibilityMode();
         save();
     }
 
@@ -2346,15 +2495,58 @@
         }
     }
 
-    // Updates the visibility of global play/stop buttons according to showGlobalControls
-    // AND according to the current tab (they should only appear on the timers tab).
-    function applyGlobalControlsVisibility() {
-        const masquer = !showGlobalControls || currentTab !== 'timers';
+    // Toggle a body class that controls whether floating buttons (add/play/stop/zoom)
+    // are visible at all times or only when the user hovers near their corner.
+    function applyButtonsVisibilityMode() {
+        document.body.classList.toggle('buttons-hover-only', buttonsHoverOnly);
+        // Make sure global play/stop are not classed `hidden` from the legacy code path
         const btnStartAll = document.getElementById('btnStartAll');
-        if (btnStartAll) btnStartAll.classList.toggle('hidden', masquer);
+        if (btnStartAll) btnStartAll.classList.remove('hidden');
         const btnStopAll = document.getElementById('btnStopAll');
-        if (btnStopAll) btnStopAll.classList.toggle('hidden', masquer);
+        if (btnStopAll) btnStopAll.classList.remove('hidden');
     }
+
+    // In hover-only mode, reveal the buttons when the user moves the mouse into the
+    // bottom-right area of the screen, or when the user taps anywhere (touch devices).
+    // The reveal lasts a few seconds after the last interaction.
+    let revealTimer = null;
+    const REVEAL_MS = 3000;
+
+    function revealFloatingButtons(durationMs = REVEAL_MS) {
+        if (!buttonsHoverOnly) return;
+        document.body.classList.add('buttons-temp-revealed');
+        if (revealTimer) clearTimeout(revealTimer);
+        revealTimer = setTimeout(() => {
+            document.body.classList.remove('buttons-temp-revealed');
+            revealTimer = null;
+        }, durationMs);
+    }
+
+    // Mouse: reveal when the cursor enters the bottom-right quadrant (within ~250px of
+    // the corner). Use mousemove with throttling.
+    let lastMoveCheck = 0;
+    document.addEventListener('mousemove', (e) => {
+        if (!buttonsHoverOnly) return;
+        const now = Date.now();
+        if (now - lastMoveCheck < 50) return; // throttle to ~20 Hz
+        lastMoveCheck = now;
+        const dx = window.innerWidth - e.clientX;
+        const dy = window.innerHeight - e.clientY;
+        if (dx >= 0 && dx <= 250 && dy >= 0 && dy <= 320) {
+            revealFloatingButtons();
+        }
+    });
+
+    // Touch: tapping anywhere on the page reveals the floating buttons for a few seconds
+    // so the user can then aim at one. We bind on `touchend` (not `touchstart`) so that we
+    // don't perturb the click event chain — on iOS, mutating the DOM/CSS during touchstart
+    // can sometimes cancel the subsequent click on the originally-tapped element (e.g. a
+    // START button on a timer card). By waiting for touchend, the click has already been
+    // queued by the browser.
+    document.addEventListener('touchend', () => {
+        if (!buttonsHoverOnly) return;
+        revealFloatingButtons();
+    }, { passive: true });
 
     // Detect browsers that correctly support the CSS 'zoom' property.
     // Safari desktop and mobile both support 'zoom' (since Safari 4) but iPad OS 13+ has
@@ -2880,7 +3072,7 @@
             extraDelay: extraDelay,
             timersZoom: timersZoom,
             clockScale: clockScale,
-            showGlobalControls: showGlobalControls,
+            buttonsHoverOnly: buttonsHoverOnly,
             showVisualTimer: showVisualTimer,
             hideTimeWithVisualTimer: hideTimeWithVisualTimer,
             visualTimerScale: visualTimerScale,
@@ -3285,19 +3477,62 @@
 
     // Applies an already-parsed import object (used by file and URL).
     // Returns true if the import was applied and the page will reload.
+    // List of localStorage keys covered by import/export — keep in sync with applyImport.
+    const IMPORT_KEYS = ['timers_v17_data', 'timers_richtext', 'timers_markdown', 'timers_current_tab'];
+    // Stores the most recently imported configuration. The user can re-apply it at any time
+    // via the "Revert to last imported configuration" menu entry — useful when the imported
+    // config is a "lesson reference" the user wants to come back to after live edits.
+    const LAST_IMPORT_KEY = 'timers_last_import';
+
+    // Save an imported config (the parsed `data` object containing IMPORT_KEYS values)
+    // into a backup blob, so the user can revert to it later via the menu.
+    function saveLastImport(parsedData) {
+        const snapshot = {};
+        IMPORT_KEYS.forEach(k => {
+            // Only save keys that were part of the import (others may have been left
+            // unchanged in localStorage, which is the correct behavior for both import
+            // and revert).
+            if (k in parsedData) snapshot[k] = parsedData[k];
+        });
+        localStorage.setItem(LAST_IMPORT_KEY, JSON.stringify(snapshot));
+    }
+
+    // Re-apply the most recently imported configuration. The backup is NOT cleared after
+    // use — the user can revert multiple times to the same reference state.
+    async function revertToLastImport() {
+        const raw = localStorage.getItem(LAST_IMPORT_KEY);
+        if (!raw) return;
+        const t = i18n[currentLang];
+        const ok = await confirmDialog(t.confirmRevertImport);
+        if (!ok) return;
+        try {
+            const snapshot = JSON.parse(raw);
+            IMPORT_KEYS.forEach(k => {
+                const v = snapshot[k];
+                if (v === null || v === undefined) localStorage.removeItem(k);
+                else if (typeof v === 'string') localStorage.setItem(k, v);
+            });
+        } catch (e) {
+            console.error('Last-import restore failed:', e);
+            return;
+        }
+        location.reload();
+    }
+
     async function applyImport(parsed, options = {}) {
         if (!parsed || typeof parsed !== 'object' || !parsed.data || typeof parsed.data !== 'object') {
             throw new Error('Structure invalide');
         }
-        const knownKeys = ['timers_v17_data', 'timers_richtext', 'timers_markdown', 'timers_current_tab'];
-        const hasAnyKey = knownKeys.some(k => k in parsed.data);
+        const hasAnyKey = IMPORT_KEYS.some(k => k in parsed.data);
         if (!hasAnyKey) throw new Error('Aucune donnée reconnue');
         // skipConfirm: bypass the confirmation dialog (used for ?force=1 in shared URLs).
         if (!options.skipConfirm) {
             const ok = await confirmDialog(i18n[currentLang].confirmImport);
             if (!ok) return false;
         }
-        knownKeys.forEach(k => {
+        // Save the imported config so the user can later revert to it via the menu.
+        saveLastImport(parsed.data);
+        IMPORT_KEYS.forEach(k => {
             const v = parsed.data[k];
             if (v === null || v === undefined) {
                 localStorage.removeItem(k);
@@ -3468,8 +3703,7 @@
                 parsed = JSON.parse(await response.text());
             }
             if (!parsed?.data || typeof parsed.data !== 'object') throw new Error('Structure invalide');
-            const knownKeys = ['timers_v17_data', 'timers_richtext', 'timers_markdown', 'timers_current_tab'];
-            const hasAnyKey = knownKeys.some(k => k in parsed.data);
+            const hasAnyKey = IMPORT_KEYS.some(k => k in parsed.data);
             if (!hasAnyKey) throw new Error('Aucune donnée reconnue');
 
             // Clean the URL whether or not the user accepts (so we don't re-ask on next reload).
@@ -3480,7 +3714,9 @@
             }
             history.replaceState(null, '', location.pathname);
             if (!ok) return;
-            knownKeys.forEach(k => {
+            // Save the imported config so the user can later revert to it via the menu.
+            saveLastImport(parsed.data);
+            IMPORT_KEYS.forEach(k => {
                 const v = parsed.data[k];
                 if (v === null || v === undefined) localStorage.removeItem(k);
                 else if (typeof v === 'string') localStorage.setItem(k, v);
@@ -3518,7 +3754,7 @@
             extraDelay = data.extraDelay !== undefined ? data.extraDelay : 30;
             timersZoom = data.timersZoom !== undefined ? data.timersZoom : 1.0;
             clockScale = data.clockScale !== undefined ? data.clockScale : 1.0;
-            showGlobalControls = data.showGlobalControls !== undefined ? data.showGlobalControls : true;
+            buttonsHoverOnly = data.buttonsHoverOnly !== undefined ? data.buttonsHoverOnly : false;
             showVisualTimer = data.showVisualTimer !== undefined ? data.showVisualTimer : (data.showTimeTimer !== undefined ? data.showTimeTimer : false);
             hideTimeWithVisualTimer = data.hideTimeWithVisualTimer !== undefined ? data.hideTimeWithVisualTimer : false;
             visualTimerScale = data.visualTimerScale !== undefined ? data.visualTimerScale : (data.timeTimerScale !== undefined ? data.timeTimerScale : 1.0);
@@ -3574,8 +3810,9 @@
             applyTheme();
         }
         // Init UI fields that must always reflect values (default or restored)
-        const globalCtrlsCheckbox = document.getElementById('globalCtrlsCheckbox');
-        if (globalCtrlsCheckbox) globalCtrlsCheckbox.checked = showGlobalControls;
+        const buttonsHoverOnlyCheckbox = document.getElementById('buttonsHoverOnlyCheckbox');
+        if (buttonsHoverOnlyCheckbox) buttonsHoverOnlyCheckbox.checked = buttonsHoverOnly;
+        applyButtonsVisibilityMode();
         const visualTimerCheckbox = document.getElementById('visualTimerCheckbox');
         if (visualTimerCheckbox) visualTimerCheckbox.checked = showVisualTimer;
         // Apply the restored Visual Timer scale to the document root (all wrappers read --vt-scale)
@@ -3595,7 +3832,10 @@
         // 6. Initialize floating buttons according to the active tab
         const btnAdd = document.getElementById('btnAddFloating');
         if (btnAdd) btnAdd.classList.toggle('hidden', currentTab !== 'timers');
-        applyGlobalControlsVisibility();
+        const btnStartAll = document.getElementById('btnStartAll');
+        if (btnStartAll) btnStartAll.classList.toggle('hidden', currentTab !== 'timers');
+        const btnStopAll = document.getElementById('btnStopAll');
+        if (btnStopAll) btnStopAll.classList.toggle('hidden', currentTab !== 'timers');
         // Boutons zoom visibles sur les deux onglets
         syncZoomButtons();
         // Apply the restored zoom

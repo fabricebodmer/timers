@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <!-- Top bar color (iOS Safari, Chrome Android, etc.).
          We declare two colors with media queries to follow the light/dark theme. -->
     <meta name="theme-color" content="#1e293b" media="(prefers-color-scheme: light)">
@@ -75,12 +75,21 @@
             position: fixed;
             inset: 0;
             width: 100%;
+            /* The top-bar handles its own safe-area-inset-top via padding. The bottom safe area
+               is handled here so floating buttons stay above the home-indicator if any. */
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            box-sizing: border-box;
         }
         /* Disable double-tap-to-zoom on iOS/Safari (annoying for interactive apps).
            'manipulation' also removes the 300ms delay after tap. */
         button, input, select, textarea, a, .duration-card, .clock-clickable, .tab-btn, .dropdown-item, .dropdown-toggle { touch-action: manipulation; }
         
-        .top-bar { background: var(--top-bar-bg); display: flex; justify-content: space-between; align-items: center; padding: 12px 30px; z-index: 100; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: background-color 0.3s ease; }
+        .top-bar { background: var(--top-bar-bg); display: flex; justify-content: space-between; align-items: center; padding: 12px 30px; z-index: 100; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: background-color 0.3s ease;
+                   /* Extend the top-bar background into the iPad/iPhone notch/status-bar safe area
+                      when the app runs in fullscreen or as a standalone PWA. Without this, a white
+                      gap appears at the top of the screen above our colored top-bar. */
+                   padding-top: calc(12px + env(safe-area-inset-top, 0px));
+                 }
         .app-title { font-weight: 900; font-size: 1.2rem; letter-spacing: 1px; }
         .right-controls { display: flex; align-items: center; gap: 12px; }
         
@@ -129,6 +138,18 @@
         input:focus { border-color: var(--primary); }
         .input-name { width: 300px; }
         .input-time { width: 80px; text-align: center; }
+        /* Three separate h/m/s inputs in the create-timer modal. Each is fixed width;
+           together they line up to roughly match the name field above. */
+        .duration-fields { display: flex; align-items: center; gap: 6px; }
+        .duration-fields input[type="number"] {
+            width: 70px; text-align: center; font-family: inherit;
+            font-size: 1rem; padding: 8px 4px;
+            border: 1px solid var(--input-border); border-radius: 6px;
+            background: var(--input-bg); color: var(--text-dark);
+            box-sizing: border-box;
+        }
+        .duration-fields input.required-empty { border-color: var(--danger); }
+        .duration-sep { font-weight: 700; color: var(--text-light); font-size: 1.2rem; }
         .btn-add-main { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 1rem; text-transform: uppercase; transition: opacity 0.2s; }
         .btn-add-main:hover { opacity: 0.9; }
 
@@ -139,7 +160,7 @@
             justify-content: center;
             gap: 30px; padding: 30px; 
             align-content: start;
-            max-width: 1700px; width: 100%; margin: 0 auto; box-sizing: border-box;
+            width: 100%; margin: 0 auto; box-sizing: border-box;
         }
         
         .duration-card { 
@@ -233,6 +254,44 @@
         .name-edit-form button.btn-cancel { background: var(--btn-close-bg); color: var(--text-light); border: 1px solid var(--input-border); }
         
         .time-left { font-size: 7rem; font-weight: 900; color: var(--input-border); margin: 0; line-height: 1; transition: all 0.2s ease; cursor: pointer; padding: 4px 12px; border-radius: 12px; }
+        /* When the Visual Timer disc is shown, reduce the time-left font to balance the layout */
+        .with-visual-timer .time-left { font-size: 4.5rem; }
+        /* When the disc is shown AND the user has clicked it to hide the numeric time, the
+           time-left is hidden entirely (only the visual disc remains). */
+        .with-visual-timer.hide-time-with-visual .time-left { display: none; }
+        /* Make the disc itself look clickable */
+        .with-visual-timer .visual-timer { cursor: pointer; }
+        /* Visual Timer SVG: hidden by default, shown only when the card has .with-visual-timer */
+        .visual-timer-wrapper { display: none; }
+        .with-visual-timer .visual-timer-wrapper {
+            display: block;
+            position: relative;
+            margin: 4px auto 8px;
+            /* --vt-scale is set inline per timer; default 1.0 */
+            width: calc(220px * var(--vt-scale, 1));
+            height: calc(220px * var(--vt-scale, 1));
+        }
+        .visual-timer { width: 100%; height: 100%; display: block; }
+        /* Resize handle: invisible by default, visible on wrapper hover */
+        .visual-timer-resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 22px;
+            height: 22px;
+            cursor: nwse-resize;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            background-image: linear-gradient(135deg, transparent 0 50%, var(--text-light) 50% 60%, transparent 60% 75%, var(--text-light) 75% 85%, transparent 85% 100%);
+            border-radius: 0 0 6px 0;
+            z-index: 5;
+            touch-action: none;
+        }
+        .visual-timer-wrapper:hover .visual-timer-resize-handle { opacity: 0.7; }
+        .visual-timer-resize-handle:hover { opacity: 1 !important; }
+        .visual-timer-wrapper.resizing .visual-timer-resize-handle { opacity: 1; }
+        /* Dark mode adjustments for the dial */
+        .dark .with-visual-timer .visual-timer circle:first-child { fill: #f1f5f9; }
         .time-left:hover { background: var(--btn-close-bg); }
         .active .time-left { color: var(--text-dark); }
         .finished .time-left { color: var(--danger); }
@@ -428,13 +487,13 @@
         .richtext-container:not(.editing) .richtext-editor { cursor: text; }
         .richtext-container:not(.editing) .richtext-editor:hover { background: var(--btn-close-bg); }
         .richtext-editor:focus { outline: none; }
-        .richtext-editor h1 { font-size: 3.5rem; font-weight: 900; margin-top: 0; margin-bottom: 0.6rem; color: var(--primary); line-height: 1.1; }
-        .richtext-editor h2 { font-size: 2.8rem; font-weight: 800; margin-top: 1.2rem; margin-bottom: 0.6rem; color: var(--text-dark); line-height: 1.1; }
-        .richtext-editor h3 { font-size: 2.2rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; color: var(--text-dark); line-height: 1.1; }
+        .richtext-editor h1 { font-size: 2.33em; font-weight: 900; margin-top: 0; margin-bottom: 0.6rem; color: var(--primary); line-height: 1.1; }
+        .richtext-editor h2 { font-size: 1.87em; font-weight: 800; margin-top: 1.2rem; margin-bottom: 0.6rem; color: var(--text-dark); line-height: 1.1; }
+        .richtext-editor h3 { font-size: 1.47em; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; color: var(--text-dark); line-height: 1.1; }
         .richtext-editor p { margin-bottom: 0.6rem; }
         .richtext-editor ul, .richtext-editor ol { margin-bottom: 0.6rem; padding-left: 2.5rem; }
         .richtext-editor li { margin-bottom: 0.2rem; }
-        .richtext-editor blockquote { border-left: 4px solid var(--primary); padding-left: 1.5rem; margin-left: 0; margin-bottom: 0.6rem; color: var(--text-light); font-style: italic; font-size: 1.6rem; line-height: 1.3; }
+        .richtext-editor blockquote { border-left: 4px solid var(--primary); padding-left: 1.5rem; margin-left: 0; margin-bottom: 0.6rem; color: var(--text-light); font-style: italic; font-size: 1.07em; line-height: 1.3; }
         .richtext-editor strong, .richtext-editor b { font-weight: 700; color: var(--text-dark); }
         .richtext-editor em, .richtext-editor i { font-style: italic; }
         .richtext-editor a { color: var(--primary); text-decoration: underline; }
@@ -513,7 +572,6 @@
             }
             
             #durationsList { 
-                grid-template-columns: 1fr; 
                 padding: 20px 15px; 
                 gap: 20px;
             }
@@ -571,19 +629,19 @@
             }
             
             .richtext-editor h1 { 
-                font-size: 2.2rem;
+                font-size: 1.83em;
             }
             
             .richtext-editor h2 { 
-                font-size: 1.8rem;
+                font-size: 1.5em;
             }
             
             .richtext-editor h3 { 
-                font-size: 1.5rem;
+                font-size: 1.25em;
             }
             
             .richtext-editor blockquote { 
-                font-size: 1.3rem;
+                font-size: 1.08em;
             }
         }
     </style>
@@ -675,6 +733,15 @@
                         </div>
                     </div>
                     <div class="dropdown-setting">
+                        <label id="txt-label-visual-timer">Timer visuel</label>
+                        <div class="dropdown-setting-input">
+                            <label class="dropdown-toggle">
+                                <input type="checkbox" id="visualTimerCheckbox" onchange="onVisualTimerChange()" onclick="event.stopPropagation()">
+                                <span></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="dropdown-setting">
                         <label id="txt-label-lang">Langue</label>
                         <div class="dropdown-setting-input">
                             <select id="langSelector" onchange="changeLanguage(this.value)" onclick="event.stopPropagation()">
@@ -713,14 +780,14 @@
                     <label id="txt-label-name">Nom</label>
                     <input type="text" id="nameInput" class="input-name" placeholder="Ex: Pain">
                 </div>
-                <div class="add-modal-time-row">
-                    <div class="field">
-                        <label id="txt-label-min">Min</label>
-                        <input type="number" id="minInput" class="input-time" value="0" min="0" oninput="clearAddModalError()">
-                    </div>
-                    <div class="field">
-                        <label id="txt-label-sec">Sec</label>
-                        <input type="number" id="secInput" class="input-time" value="0" min="0" max="59" oninput="clearAddModalError()">
+                <div class="field">
+                    <label id="txt-label-duration">Durée</label>
+                    <div class="duration-fields">
+                        <input type="number" id="durationH" value="0" min="0" max="23" oninput="clearAddModalError()" aria-label="heures">
+                        <span class="duration-sep">:</span>
+                        <input type="number" id="durationM" value="5" min="0" max="59" oninput="clearAddModalError()" aria-label="minutes">
+                        <span class="duration-sep">:</span>
+                        <input type="number" id="durationS" value="0" min="0" max="59" oninput="clearAddModalError()" aria-label="secondes">
                     </div>
                 </div>
             </div>
@@ -772,9 +839,9 @@
 
 <script>
     const i18n = {
-        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", editStartTimeTitle: "Modifier l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", fileDropMessage: "Déposer le fichier JSON pour l'importer", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Auto-reset après", autoResetUnit: "sec (0=off)", extraLabel: "Temps supplémentaire", extraUnit: "sec", removeExtraTitle: "Annuler le temps supplémentaire", langLabel: "Langue", configSection: "Configuration", globalCtrlsLabel: "Boutons globaux", clearAll: "Réinitialiser…", clockLabel: "Horloge", clockNone: "Aucune", clockDigital: "Numérique", clockCff: "CFF", clockBoth: "CFF + numérique", clockToggleTitle: "Cliquer pour changer d'horloge", clockResizeTitle: "Glisser pour redimensionner", startAllTitle: "Démarrer tous les timers", stopAllTitle: "Arrêter tous les timers", zoomInTitle: "Agrandir les timers", zoomOutTitle: "Réduire les timers", zoomResetTitle: "Zoom 100% (réinitialiser)", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes", startTimeTooEarly: "Impossible de placer le départ plus loin dans le passé que la durée du timer", startTimeTooLate: "Impossible de placer le départ plus tard que le temps déjà écoulé", invalidTimeFormat: "Format d'heure invalide" },
-        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notizen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", editStartTimeTitle: "Startzeit ändern", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", fileDropMessage: "JSON-Datei hier ablegen, um sie zu importieren", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Auto-Reset nach", autoResetUnit: "Sek (0=aus)", extraLabel: "Zusätzliche Zeit", extraUnit: "Sek", removeExtraTitle: "Zusätzliche Zeit aufheben", langLabel: "Sprache", configSection: "Konfiguration", globalCtrlsLabel: "Globale Tasten", clearAll: "Zurücksetzen…", clockLabel: "Uhr", clockNone: "Keine", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Klicken, um Uhr zu wechseln", clockResizeTitle: "Ziehen zum Vergrößern", startAllTitle: "Alle Timer starten", stopAllTitle: "Alle Timer stoppen", zoomInTitle: "Timer vergrößern", zoomOutTitle: "Timer verkleinern", zoomResetTitle: "Zoom 100% (zurücksetzen)", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden", startTimeTooEarly: "Der Start kann nicht weiter in der Vergangenheit liegen als die Timer-Dauer", startTimeTooLate: "Der Start kann nicht später liegen als die bereits verstrichene Zeit", invalidTimeFormat: "Ungültiges Zeitformat" },
-        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", editStartTimeTitle: "Edit start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", fileDropMessage: "Drop the JSON file to import it", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Auto-reset after", autoResetUnit: "sec (0=off)", extraLabel: "Extra time", extraUnit: "sec", removeExtraTitle: "Cancel extra time", langLabel: "Language", configSection: "Configuration", globalCtrlsLabel: "Global buttons", clearAll: "Reset…", clockLabel: "Clock", clockNone: "None", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Click to switch clock", clockResizeTitle: "Drag to resize", startAllTitle: "Start all timers", stopAllTitle: "Stop all timers", zoomInTitle: "Make timers bigger", zoomOutTitle: "Make timers smaller", zoomResetTitle: "Zoom 100% (reset)", toggleSecondsTitle: "Click to show/hide seconds", startTimeTooEarly: "Cannot place the start further in the past than the timer duration", startTimeTooLate: "Cannot place the start later than the time already elapsed", invalidTimeFormat: "Invalid time format" }
+        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", durationLabel: "Durée (h:m:s)", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", editStartTimeTitle: "Modifier l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", fileDropMessage: "Déposer le fichier JSON pour l'importer", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Auto-reset après", autoResetUnit: "sec (0=off)", extraLabel: "Temps supplémentaire", extraUnit: "sec", removeExtraTitle: "Annuler le temps supplémentaire", langLabel: "Langue", configSection: "Configuration", globalCtrlsLabel: "Boutons globaux", visualTimerLabel: "Timer visuel", visualTimerResizeTitle: "Glisser pour redimensionner ce timer visuel", toggleHideTimeTitle: "Cliquer pour afficher/masquer le temps restant", clearAll: "Réinitialiser…", clockLabel: "Horloge", clockNone: "Aucune", clockDigital: "Numérique", clockCff: "CFF", clockBoth: "CFF + numérique", clockToggleTitle: "Cliquer pour changer d'horloge", clockResizeTitle: "Glisser pour redimensionner", startAllTitle: "Démarrer tous les timers", stopAllTitle: "Arrêter tous les timers", zoomInTitle: "Agrandir les timers", zoomOutTitle: "Réduire les timers", zoomResetTitle: "Zoom 100% (réinitialiser)", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes", startTimeTooEarly: "Impossible de placer le départ plus loin dans le passé que la durée du timer", startTimeTooLate: "Impossible de placer le départ plus tard que le temps déjà écoulé", invalidTimeFormat: "Format d'heure invalide" },
+        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", durationLabel: "Dauer (h:m:s)", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notizen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", editStartTimeTitle: "Startzeit ändern", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", fileDropMessage: "JSON-Datei hier ablegen, um sie zu importieren", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Auto-Reset nach", autoResetUnit: "Sek (0=aus)", extraLabel: "Zusätzliche Zeit", extraUnit: "Sek", removeExtraTitle: "Zusätzliche Zeit aufheben", langLabel: "Sprache", configSection: "Konfiguration", globalCtrlsLabel: "Globale Tasten", visualTimerLabel: "Visueller Timer", visualTimerResizeTitle: "Ziehen, um diesen visuellen Timer zu skalieren", toggleHideTimeTitle: "Klicken, um die Restzeit ein-/auszublenden", clearAll: "Zurücksetzen…", clockLabel: "Uhr", clockNone: "Keine", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Klicken, um Uhr zu wechseln", clockResizeTitle: "Ziehen zum Vergrößern", startAllTitle: "Alle Timer starten", stopAllTitle: "Alle Timer stoppen", zoomInTitle: "Timer vergrößern", zoomOutTitle: "Timer verkleinern", zoomResetTitle: "Zoom 100% (zurücksetzen)", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden", startTimeTooEarly: "Der Start kann nicht weiter in der Vergangenheit liegen als die Timer-Dauer", startTimeTooLate: "Der Start kann nicht später liegen als die bereits verstrichene Zeit", invalidTimeFormat: "Ungültiges Zeitformat" },
+        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", durationLabel: "Duration (h:m:s)", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", editStartTimeTitle: "Edit start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", fileDropMessage: "Drop the JSON file to import it", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Auto-reset after", autoResetUnit: "sec (0=off)", extraLabel: "Extra time", extraUnit: "sec", removeExtraTitle: "Cancel extra time", langLabel: "Language", configSection: "Configuration", globalCtrlsLabel: "Global buttons", visualTimerLabel: "Visual Timer", visualTimerResizeTitle: "Drag to resize this visual timer", toggleHideTimeTitle: "Click to show/hide remaining time", clearAll: "Reset…", clockLabel: "Clock", clockNone: "None", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Click to switch clock", clockResizeTitle: "Drag to resize", startAllTitle: "Start all timers", stopAllTitle: "Stop all timers", zoomInTitle: "Make timers bigger", zoomOutTitle: "Make timers smaller", zoomResetTitle: "Zoom 100% (reset)", toggleSecondsTitle: "Click to show/hide seconds", startTimeTooEarly: "Cannot place the start further in the past than the timer duration", startTimeTooLate: "Cannot place the start later than the time already elapsed", invalidTimeFormat: "Invalid time format" }
     };
 
     let currentLang = 'fr';
@@ -791,6 +858,9 @@
     let timersZoom = 1.0; // Zoom applied to the timers grid (0.6 to 2.0)
     let clockScale = 1.0; // Clock scale (0.5 to 3.0), adjustable via the handle
     let showGlobalControls = true; // Afficher les boutons globaux play/stop (en plus de + et zoom)
+    let showVisualTimer = false; // Display a Visual Timer-style disc on each timer card
+    let hideTimeWithVisualTimer = false; // When true (and Visual Timer is on), hide the numeric time-left display
+    let visualTimerScale = 1.0; // Global scale of the Visual Timer disc on every timer card
     let clockMode = 'digital'; // 'none' | 'digital' | 'cff' | 'both'
     let currentTab = 'timers';
     let showStartTime = false; // Global display of start time for all active timers
@@ -1034,7 +1104,21 @@
         // Zoom applies only to the editor content, not to the toolbar
         // (la toolbar garde sa taille fixe pour rester accessible).
         const editor = document.getElementById('richtextEditor');
-        applyScale(editor, richtextZoom);
+        if (!editor) return;
+        if (supportsCssZoom) {
+            // Desktop browsers (Chrome, Firefox 126+, Safari desktop): use CSS zoom.
+            applyScale(editor, richtextZoom);
+        } else {
+            // iPad/iPhone Safari: 'transform: scale' on the contenteditable causes a left
+            // shift bug. Use font-size scaling instead — children using rem/em scale
+            // accordingly. Padding stays fixed but that's fine for readability.
+            editor.style.transform = '';
+            editor.style.transformOrigin = '';
+            editor.style.zoom = '';
+            editor.style.marginBottom = '';
+            // Base font-size of the editor is 1.5rem (see CSS); we scale that.
+            editor.style.fontSize = `calc(1.5rem * ${richtextZoom})`;
+        }
         // If on the notes tab, update the floating buttons
         if (currentTab === 'instructions') syncZoomButtons();
     }
@@ -1104,12 +1188,13 @@
         document.getElementById('txt-clear-all').textContent = t.clearAll;
         const txtSectionConfig = document.getElementById('txt-section-config'); if (txtSectionConfig) txtSectionConfig.textContent = t.configSection;
         const txtGlobalCtrls = document.getElementById('txt-label-global-ctrls'); if (txtGlobalCtrls) txtGlobalCtrls.textContent = t.globalCtrlsLabel;
+        const txtVisualTimer = document.getElementById('txt-label-visual-timer'); if (txtVisualTimer) txtVisualTimer.textContent = t.visualTimerLabel;
         const txtExport = document.getElementById('txt-export'); if (txtExport) txtExport.textContent = t.export;
         const txtImport = document.getElementById('txt-import'); if (txtImport) txtImport.textContent = t.import;
         const txtShare = document.getElementById('txt-share'); if (txtShare) txtShare.textContent = t.share;
         document.getElementById('txt-label-name').textContent = t.labelName;
-        document.getElementById('txt-label-min').textContent = t.labelMin;
-        document.getElementById('txt-label-sec').textContent = t.labelSec;
+        const lblDuration = document.getElementById('txt-label-duration');
+        if (lblDuration) lblDuration.textContent = t.durationLabel;
         document.getElementById('txt-btn-add').textContent = t.btnAdd;
         const txtThreshold = document.getElementById('txt-label-threshold'); if (txtThreshold) txtThreshold.textContent = t.thresholdLabel;
         const txtThresholdUnit = document.getElementById('txt-threshold-unit'); if (txtThresholdUnit) txtThresholdUnit.textContent = t.thresholdUnit;
@@ -1399,6 +1484,7 @@
             timeDisplay.textContent = formatTime(obj.totalSecs);
         }
         updateTimerTitle(id);
+        if (showVisualTimer) updateVisualTimerDisc(id);
     }
 
     // Helper: refresh display of all timers (used by SEC toggle and threshold change)
@@ -1423,18 +1509,20 @@
         if (!modal) return;
         // Reset fields
         document.getElementById('nameInput').value = '';
-        document.getElementById('minInput').value = '0';
-        document.getElementById('secInput').value = '0';
+        document.getElementById('durationH').value = '0';
+        document.getElementById('durationM').value = '5';
+        document.getElementById('durationS').value = '0';
         // Clear any error state from a previous opening
-        document.getElementById('minInput').classList.remove('required-empty');
-        document.getElementById('secInput').classList.remove('required-empty');
+        ['durationH','durationM','durationS'].forEach(id => {
+            document.getElementById(id).classList.remove('required-empty');
+        });
         modal.classList.add('visible');
         // Focus on the name
         setTimeout(() => document.getElementById('nameInput').focus(), 50);
         // Escape to close
         const onKey = (e) => {
             if (e.key === 'Escape') { e.preventDefault(); closeAddModal(); document.removeEventListener('keydown', onKey); }
-            else if (e.key === 'Enter' && (e.target.id === 'nameInput' || e.target.id === 'minInput' || e.target.id === 'secInput')) {
+            else if (e.key === 'Enter' && ['nameInput','durationH','durationM','durationS'].includes(e.target.id)) {
                 e.preventDefault(); addTimer();
             }
         };
@@ -1442,11 +1530,12 @@
         modal._onKey = onKey;
     }
 
-    // Clears the "required field" error state on Min/Sec fields as soon as the user
+    // Clears the "required field" error state on the duration fields as soon as the user
     // starts typing again. The red validation only appears on add attempt.
     function clearAddModalError() {
-        document.getElementById('minInput').classList.remove('required-empty');
-        document.getElementById('secInput').classList.remove('required-empty');
+        ['durationH','durationM','durationS'].forEach(id => {
+            document.getElementById(id).classList.remove('required-empty');
+        });
     }
 
     function closeAddModal() {
@@ -1459,12 +1548,16 @@
     function addTimer() {
         const nomInput = document.getElementById('nameInput').value.trim();
         const nom = nomInput || '';
-        const totalSecs = (parseInt(document.getElementById('minInput').value)||0)*60 + (parseInt(document.getElementById('secInput').value)||0);
+        const h = parseInt(document.getElementById('durationH').value) || 0;
+        const m = parseInt(document.getElementById('durationM').value) || 0;
+        const s = parseInt(document.getElementById('durationS').value) || 0;
+        const totalSecs = h*3600 + m*60 + s;
         if (totalSecs <= 0) {
-            // Mark Min/Sec fields red and focus them to signal the error
-            document.getElementById('minInput').classList.add('required-empty');
-            document.getElementById('secInput').classList.add('required-empty');
-            document.getElementById('minInput').focus();
+            // Mark all duration fields red and focus the minutes (most common entry point)
+            ['durationH','durationM','durationS'].forEach(id => {
+                document.getElementById(id).classList.add('required-empty');
+            });
+            document.getElementById('durationM').focus();
             return;
         }
         const id = Date.now();
@@ -1479,21 +1572,281 @@
         const t = i18n[currentLang];
         const card = document.createElement('div');
         card.className = 'duration-card'; card.id = `card-${obj.id}`; card.draggable = true;
+        if (showVisualTimer) card.classList.add('with-visual-timer');
+        if (hideTimeWithVisualTimer) card.classList.add('hide-time-with-visual');
         // The name field is ALWAYS present (even empty) so it can be clicked/renamed.
         // Si vide on affiche un placeholder visuel via CSS (data-empty="1").
         const nomTexte = obj.nom || t.untiteld || 'Sans titre';
         const nomDataEmpty = obj.nom ? '' : 'data-empty="1"';
+        // Visual Timer SVG: a 60-minute analog dial with a red sector showing remaining time.
+        // The sector is updated by updateVisualTimerDisc() each tick.
+        // viewBox 0 0 200 200, center at (100,100), radius 80 for the dial.
+        // The red sector is drawn as a <path> with d updated dynamically.
+        // Wrapped in a container so we can attach a resize handle without affecting the SVG itself.
+        const visualTimerSvg = `
+            <div class="visual-timer-wrapper" id="visual-timer-wrapper-${obj.id}">
+                <svg class="visual-timer" id="visual-timer-${obj.id}" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" onclick="toggleHideTimeWithVisualTimer()" title="${t.toggleHideTimeTitle || 'Cliquer pour afficher/masquer le temps restant'}">
+                    <circle cx="100" cy="100" r="92" fill="white" stroke="#222" stroke-width="3"/>
+                    <g class="tt-ticks">${buildVisualTimerTicks()}</g>
+                    <g class="tt-numbers">${buildVisualTimerNumbers()}</g>
+                    <path class="tt-sector" id="visual-timer-sector-${obj.id}" d="" fill="#d8262a"/>
+                    <circle cx="100" cy="100" r="6" fill="#222"/>
+                </svg>
+                <div class="visual-timer-resize-handle" onmousedown="event.stopPropagation(); startVisualTimerResize(event)" ontouchstart="event.stopPropagation(); startVisualTimerResize(event)" title="${t.visualTimerResizeTitle || 'Glisser pour redimensionner'}"></div>
+            </div>`;
         card.innerHTML = `<div class="drag-handle"><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div></div>
             <button class="btn-duplicate" onclick="duplicateTimer('${obj.id}')" title="${t.duplicate}">⎘</button>
             <button class="btn-close" onclick="deleteTimer('${obj.id}')">×</button>
             <div class="label-duree-titre" id="title-${obj.id}" onclick="editTimer('${obj.id}')" title="${t.editDurationTitle}">${t.duration} — ${formatTime(obj.totalSecs)}</div>
             <div class="label-nom" id="nom-${obj.id}" ${nomDataEmpty} onclick="editName('${obj.id}')" title="${t.editNameTitle || 'Cliquer pour renommer'}">${escapeHtml(nomTexte)}</div>
+            ${visualTimerSvg}
             <div class="time-left" id="time-${obj.id}" onclick="toggleHideSeconds()" title="${t.toggleSecondsTitle}">${formatTime(obj.totalSecs)}</div>
             <div class="end-time-display" id="endtime-${obj.id}" onclick="toggleStartTime()"></div>
             <div class="card-actions" id="actions-${obj.id}"><button class="btn-start" onclick="startTimer('${obj.id}')">${t.start}</button></div>
             <div class="progress-bar-container"><div class="progress-bar-fill" id="progress-${obj.id}"></div></div>`;
         document.getElementById('durationsList').appendChild(card);
         attachDragEvents(card);
+        updateVisualTimerDisc(obj.id);
+    }
+
+    // Build the 60 minute tick marks around the Visual Timer dial.
+    // Major ticks every 5 minutes, minor ticks every minute.
+    function buildVisualTimerTicks() {
+        let s = '';
+        for (let i = 0; i < 60; i++) {
+            const angle = i * 6; // 360 / 60
+            const isMajor = i % 5 === 0;
+            const len = isMajor ? 8 : 4;
+            const width = isMajor ? 2 : 1;
+            // Tick from radius 84 (just inside circle r=92) inward by `len`
+            const r1 = 84;
+            const r2 = 84 - len;
+            const rad = (angle - 90) * Math.PI / 180;
+            const x1 = 100 + r1 * Math.cos(rad);
+            const y1 = 100 + r1 * Math.sin(rad);
+            const x2 = 100 + r2 * Math.cos(rad);
+            const y2 = 100 + r2 * Math.sin(rad);
+            s += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="#222" stroke-width="${width}"/>`;
+        }
+        return s;
+    }
+
+    // Build the minute numbers (5, 10, 15, ..., 55) around the dial.
+    function buildVisualTimerNumbers() {
+        let s = '';
+        for (let i = 5; i < 60; i += 5) {
+            const angle = i * 6;
+            const r = 68;
+            const rad = (angle - 90) * Math.PI / 180;
+            const x = 100 + r * Math.cos(rad);
+            const y = 100 + r * Math.sin(rad);
+            s += `<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#222">${i}</text>`;
+        }
+        return s;
+    }
+
+    // Track timers currently in their "wind-up" animation. While animating, the regular
+    // updateVisualTimerDisc() calls (from globalTick) are skipped to avoid overwriting the
+    // in-progress animation path.
+    let visualTimerAnimating = new Set();
+
+    // Update the red sector of a timer's Visual Timer disc based on remaining time.
+    // The sector spans from 12 o'clock clockwise by (remaining_min / 60 * 360°).
+    // If remaining > 60 min, the disc is fully red until it drops below 60 min.
+    function updateVisualTimerDisc(id) {
+        if (visualTimerAnimating.has(id.toString())) return;
+        const sector = document.getElementById(`visual-timer-sector-${id}`);
+        if (!sector) return;
+        const obj = timersList.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        // If the timer hasn't been started yet, show an empty disc (no red sector).
+        if (obj.start === null) {
+            sector.setAttribute('d', '');
+            return;
+        }
+        const elapsed = (Date.now() - obj.start) / 1000;
+        const remainingSecs = (obj.totalSecs + obj.extraSecs) - elapsed;
+        if (remainingSecs <= 0) {
+            sector.setAttribute('d', '');
+            return;
+        }
+        // Cap at 60 minutes (3600s): above that, full red disc
+        const remainingMin = Math.min(remainingSecs / 60, 60);
+        const angle = remainingMin / 60 * 360;
+        sector.setAttribute('d', buildSectorPath(100, 100, 80, angle));
+    }
+
+    // Wind-up animation: sector grows from 0° to 360° (clockwise), then shrinks down to
+    // the angle representing the actual remaining time. Used when a timer starts or when
+    // the Visual Timer feature is enabled, to visually emphasize the disc.
+    //   Phase 1: 0° → 360°  over ~600ms
+    //   Phase 2: 360° → finalAngle  over ~400ms
+    function animateVisualTimerWindUp(id) {
+        const sector = document.getElementById(`visual-timer-sector-${id}`);
+        if (!sector) return;
+        const obj = timersList.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        // No animation if the timer isn't running — disc stays empty.
+        if (obj.start === null) {
+            sector.setAttribute('d', '');
+            return;
+        }
+        const elapsed = (Date.now() - obj.start) / 1000;
+        const remainingSecs = (obj.totalSecs + obj.extraSecs) - elapsed;
+        if (remainingSecs <= 0) return;
+        const idStr = id.toString();
+        visualTimerAnimating.add(idStr);
+
+        const PHASE1_MS = 600;
+        const PHASE2_MS = 600;
+        // Cap phase 1's max angle just below 360 so we stay on the secteur path topology
+        // (avoids the "full disc" path which has a different shape and would cause a flash
+        // when transitioning to the secteur path at the start of phase 2).
+        const PHASE1_MAX = 359.5;
+        const startT = performance.now();
+
+        // Helper: compute the angle that should be displayed *right now* based on elapsed time.
+        const currentTargetAngle = () => {
+            const el = (Date.now() - obj.start) / 1000;
+            const r = (obj.totalSecs + obj.extraSecs) - el;
+            if (r <= 0) return 0;
+            return Math.min(r / 60, 60) / 60 * 360;
+        };
+
+        const tick = (now) => {
+            const elapsed = now - startT;
+            let angle;
+            if (elapsed < PHASE1_MS) {
+                // Phase 1 (wind-up): ease-out from 0 to PHASE1_MAX (just below 360°).
+                const p = elapsed / PHASE1_MS;
+                const eased = 1 - Math.pow(1 - p, 3); // cubic ease-out
+                angle = eased * PHASE1_MAX;
+            } else if (elapsed < PHASE1_MS + PHASE2_MS) {
+                // Phase 2 (return): ease-out from PHASE1_MAX to current target angle.
+                // Same path topology as phase 1 (no full-disc switch) → no flash.
+                const p = (elapsed - PHASE1_MS) / PHASE2_MS;
+                const eased = 1 - Math.pow(1 - p, 3); // cubic ease-out
+                const target = currentTargetAngle();
+                angle = PHASE1_MAX + eased * (target - PHASE1_MAX);
+            } else {
+                angle = currentTargetAngle();
+            }
+            sector.setAttribute('d', buildSectorPath(100, 100, 80, angle));
+            if (elapsed < PHASE1_MS + PHASE2_MS) {
+                requestAnimationFrame(tick);
+            } else {
+                visualTimerAnimating.delete(idStr);
+                // Final sync to the current remaining time
+                updateVisualTimerDisc(id);
+            }
+        };
+        requestAnimationFrame(tick);
+    }
+
+
+    // --- Drag to resize all Visual Timer discs (global scale) via the handle on any one of them ---
+    function startVisualTimerResize(e) {
+        // The handle that was clicked is on a wrapper; we use it for visual feedback,
+        // but the scale change applies to ALL Visual Timer wrappers (global setting).
+        const wrapper = e.currentTarget ? e.currentTarget.parentElement : null;
+        if (!wrapper) return;
+        e.preventDefault();
+        const point = e.touches ? e.touches[0] : e;
+        const startX = point.clientX;
+        const startY = point.clientY;
+        const startScale = visualTimerScale;
+        wrapper.classList.add('resizing');
+        let aBouge = false;
+
+        const onMove = (ev) => {
+            const p = ev.touches ? ev.touches[0] : ev;
+            const dx = p.clientX - startX;
+            const dy = p.clientY - startY;
+            if (Math.abs(dx) + Math.abs(dy) > 3) aBouge = true;
+            const delta = (dx + dy) / 2;
+            // Sensitivity: 100 px of movement = +1.0 scale
+            let newScale = startScale + delta / 100;
+            // Lower bound: 0.4
+            if (newScale < 0.4) newScale = 0.4;
+            // Upper bound: the disc must fit in the timer card's content width.
+            // Card has max-width 500px (see grid CSS) and ~30px horizontal padding total.
+            // The disc's natural width is 220px. So max scale = (cardWidth - padding) / 220.
+            const card = wrapper.closest('.duration-card');
+            if (card) {
+                const cs = window.getComputedStyle(card);
+                const padL = parseFloat(cs.paddingLeft) || 0;
+                const padR = parseFloat(cs.paddingRight) || 0;
+                const innerWidth = card.clientWidth - padL - padR;
+                const maxByCard = innerWidth / 220;
+                if (newScale > maxByCard) newScale = maxByCard;
+            }
+            // Hard cap as safety net
+            if (newScale > 2.5) newScale = 2.5;
+            visualTimerScale = Math.round(newScale * 100) / 100;
+            applyVisualTimerScale();
+        };
+        const onEnd = () => {
+            wrapper.classList.remove('resizing');
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onEnd);
+            // Block the click that follows mouseup if the user actually dragged
+            if (aBouge) {
+                const blockClick = (ev) => {
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                    document.removeEventListener('click', blockClick, true);
+                };
+                document.addEventListener('click', blockClick, true);
+            }
+            save();
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onEnd);
+    }
+
+    // Apply the global Visual Timer scale to the document root (all wrappers read --vt-scale).
+    function applyVisualTimerScale() {
+        document.documentElement.style.setProperty('--vt-scale', visualTimerScale);
+    }
+
+    // Toggle the visibility of the numeric time-left when the Visual Timer is shown.
+    // Triggered by clicking the disc itself.
+    function toggleHideTimeWithVisualTimer() {
+        if (!showVisualTimer) return; // No effect if Visual Timer feature is off
+        hideTimeWithVisualTimer = !hideTimeWithVisualTimer;
+        applyHideTimeWithVisualTimer();
+        save();
+    }
+
+    function applyHideTimeWithVisualTimer() {
+        document.querySelectorAll('.duration-card').forEach(card => {
+            card.classList.toggle('hide-time-with-visual', hideTimeWithVisualTimer);
+        });
+    }
+
+    // spanning from 12 o'clock clockwise by `angleDeg` degrees.
+    function buildSectorPath(cx, cy, r, angleDeg) {
+        if (angleDeg <= 0) return '';
+        // For a (near-)full disc, draw a true circle using two 180° arcs. This avoids the
+        // hairline gap that's visible at near-360° angles, and avoids the degenerate case
+        // where start and end points are identical (browsers silently fail to render that).
+        // The threshold is set generously (>= 358) so that durations very close to 60min
+        // also render as a full disc — a 2° gap is imperceptible at typical sizes.
+        if (angleDeg >= 358) {
+            return `M ${cx-r} ${cy} A ${r} ${r} 0 1 1 ${cx+r} ${cy} A ${r} ${r} 0 1 1 ${cx-r} ${cy} Z`;
+        }
+        const startRad = -Math.PI / 2; // 12 o'clock
+        const endRad = startRad + angleDeg * Math.PI / 180;
+        const x1 = cx + r * Math.cos(startRad);
+        const y1 = cy + r * Math.sin(startRad);
+        const x2 = cx + r * Math.cos(endRad);
+        const y2 = cy + r * Math.sin(endRad);
+        const largeArc = angleDeg > 180 ? 1 : 0;
+        return `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
     }
 
     function startTimer(id) {
@@ -1503,6 +1856,8 @@
         obj.start = Date.now();
         obj.extraSecs = 0;  // Reset extra time on start
         updateActiveUI(id); updateEndTime(id); updateTimerTitle(id); startTick(id); save();
+        // Wind-up animation on the Visual Timer disc (if the feature is enabled)
+        if (showVisualTimer) animateVisualTimerWindUp(id);
     }
 
     // Updates the title text "DURATION — X:XX" or "DURATION — X:XX (+30s)" if extraSecs > 0
@@ -1578,7 +1933,19 @@
 
     function applyTimersZoom() {
         const list = document.getElementById('durationsList');
-        applyScale(list, timersZoom);
+        if (!list) return;
+        // For the timers grid we ALWAYS use native CSS 'zoom' (even on iPad), because
+        // 'transform: scale' wouldn't trigger grid reflow — the column count would stay
+        // fixed regardless of zoom level. 'zoom' has minor rem-scaling quirks on iPad but
+        // those are acceptable; the column-count behavior is what matters here.
+        list.style.transform = '';
+        list.style.transformOrigin = '';
+        list.style.marginBottom = '';
+        if (Math.abs(timersZoom - 1.0) < 0.001) {
+            list.style.zoom = '';
+        } else {
+            list.style.zoom = timersZoom;
+        }
         // Synchroniser les boutons UNIQUEMENT si on est sur l'onglet timers
         // (otherwise they reflect richtextZoom applied via applyZoom)
         if (currentTab === 'timers') syncZoomButtons();
@@ -1806,12 +2173,14 @@
             if (restant <= 0) {
                 timeEl.textContent = "0:00";
                 progressEl.style.width = "100%";
+                if (showVisualTimer) updateVisualTimerDisc(id);
                 if (!card.classList.contains('finished')) { markFinished(id); }
                 activeTickIds.delete(id);
                 return;
             }
             timeEl.textContent = formatTime(Math.ceil(restant/1000));
             progressEl.style.width = (ecoule/total*100) + "%";
+            if (showVisualTimer) updateVisualTimerDisc(id);
         });
         // No more active timers → stop the clock
         if (activeTickIds.size === 0 && globalTickInterval !== null) {
@@ -1904,6 +2273,36 @@
         save();
     }
 
+    function onVisualTimerChange() {
+        const checkbox = document.getElementById('visualTimerCheckbox');
+        if (!checkbox) return;
+        const wasOn = showVisualTimer;
+        showVisualTimer = checkbox.checked;
+        applyVisualTimerVisibility();
+        // If we just turned the feature ON (not at initial load), play the wind-up
+        // animation only on timers that are already running. Timers not started yet
+        // stay with an empty disc.
+        if (showVisualTimer && !wasOn) {
+            timersList.forEach(d => {
+                if (d.start !== null) animateVisualTimerWindUp(d.id);
+            });
+        }
+        save();
+    }
+
+    // Show/hide the Visual Timer disc on every timer card and adjust the
+    // time-left font size accordingly (smaller when the disc is shown to keep the
+    // card layout balanced).
+    function applyVisualTimerVisibility() {
+        document.querySelectorAll('.duration-card').forEach(card => {
+            card.classList.toggle('with-visual-timer', showVisualTimer);
+        });
+        // Refresh all displays so the disc shows the current remaining time
+        if (showVisualTimer) {
+            timersList.forEach(d => updateVisualTimerDisc(d.id));
+        }
+    }
+
     // Updates the visibility of global play/stop buttons according to showGlobalControls
     // AND according to the current tab (they should only appear on the timers tab).
     function applyGlobalControlsVisibility() {
@@ -1956,14 +2355,15 @@
         el.style.zoom = '';
         el.style.transformOrigin = '50% 0';
         el.style.transform = `scale(${scale})`;
-        // Reserve additional vertical space if scale > 1
+        // Vertical compensation: reserve more space if growing, reclaim space if shrinking.
+        // The naturalHeight (offsetHeight) is the un-scaled box; the visible height is
+        // naturalHeight * scale. We adjust margin-bottom by the delta so the layout
+        // matches the visual rendering on Safari/iOS where 'transform: scale' doesn't
+        // affect layout box dimensions.
         requestAnimationFrame(() => {
             const naturalHeight = el.offsetHeight;
-            if (scale > 1) {
-                el.style.marginBottom = (naturalHeight * (scale - 1)) + 'px';
-            } else {
-                el.style.marginBottom = '';
-            }
+            // (scale - 1) is positive when growing, negative when shrinking
+            el.style.marginBottom = (naturalHeight * (scale - 1)) + 'px';
         });
     }
 
@@ -2020,6 +2420,10 @@
         document.getElementById(`time-${id}`).textContent = formatTime(obj.totalSecs);
         document.getElementById(`endtime-${id}`).textContent = "";
         updateTimerTitle(id);
+        // Stop any running wind-up animation and clear the Visual Timer red disc
+        // (since obj.start is now null, updateVisualTimerDisc will draw an empty disc).
+        visualTimerAnimating.delete(id.toString());
+        updateVisualTimerDisc(id);
         document.getElementById(`actions-${id}`).innerHTML = `<button class="btn-start" onclick="startTimer('${id}')">${i18n[currentLang].start}</button>`;
         save();
     }
@@ -2434,6 +2838,9 @@
             timersZoom: timersZoom,
             clockScale: clockScale,
             showGlobalControls: showGlobalControls,
+            showVisualTimer: showVisualTimer,
+            hideTimeWithVisualTimer: hideTimeWithVisualTimer,
+            visualTimerScale: visualTimerScale,
             clockMode: clockMode,
             showStartTime: showStartTime,
             richtextZoom: richtextZoom
@@ -3069,6 +3476,9 @@
             timersZoom = data.timersZoom !== undefined ? data.timersZoom : 1.0;
             clockScale = data.clockScale !== undefined ? data.clockScale : 1.0;
             showGlobalControls = data.showGlobalControls !== undefined ? data.showGlobalControls : true;
+            showVisualTimer = data.showVisualTimer !== undefined ? data.showVisualTimer : (data.showTimeTimer !== undefined ? data.showTimeTimer : false);
+            hideTimeWithVisualTimer = data.hideTimeWithVisualTimer !== undefined ? data.hideTimeWithVisualTimer : false;
+            visualTimerScale = data.visualTimerScale !== undefined ? data.visualTimerScale : (data.timeTimerScale !== undefined ? data.timeTimerScale : 1.0);
             clockMode = data.clockMode || 'digital';
             // Migration : si l'ancienne forme (Set d'IDs) existe, on prend "true" si non vide
             if (data.showStartTime !== undefined) {
@@ -3123,6 +3533,14 @@
         // Init UI fields that must always reflect values (default or restored)
         const globalCtrlsCheckbox = document.getElementById('globalCtrlsCheckbox');
         if (globalCtrlsCheckbox) globalCtrlsCheckbox.checked = showGlobalControls;
+        const visualTimerCheckbox = document.getElementById('visualTimerCheckbox');
+        if (visualTimerCheckbox) visualTimerCheckbox.checked = showVisualTimer;
+        // Apply the restored Visual Timer scale to the document root (all wrappers read --vt-scale)
+        applyVisualTimerScale();
+        // Apply Visual Timer visibility to existing cards (in case createCardHTML ran
+        // before the saved state was restored — safe to call always).
+        applyVisualTimerVisibility();
+        applyHideTimeWithVisualTimer();
         
         // 5. Restaurer l'onglet actif
         const savedTab = localStorage.getItem('timers_current_tab');

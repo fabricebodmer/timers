@@ -1590,6 +1590,7 @@
                     <g class="tt-ticks">${buildVisualTimerTicks()}</g>
                     <g class="tt-numbers">${buildVisualTimerNumbers()}</g>
                     <path class="tt-sector" id="visual-timer-sector-${obj.id}" d="" fill="#d8262a"/>
+                    <path class="tt-sector-overflow" id="visual-timer-overflow-${obj.id}" d="" fill="#5c1010"/>
                     <circle cx="100" cy="100" r="6" fill="#222"/>
                 </svg>
                 <div class="visual-timer-resize-handle" onmousedown="event.stopPropagation(); startVisualTimerResize(event)" ontouchstart="event.stopPropagation(); startVisualTimerResize(event)" title="${t.visualTimerResizeTitle || 'Glisser pour redimensionner'}"></div>
@@ -1651,29 +1652,44 @@
     let visualTimerAnimating = new Set();
 
     // Update the red sector of a timer's Visual Timer disc based on remaining time.
-    // The sector spans from 12 o'clock clockwise by (remaining_min / 60 * 360°).
-    // If remaining > 60 min, the disc is fully red until it drops below 60 min.
+    // Update the red sector(s) of a timer's Visual Timer disc based on remaining time.
+    // Two sectors are stacked:
+    //   - The base (red, #d8262a) represents the LAST hour of remaining time.
+    //   - The overflow (dark red / "bordeaux", #5c1010) represents the second-to-last hour.
+    // This way we can visually distinguish remaining times up to 120 minutes.
+    //   < 60 min remaining: only red shows (size = remaining_min / 60 × 360°)
+    //   60-120 min: red is full (60 min), dark-red shows on top (size = (remaining-60)/60 × 360°)
+    //   > 120 min: both full (red full + dark-red full)
     function updateVisualTimerDisc(id) {
         if (visualTimerAnimating.has(id.toString())) return;
         const sector = document.getElementById(`visual-timer-sector-${id}`);
+        const overflow = document.getElementById(`visual-timer-overflow-${id}`);
         if (!sector) return;
         const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj) return;
         // If the timer hasn't been started yet, show an empty disc (no red sector).
         if (obj.start === null) {
             sector.setAttribute('d', '');
+            if (overflow) overflow.setAttribute('d', '');
             return;
         }
-        const elapsed = (Date.now() - obj.start) / 1000;
-        const remainingSecs = (obj.totalSecs + obj.extraSecs) - elapsed;
+        const elapsedS = (Date.now() - obj.start) / 1000;
+        const remainingSecs = (obj.totalSecs + obj.extraSecs) - elapsedS;
         if (remainingSecs <= 0) {
             sector.setAttribute('d', '');
+            if (overflow) overflow.setAttribute('d', '');
             return;
         }
-        // Cap at 60 minutes (3600s): above that, full red disc
-        const remainingMin = Math.min(remainingSecs / 60, 60);
-        const angle = remainingMin / 60 * 360;
-        sector.setAttribute('d', buildSectorPath(100, 100, 80, angle));
+        const remainingMin = remainingSecs / 60;
+        // Base red: last hour. Full disc when remaining > 60 min.
+        const redAngle = Math.min(remainingMin, 60) / 60 * 360;
+        sector.setAttribute('d', buildSectorPath(100, 100, 80, redAngle));
+        // Overflow dark-red: between 60 and 120 minutes. Empty if ≤ 60 min remaining.
+        if (overflow) {
+            const overflowMin = Math.max(0, Math.min(remainingMin - 60, 60));
+            const overflowAngle = overflowMin / 60 * 360;
+            overflow.setAttribute('d', buildSectorPath(100, 100, 80, overflowAngle));
+        }
     }
 
     // Wind-up animation: sector grows from 0° to 360° (clockwise), then shrinks down to
@@ -1683,55 +1699,81 @@
     //   Phase 2: 360° → finalAngle  over ~400ms
     function animateVisualTimerWindUp(id) {
         const sector = document.getElementById(`visual-timer-sector-${id}`);
+        const overflow = document.getElementById(`visual-timer-overflow-${id}`);
         if (!sector) return;
         const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj) return;
         // No animation if the timer isn't running — disc stays empty.
         if (obj.start === null) {
             sector.setAttribute('d', '');
+            if (overflow) overflow.setAttribute('d', '');
             return;
         }
-        const elapsed = (Date.now() - obj.start) / 1000;
-        const remainingSecs = (obj.totalSecs + obj.extraSecs) - elapsed;
-        if (remainingSecs <= 0) return;
+        const remainingSecsAtStart = (obj.totalSecs + obj.extraSecs) - (Date.now() - obj.start) / 1000;
+        if (remainingSecsAtStart <= 0) return;
         const idStr = id.toString();
         visualTimerAnimating.add(idStr);
 
-        const PHASE1_MS = 600;
-        const PHASE2_MS = 600;
-        // Cap phase 1's max angle just below 360 so we stay on the secteur path topology
-        // (avoids the "full disc" path which has a different shape and would cause a flash
-        // when transitioning to the secteur path at the start of phase 2).
-        const PHASE1_MAX = 359.5;
-        const startT = performance.now();
+        // The wind-up animation uses a "global angle" going from 0 to 720°:
+        //   0-360°: red sector grows from empty to (almost) full
+        //   360-720°: red is full, dark-red ("overflow") sector grows from empty to full
+        // Phase 1 winds up to a max angle that depends on remaining time:
+        //   - remaining <= 60 min: wind up to 359.5° (shows just red ramp)
+        //   - remaining > 60 min: wind up to 719.5° (red ramp then dark-red ramp on top)
+        // PHASE1_MAX caps at near-360 to keep path topology consistent (avoids flash).
+        const remainingMin = remainingSecsAtStart / 60;
+        // PHASE1_TOP caps just below 359.9° (the threshold above which buildSectorPath
+        // switches to the full-circle path). For >60 min we wind up the overflow disc on
+        // top of a full red, so the cap is 360 + 359.89 = 719.89°.
+        const PHASE1_TOP = remainingMin > 60 ? 719.89 : 359.89;
 
-        // Helper: compute the angle that should be displayed *right now* based on elapsed time.
-        const currentTargetAngle = () => {
+        // Apply the current "global angle" to the two sectors.
+        const applyGlobalAngle = (a) => {
+            if (a <= 360) {
+                // Only red is partially filled
+                sector.setAttribute('d', buildSectorPath(100, 100, 80, a));
+                if (overflow) overflow.setAttribute('d', '');
+            } else {
+                // Red is full (use 359.89° to stay just under the full-circle threshold,
+                // matching what we draw during phase 1's red ramp), overflow grows on top.
+                sector.setAttribute('d', buildSectorPath(100, 100, 80, 359.89));
+                if (overflow) overflow.setAttribute('d', buildSectorPath(100, 100, 80, a - 360));
+            }
+        };
+
+        // Helper: convert remaining-seconds to a "global angle" for phase 2 / live rendering.
+        const targetGlobalAngle = () => {
             const el = (Date.now() - obj.start) / 1000;
             const r = (obj.totalSecs + obj.extraSecs) - el;
             if (r <= 0) return 0;
-            return Math.min(r / 60, 60) / 60 * 360;
+            const min = r / 60;
+            if (min <= 60) return min / 60 * 360;
+            // 60-120 min: 360 + (min-60)/60 × 360
+            return 360 + Math.min(min - 60, 60) / 60 * 360;
         };
+
+        const PHASE1_MS = 600;
+        const PHASE2_MS = 600;
+        const startT = performance.now();
 
         const tick = (now) => {
             const elapsed = now - startT;
             let angle;
             if (elapsed < PHASE1_MS) {
-                // Phase 1 (wind-up): ease-out from 0 to PHASE1_MAX (just below 360°).
+                // Phase 1 (wind-up): ease-out from 0 to PHASE1_TOP.
                 const p = elapsed / PHASE1_MS;
                 const eased = 1 - Math.pow(1 - p, 3); // cubic ease-out
-                angle = eased * PHASE1_MAX;
+                angle = eased * PHASE1_TOP;
             } else if (elapsed < PHASE1_MS + PHASE2_MS) {
-                // Phase 2 (return): ease-out from PHASE1_MAX to current target angle.
-                // Same path topology as phase 1 (no full-disc switch) → no flash.
+                // Phase 2 (return): ease-out from PHASE1_TOP to current target.
                 const p = (elapsed - PHASE1_MS) / PHASE2_MS;
                 const eased = 1 - Math.pow(1 - p, 3); // cubic ease-out
-                const target = currentTargetAngle();
-                angle = PHASE1_MAX + eased * (target - PHASE1_MAX);
+                const target = targetGlobalAngle();
+                angle = PHASE1_TOP + eased * (target - PHASE1_TOP);
             } else {
-                angle = currentTargetAngle();
+                angle = targetGlobalAngle();
             }
-            sector.setAttribute('d', buildSectorPath(100, 100, 80, angle));
+            applyGlobalAngle(angle);
             if (elapsed < PHASE1_MS + PHASE2_MS) {
                 requestAnimationFrame(tick);
             } else {
@@ -1832,11 +1874,12 @@
     function buildSectorPath(cx, cy, r, angleDeg) {
         if (angleDeg <= 0) return '';
         // For a (near-)full disc, draw a true circle using two 180° arcs. This avoids the
-        // hairline gap that's visible at near-360° angles, and avoids the degenerate case
-        // where start and end points are identical (browsers silently fail to render that).
-        // The threshold is set generously (>= 358) so that durations very close to 60min
-        // also render as a full disc — a 2° gap is imperceptible at typical sizes.
-        if (angleDeg >= 358) {
+        // degenerate case where start and end points are numerically identical (browsers
+        // silently fail to render that single arc). The threshold is tight (>= 359.9°)
+        // so that any visible chord (e.g. at 358° = 20 sec before 60 min) still renders
+        // as a partial sector — otherwise the user sees a perceptible "jump" when the
+        // remaining time crosses the 358° boundary.
+        if (angleDeg >= 359.9) {
             return `M ${cx-r} ${cy} A ${r} ${r} 0 1 1 ${cx+r} ${cy} A ${r} ${r} 0 1 1 ${cx-r} ${cy} Z`;
         }
         const startRad = -Math.PI / 2; // 12 o'clock

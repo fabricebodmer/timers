@@ -251,7 +251,7 @@
         }
         
         .duration-card { 
-            background: var(--card-bg); border-radius: 35px; padding: 40px 40px 50px 40px; 
+            background: var(--card-bg); border-radius: 35px; padding: 40px 40px 28px 40px; 
             border: 1px solid var(--card-border); text-align: center; position: relative; 
             box-shadow: 0 12px 24px var(--shadow-color); transition: all 0.3s ease;
             overflow: hidden; cursor: grab; user-select: none;
@@ -436,6 +436,9 @@
         .active .time-left { color: var(--text-dark); }
         .finished .time-left { color: var(--danger); }
         .finished .time-left:hover { background: var(--danger-bg); }
+        /* Paused timer: gray out the remaining time (it isn't ticking). Not-started timers
+           are already gray via the default .time-left color (var(--input-border)). */
+        .active.paused .time-left { color: var(--input-border); }
 
         /* Champ seuil secondes */
         .field-threshold { border-left: 1px solid var(--card-border); padding-left: 20px; margin-left: 10px; }
@@ -446,9 +449,11 @@
         .drop-indicator { position: absolute; background: var(--primary); border-radius: 4px; pointer-events: none; z-index: 50; box-shadow: 0 0 12px rgba(14, 165, 233, 0.5); display: none; }
         .drop-indicator.visible { display: block; }
 
-        .end-time-display { font-weight: 800; color: var(--text-light); font-size: 1.1rem; margin-bottom: 15px; min-height: 1.2em; text-transform: uppercase; transition: all 0.2s ease; }
+        .end-time-display { font-weight: 800; color: var(--text-light); font-size: 1.1rem; margin-bottom: 10px; min-height: 1.2em; text-transform: uppercase; transition: all 0.2s ease; }
         .active .end-time-display { color: var(--primary); }
         .finished .end-time-display { visibility: hidden; }
+        /* When paused, hide the end time (it's meaningless while the countdown is frozen). */
+        .active.paused .end-time-display { visibility: hidden; }
         /* Quand le timer est actif, l'heure de fin devient cliquable */
         .active .end-time-display { cursor: pointer; padding: 4px 10px; border-radius: 8px; border: 2px dashed transparent; display: inline-block; }
         .active .end-time-display:hover { background: var(--btn-close-bg); border-color: var(--input-border); }
@@ -468,7 +473,7 @@
         .end-time-display.start-edit-form button:disabled:hover { opacity: 0.7; }
         .end-time-display.start-edit-form button.btn-cancel { background: var(--btn-close-bg); color: var(--text-light); border: 1px solid var(--input-border); }
 
-        .card-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .card-actions { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
         .btn-start { background: var(--success); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 1rem; width: 100%; max-width: 200px; transition: opacity 0.2s; }
         .btn-start:hover { opacity: 0.9; }
         /* "Auto start (pending chain)" variant: a timer queued to auto-start when the
@@ -838,24 +843,26 @@
             opacity: 1;
         }
 
-        /* "Hide timer buttons" mode: the per-card action buttons are hidden at rest but
-           keep their space (so cards don't reflow). They appear when the user hovers ANY
-           timer (revealing all visible timers' buttons at once) or, on touch devices where
-           there is no hover, when the body gets .timer-buttons-revealed (set on tap/move).
+        /* "Hide timer buttons" mode: on a RUNNING timer (active, not paused), the action
+           buttons are hidden at rest but keep their space (no reflow). They reappear when
+           the user hovers the buttons area of any timer — revealing every visible timer's
+           buttons at once (via :has) — or, on touch devices, when body gets
+           .timer-buttons-revealed (set on tap). The MUTE button is NEVER hidden, and
+           timers that are not started or paused always show their buttons.
            We use visibility+opacity (NOT display:none) so the layout is preserved. */
-        body.hide-timer-buttons .card-actions {
+        body.hide-timer-buttons .duration-card.active:not(.paused) .card-actions > .btn-action:not(.btn-mute) {
             visibility: hidden;
             opacity: 0;
-            transition: opacity 0.2s ease;
+            transition: opacity 0.18s ease;
         }
-        /* Reveal on hover of the timers grid (desktop): hovering anywhere over the list
-           reveals every visible timer's buttons together. */
-        body.hide-timer-buttons #durationsList:hover .card-actions {
+        /* Reveal when hovering the buttons of ANY running timer: :has lets one card's
+           hover reveal all cards' buttons. Leaving the buttons area hides them again. */
+        body.hide-timer-buttons #durationsList:has(.duration-card.active .card-actions:hover) .duration-card.active:not(.paused) .card-actions > .btn-action:not(.btn-mute) {
             visibility: visible;
             opacity: 1;
         }
-        /* Reveal via JS-set class (touch devices: tap/move; also a fallback on desktop). */
-        body.hide-timer-buttons.timer-buttons-revealed .card-actions {
+        /* Reveal via JS-set class (touch devices: tap; auto-hides after a few seconds). */
+        body.hide-timer-buttons.timer-buttons-revealed .duration-card.active:not(.paused) .card-actions > .btn-action:not(.btn-mute) {
             visibility: visible;
             opacity: 1;
         }
@@ -869,6 +876,13 @@
             margin: 0;
             padding: 0;
             border: none;
+            pointer-events: none;
+        }
+        /* Invisible placeholder that reserves the vertical space of the MUTE button line on
+           timers that are not started yet, so the card height stays constant when the timer
+           is started (no layout jump). It must not be clickable or perceivable. */
+        .card-actions .btn-mute-spacer {
+            visibility: hidden;
             pointer-events: none;
         }
 
@@ -1128,7 +1142,7 @@
     <button class="btn-zoom-timers btn-zoom-reset" id="btnZoomReset" onclick="resetZoomTimers()" title="Zoom 100%"><span id="btnZoomResetLabel">100%</span></button>
     <button class="btn-zoom-timers btn-zoom-in" id="btnZoomIn" onclick="zoomTimers(0.1)" title="Agrandir les timers">🔍＋</button>
     <button class="btn-stop-all" id="btnStopAll" onclick="stopAll()" title="Arrêter tous les timers"><svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
-    <button class="btn-pause-all" id="btnPauseAll" onclick="pauseAll()" title="Pause tous les timers"><svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
+        <button class="btn-pause-all" id="btnPauseAll" onclick="togglePauseAll()" title="Pause tous les timers"><svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
     <button class="btn-start-all" id="btnStartAll" onclick="startAll()" title="Démarrer tous les timers"><svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>
     <button class="btn-add-floating" id="btnAddFloating" onclick="openAddModal()" title="Ajouter un timer"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
 
@@ -1161,9 +1175,9 @@
 
 <script>
     const i18n = {
-        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", durationLabel: "Durée (h:m:s)", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", confirmStopAll: "Souhaitez-vous vraiment arrêter tous les timers ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", editStartTimeTitle: "Modifier l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", fileDropMessage: "Déposer le fichier JSON pour l'importer", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Durée alarme", autoResetUnit: "sec (0=off)", extraLabel: "Temps supplémentaire", extraUnit: "sec", removeExtraTitle: "Annuler le temps supplémentaire", langLabel: "Langue", configSection: "Configuration", buttonsLabel: "Masquer les boutons globaux", hideTimerButtonsLabel: "Masquer les boutons des timers", chainLabel: "Chaîner les timers", hideFinishedLabel: "Masquer les timers terminés", visualTimerLabel: "Timer visuel", visualTimerResizeTitle: "Glisser pour redimensionner ce timer visuel", toggleHideTimeTitle: "Cliquer pour afficher/masquer le temps restant", clearAll: "Réinitialiser…", clockLabel: "Horloge", clockNone: "Aucune", clockDigital: "Numérique", clockCff: "CFF", clockBoth: "CFF + numérique", clockToggleTitle: "Cliquer pour changer d'horloge", clockResizeTitle: "Glisser pour redimensionner", startAllTitle: "Démarrer tous les timers", stopAllTitle: "Arrêter tous les timers", zoomInTitle: "Agrandir les timers", zoomOutTitle: "Réduire les timers", zoomResetTitle: "Zoom 100% (réinitialiser)", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes", startTimeTooEarly: "Impossible de placer le départ plus loin dans le passé que la durée du timer", startTimeTooLate: "Impossible de placer le départ plus tard que le temps déjà écoulé", invalidTimeFormat: "Format d'heure invalide", deleteLabel: "Supprimer", hideLabel: "Masquer", hideDisabledRunning: "Impossible de masquer un timer en cours", unhideTitle: "Cliquer pour réafficher ce timer", autoStart: "Démarrage (auto.)", pause: "PAUSE", resume: "REPRENDRE", pauseAllTitle: "Mettre en pause tous les timers en cours", helpTitle: "Aide", menuPanelTitle: "Réglages", revertImportLabel: "Revenir au dernier import", confirmRevertImport: "Réappliquer la dernière configuration importée ? Vos modifications actuelles seront écrasées." },
-        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", durationLabel: "Dauer (h:m:s)", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", confirmStopAll: "Möchten Sie wirklich alle Timer stoppen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notizen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", editStartTimeTitle: "Startzeit ändern", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", fileDropMessage: "JSON-Datei hier ablegen, um sie zu importieren", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Alarmdauer", autoResetUnit: "Sek (0=aus)", extraLabel: "Zusätzliche Zeit", extraUnit: "Sek", removeExtraTitle: "Zusätzliche Zeit aufheben", langLabel: "Sprache", configSection: "Konfiguration", buttonsLabel: "Globale Tasten ausblenden", hideTimerButtonsLabel: "Timer-Tasten ausblenden", chainLabel: "Timer verketten", hideFinishedLabel: "Beendete Timer ausblenden", visualTimerLabel: "Visueller Timer", visualTimerResizeTitle: "Ziehen, um diesen visuellen Timer zu skalieren", toggleHideTimeTitle: "Klicken, um die Restzeit ein-/auszublenden", clearAll: "Zurücksetzen…", clockLabel: "Uhr", clockNone: "Keine", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Klicken, um Uhr zu wechseln", clockResizeTitle: "Ziehen zum Vergrößern", startAllTitle: "Alle Timer starten", stopAllTitle: "Alle Timer stoppen", zoomInTitle: "Timer vergrößern", zoomOutTitle: "Timer verkleinern", zoomResetTitle: "Zoom 100% (zurücksetzen)", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden", startTimeTooEarly: "Der Start kann nicht weiter in der Vergangenheit liegen als die Timer-Dauer", startTimeTooLate: "Der Start kann nicht später liegen als die bereits verstrichene Zeit", invalidTimeFormat: "Ungültiges Zeitformat", deleteLabel: "Löschen", hideLabel: "Ausblenden", hideDisabledRunning: "Ein laufender Timer kann nicht ausgeblendet werden", unhideTitle: "Klicken, um diesen Timer wieder anzuzeigen", autoStart: "Start (autom.)", pause: "PAUSE", resume: "WEITER", pauseAllTitle: "Alle laufenden Timer pausieren", helpTitle: "Hilfe", menuPanelTitle: "Einstellungen", revertImportLabel: "Zum letzten Import zurückkehren", confirmRevertImport: "Die letzte importierte Konfiguration erneut anwenden? Ihre aktuellen Änderungen werden überschrieben." },
-        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", durationLabel: "Duration (h:m:s)", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", confirmStopAll: "Do you really want to stop all timers?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", editStartTimeTitle: "Edit start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", fileDropMessage: "Drop the JSON file to import it", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Alarm duration", autoResetUnit: "sec (0=off)", extraLabel: "Extra time", extraUnit: "sec", removeExtraTitle: "Cancel extra time", langLabel: "Language", configSection: "Configuration", buttonsLabel: "Hide global buttons", hideTimerButtonsLabel: "Hide timer buttons", chainLabel: "Chain timers", hideFinishedLabel: "Hide finished timers", visualTimerLabel: "Visual Timer", visualTimerResizeTitle: "Drag to resize this visual timer", toggleHideTimeTitle: "Click to show/hide remaining time", clearAll: "Reset…", clockLabel: "Clock", clockNone: "None", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Click to switch clock", clockResizeTitle: "Drag to resize", startAllTitle: "Start all timers", stopAllTitle: "Stop all timers", zoomInTitle: "Make timers bigger", zoomOutTitle: "Make timers smaller", zoomResetTitle: "Zoom 100% (reset)", toggleSecondsTitle: "Click to show/hide seconds", startTimeTooEarly: "Cannot place the start further in the past than the timer duration", startTimeTooLate: "Cannot place the start later than the time already elapsed", invalidTimeFormat: "Invalid time format", deleteLabel: "Delete", hideLabel: "Hide", hideDisabledRunning: "Cannot hide a running timer", unhideTitle: "Click to show this timer again", autoStart: "Auto start", pause: "PAUSE", resume: "RESUME", pauseAllTitle: "Pause all running timers", helpTitle: "Help", menuPanelTitle: "Settings", revertImportLabel: "Revert to last import", confirmRevertImport: "Re-apply the last imported configuration? Your current changes will be overwritten." }
+        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", durationLabel: "Durée (h:m:s)", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", soundOn: "ACTIVÉ", defaultTimerName: "œuf à la coque", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", confirmStopAll: "Souhaitez-vous vraiment arrêter tous les timers ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", editStartTimeTitle: "Modifier l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", fileDropMessage: "Déposer le fichier JSON pour l'importer", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Durée alarme", autoResetUnit: "sec (0=off)", extraLabel: "Temps supplémentaire", extraUnit: "sec", removeExtraTitle: "Annuler le temps supplémentaire", langLabel: "Langue", configSection: "Configuration", buttonsLabel: "Masquer les boutons globaux", hideTimerButtonsLabel: "Masquer les boutons des timers", chainLabel: "Chaîner les timers", hideFinishedLabel: "Masquer les timers terminés", visualTimerLabel: "Timer visuel", visualTimerResizeTitle: "Glisser pour redimensionner ce timer visuel", toggleHideTimeTitle: "Cliquer pour afficher/masquer le temps restant", clearAll: "Réinitialiser…", clockLabel: "Horloge", clockNone: "Aucune", clockDigital: "Numérique", clockCff: "CFF", clockBoth: "CFF + numérique", clockToggleTitle: "Cliquer pour changer d'horloge", clockResizeTitle: "Glisser pour redimensionner", startAllTitle: "Démarrer tous les timers", stopAllTitle: "Arrêter tous les timers", zoomInTitle: "Agrandir les timers", zoomOutTitle: "Réduire les timers", zoomResetTitle: "Zoom 100% (réinitialiser)", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes", startTimeTooEarly: "Impossible de placer le départ plus loin dans le passé que la durée du timer", startTimeTooLate: "Impossible de placer le départ plus tard que le temps déjà écoulé", invalidTimeFormat: "Format d'heure invalide", deleteLabel: "Supprimer", hideLabel: "Masquer", hideDisabledRunning: "Impossible de masquer un timer en cours", unhideTitle: "Cliquer pour réafficher ce timer", autoStart: "Démarrage (auto.)", pause: "PAUSE", resume: "REPRENDRE", pauseAllTitle: "Mettre en pause tous les timers en cours", resumeAllTitle: "Reprendre les timers en pause", chainStartPrompt: "Le mode chaîné est activé. Que souhaitez-vous démarrer ?", chainStartFirst: "Le premier", chainStartAll: "Tous", helpTitle: "Aide", menuPanelTitle: "Réglages", revertImportLabel: "Revenir à la configuration importée", confirmRevertImport: "Réappliquer la dernière configuration importée ? Vos modifications actuelles seront écrasées." },
+        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", durationLabel: "Dauer (h:m:s)", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", soundOn: "AKTIV", defaultTimerName: "weiches Ei", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", confirmStopAll: "Möchten Sie wirklich alle Timer stoppen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notizen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", editStartTimeTitle: "Startzeit ändern", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", fileDropMessage: "JSON-Datei hier ablegen, um sie zu importieren", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Alarmdauer", autoResetUnit: "Sek (0=aus)", extraLabel: "Zusätzliche Zeit", extraUnit: "Sek", removeExtraTitle: "Zusätzliche Zeit aufheben", langLabel: "Sprache", configSection: "Konfiguration", buttonsLabel: "Globale Tasten ausblenden", hideTimerButtonsLabel: "Timer-Tasten ausblenden", chainLabel: "Timer verketten", hideFinishedLabel: "Beendete Timer ausblenden", visualTimerLabel: "Visueller Timer", visualTimerResizeTitle: "Ziehen, um diesen visuellen Timer zu skalieren", toggleHideTimeTitle: "Klicken, um die Restzeit ein-/auszublenden", clearAll: "Zurücksetzen…", clockLabel: "Uhr", clockNone: "Keine", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Klicken, um Uhr zu wechseln", clockResizeTitle: "Ziehen zum Vergrößern", startAllTitle: "Alle Timer starten", stopAllTitle: "Alle Timer stoppen", zoomInTitle: "Timer vergrößern", zoomOutTitle: "Timer verkleinern", zoomResetTitle: "Zoom 100% (zurücksetzen)", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden", startTimeTooEarly: "Der Start kann nicht weiter in der Vergangenheit liegen als die Timer-Dauer", startTimeTooLate: "Der Start kann nicht später liegen als die bereits verstrichene Zeit", invalidTimeFormat: "Ungültiges Zeitformat", deleteLabel: "Löschen", hideLabel: "Ausblenden", hideDisabledRunning: "Ein laufender Timer kann nicht ausgeblendet werden", unhideTitle: "Klicken, um diesen Timer wieder anzuzeigen", autoStart: "Start (autom.)", pause: "PAUSE", resume: "WEITER", pauseAllTitle: "Alle laufenden Timer pausieren", resumeAllTitle: "Pausierte Timer fortsetzen", chainStartPrompt: "Der Verkettungsmodus ist aktiv. Was möchten Sie starten?", chainStartFirst: "Den ersten", chainStartAll: "Alle", helpTitle: "Hilfe", menuPanelTitle: "Einstellungen", revertImportLabel: "Zur importierten Konfiguration zurückkehren", confirmRevertImport: "Die letzte importierte Konfiguration erneut anwenden? Ihre aktuellen Änderungen werden überschrieben." },
+        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", durationLabel: "Duration (h:m:s)", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", soundOn: "ON", defaultTimerName: "soft-boiled egg", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", confirmStopAll: "Do you really want to stop all timers?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", editStartTimeTitle: "Edit start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", fileDropMessage: "Drop the JSON file to import it", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Alarm duration", autoResetUnit: "sec (0=off)", extraLabel: "Extra time", extraUnit: "sec", removeExtraTitle: "Cancel extra time", langLabel: "Language", configSection: "Configuration", buttonsLabel: "Hide global buttons", hideTimerButtonsLabel: "Hide timer buttons", chainLabel: "Chain timers", hideFinishedLabel: "Hide finished timers", visualTimerLabel: "Visual Timer", visualTimerResizeTitle: "Drag to resize this visual timer", toggleHideTimeTitle: "Click to show/hide remaining time", clearAll: "Reset…", clockLabel: "Clock", clockNone: "None", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Click to switch clock", clockResizeTitle: "Drag to resize", startAllTitle: "Start all timers", stopAllTitle: "Stop all timers", zoomInTitle: "Make timers bigger", zoomOutTitle: "Make timers smaller", zoomResetTitle: "Zoom 100% (reset)", toggleSecondsTitle: "Click to show/hide seconds", startTimeTooEarly: "Cannot place the start further in the past than the timer duration", startTimeTooLate: "Cannot place the start later than the time already elapsed", invalidTimeFormat: "Invalid time format", deleteLabel: "Delete", hideLabel: "Hide", hideDisabledRunning: "Cannot hide a running timer", unhideTitle: "Click to show this timer again", autoStart: "Auto start", pause: "PAUSE", resume: "RESUME", pauseAllTitle: "Pause all running timers", resumeAllTitle: "Resume paused timers", chainStartPrompt: "Chaining mode is on. What do you want to start?", chainStartFirst: "The first", chainStartAll: "All", helpTitle: "Help", menuPanelTitle: "Settings", revertImportLabel: "Revert to imported configuration", confirmRevertImport: "Re-apply the last imported configuration? Your current changes will be overwritten." }
     };
 
     let currentLang = 'fr';
@@ -1174,7 +1188,7 @@
     let dragSrcEl = null;
     let darkMode = false;
     let hideSeconds = false;
-    let secondsThreshold = 180; // Below 3 minutes by default, we always display seconds
+    let secondsThreshold = 120; // Below 2 minutes by default, we always display seconds
     let autoResetDelay = 60; // Delay in seconds before auto-reset of a finished timer (0 = disabled)
     let extraDelay = 30; // Extra time added by the "+Xs" button on a timer (configurable)
     let timersZoom = 1.0; // Zoom applied to the timers grid (0.6 to 2.0)
@@ -1589,6 +1603,7 @@
         if (menuPanelTitle) menuPanelTitle.textContent = t.menuPanelTitle;
         const btnPauseAll = document.getElementById('btnPauseAll');
         if (btnPauseAll) btnPauseAll.title = t.pauseAllTitle;
+        if (typeof updatePauseAllButton === 'function') updatePauseAllButton();
         const btnStopAll = document.getElementById('btnStopAll');
         if (btnStopAll) btnStopAll.title = t.stopAllTitle;
         const btnZoomIn = document.getElementById('btnZoomIn');
@@ -1611,7 +1626,7 @@
                 const btnStart = card.querySelector('.btn-start'); if (btnStart) btnStart.textContent = t.start;
                 const btnStop = card.querySelector('.btn-stop'); if (btnStop) btnStop.textContent = `🛑 ${t.stop}`;
                 const btnPlus = card.querySelector('.btn-plus'); if (btnPlus) btnPlus.textContent = extraLabel();
-                const btnMute = card.querySelector(`[id^="btn-mute-"]`); if (btnMute) btnMute.innerHTML = `${d.muted?'🔇':'🔊'} ${t.mute}`;
+                const btnMute = card.querySelector(`[id^="btn-mute-"]`); if (btnMute) btnMute.innerHTML = muteLabel(d.muted);
                 const btnDup = card.querySelector('.btn-duplicate'); if (btnDup) btnDup.title = t.duplicate;
                 const timeEl = card.querySelector('.time-left'); if (timeEl) timeEl.title = t.toggleSecondsTitle;
                 // Update the "Untitled" placeholder for timers without a name
@@ -1623,14 +1638,19 @@
                 updateEndTime(d.id);
             }
         });
+        // Re-traducing the START buttons above reset any "auto start" hint to plain START;
+        // restore the hints based on the current chain state.
+        refreshChainLabels();
     }
 
     function formatTime(s) { 
         const minutes = Math.floor(s/60);
         const secondes = s % 60;
-        // On masque les secondes UNIQUEMENT si hideSeconds est actif ET qu'on est au-dessus du seuil
+        // On masque les secondes UNIQUEMENT si hideSeconds est actif ET qu'on est au-dessus du seuil.
+        // Dans ce cas on arrondit aux minutes SUPÉRIEURES : tant qu'il reste 2:01–2:59 on affiche
+        // "3 min" (et non "2 min"), ce qui est plus intuitif — on ne passe à "2 min" qu'à 2:00 pile.
         if (hideSeconds && s >= secondsThreshold && minutes > 0) {
-            return `${minutes} min`;
+            return `${Math.ceil(s/60)} min`;
         }
         return `${minutes}:${secondes.toString().padStart(2,'0')}`; 
     }
@@ -2443,7 +2463,28 @@
 
     // Starts all timers that are not yet running, and resumes any that are paused.
     // Does not affect timers that are already running or finished.
-    function startAll() {
+    async function startAll() {
+        const t = i18n[currentLang];
+        // When chaining is on, "start all" is ambiguous: the user may want only the first
+        // timer to start (the chain will run the rest), or really all of them at once.
+        // Ask — but only if there is more than one not-started timer to chain.
+        const notStarted = timersList.filter(d => d.start === null);
+        const anyPaused = timersList.some(d => d.pausedAt !== null);
+        if (chainTimers && notStarted.length > 1) {
+            const choice = await confirmDialog(t.chainStartPrompt, {
+                okLabel: t.chainStartFirst,        // start only the first
+                thirdLabel: t.chainStartAll,       // start all at once
+                cancelLabel: t.cancel
+            });
+            if (choice === false) return;          // Cancel
+            if (choice === true) {
+                // Start only the first not-started timer; resume any paused ones too.
+                if (anyPaused) timersList.forEach(d => { if (d.pausedAt !== null) resumeTimer(d.id); });
+                startTimer(notStarted[0].id);
+                return;
+            }
+            // choice === 'third' → start all (fall through to the default behavior)
+        }
         timersList.forEach(d => {
             if (d.start === null) startTimer(d.id);
             else if (d.pausedAt !== null) resumeTimer(d.id);
@@ -2451,10 +2492,48 @@
     }
 
     // Pauses all running timers (those that are started and not already paused).
-    function pauseAll() {
-        timersList.forEach(d => {
-            if (d.start !== null && d.pausedAt === null) pauseTimer(d.id);
-        });
+    // Set of timer ids that were paused by the global "pause all" button, so the same
+    // button (now "resume all") can resume exactly those — and not timers the user had
+    // paused individually beforehand.
+    let pausedByPauseAll = new Set();
+
+    // Global pause/resume toggle. If any timer is currently running (started, not paused),
+    // pause them all and remember which ones. Otherwise, resume the ones we paused.
+    function togglePauseAll() {
+        const running = timersList.filter(d => d.start !== null && d.pausedAt === null);
+        if (running.length > 0) {
+            // PAUSE phase
+            pausedByPauseAll = new Set();
+            running.forEach(d => { pausedByPauseAll.add(d.id.toString()); pauseTimer(d.id); });
+        } else {
+            // RESUME phase: resume only the timers we paused (if they're still paused).
+            pausedByPauseAll.forEach(idStr => {
+                const obj = timersList.find(d => d.id.toString() === idStr);
+                if (obj && obj.pausedAt !== null) resumeTimer(obj.id);
+            });
+            pausedByPauseAll = new Set();
+        }
+        updatePauseAllButton();
+    }
+
+    // Backward-compatible alias (kept in case anything still calls pauseAll()).
+    function pauseAll() { togglePauseAll(); }
+
+    // Update the global pause/resume button icon + title to reflect the current action.
+    function updatePauseAllButton() {
+        const btn = document.getElementById('btnPauseAll');
+        if (!btn) return;
+        const t = i18n[currentLang];
+        const anyRunning = timersList.some(d => d.start !== null && d.pausedAt === null);
+        if (anyRunning) {
+            // Show the PAUSE icon (two bars)
+            btn.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+            btn.title = t.pauseAllTitle;
+        } else {
+            // Show the RESUME icon (play triangle)
+            btn.innerHTML = '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+            btn.title = t.resumeAllTitle || t.pauseAllTitle;
+        }
     }
 
     // Stops all running or finished timers (resets them to initial state).
@@ -2794,13 +2873,15 @@
         if (!card || card.classList.contains('finished')) return;
         card.classList.add('finished');
         playAlarm(id);
+        updatePauseAllButton();
         // Auto-reset runs normally (it animates the bar back down). When "hide finished
         // timers" is enabled, the timer gets hidden AFTER the auto-reset completes (handled
         // in startAutoReset's timeout). If there's no auto-reset delay, we hide after a
         // short grace period so the alarm is heard.
         if (autoResetDelay > 0) startAutoReset(id);
         else if (hideFinished) {
-            // No reset delay: hide shortly after finishing (let the alarm play briefly).
+            // No reset delay: let the alarm play briefly, then hide. hideTimer() resets the
+            // timer first, so it's hidden in a clean (non-red) state.
             setTimeout(() => { hideTimer(id); }, 1500);
         }
         // Timer chaining: when enabled, finishing a timer auto-starts the next one in
@@ -3127,6 +3208,7 @@
         save();
         // Stopping a timer can change the chain state for the following timer.
         refreshChainLabels();
+        updatePauseAllButton();
     }
 
     // Returns true if a timer is "active" in the sense that it has been started and is
@@ -3145,12 +3227,26 @@
     function startActionsHTML(id) {
         const t = i18n[currentLang];
         const idx = timersList.findIndex(d => d.id.toString() === id.toString());
-        const prev = idx > 0 ? timersList[idx - 1] : null;
-        if (chainTimers && isTimerActive(prev)) {
-            // Pending auto-start: show a label and still allow a manual start.
-            return `<button class="btn-start btn-start-auto" onclick="startTimer('${id}')">${t.autoStart || 'Démarrage (auto.)'}</button>`;
+        // Cascade: this not-started timer shows "auto start" if, walking backwards over a
+        // continuous run of not-started timers, we reach an active timer. That means the
+        // chain will eventually flow down to this one. If any timer in between is itself
+        // active (already running) the walk stops at it (still counts as active → auto).
+        let pending = false;
+        if (chainTimers && idx > 0) {
+            for (let j = idx - 1; j >= 0; j--) {
+                if (isTimerActive(timersList[j])) { pending = true; break; }
+                // timersList[j] is not started: keep walking back through the chain.
+            }
         }
-        return `<button class="btn-start" onclick="startTimer('${id}')">${t.start}</button>`;
+        const mainBtn = pending
+            // Pending auto-start: show a label and still allow a manual start.
+            ? `<button class="btn-start btn-start-auto" onclick="startTimer('${id}')">${t.autoStart || 'Démarrage (auto.)'}</button>`
+            : `<button class="btn-start" onclick="startTimer('${id}')">${t.start}</button>`;
+        // Reserve the vertical space of the MUTE line (which exists once the timer runs) so
+        // the card height doesn't jump when the timer is started. The spacer is an invisible
+        // button of the same size as a real action button, on its own line (via the break).
+        const muteSpacer = `<span class="btn-mute-break"></span><button class="btn-action btn-mute-spacer" tabindex="-1" aria-hidden="true">🔊 ${t.soundOn}</button>`;
+        return mainBtn + muteSpacer;
     }
 
     // Refresh the START button / "auto start" hint on every not-started timer. Called
@@ -3180,13 +3276,21 @@
             <button class="btn-action btn-plus" onclick="addExtraTime('${id}')">${extraLabel()}</button>
             <button class="btn-action btn-stop" onclick="stopTimer('${id}')">🛑 ${t.stop}</button>
             <span class="btn-mute-break"></span>
-            <button id="btn-mute-${id}" class="btn-action" onclick="toggleMute('${id}')">${obj.muted?'🔇':'🔊'} ${t.mute}</button>`;
+            <button id="btn-mute-${id}" class="btn-action btn-mute" onclick="toggleMute('${id}')">${muteLabel(obj.muted)}</button>`;
+        updatePauseAllButton();
+    }
+
+    // Label for the mute button: shows the icon AND a word reflecting the state —
+    // "ACTIVÉ" (sound on) or "MUET" (muted). Helps tell the two states apart at a glance.
+    function muteLabel(muted) {
+        const t = i18n[currentLang];
+        return muted ? `🔇 ${t.mute}` : `🔊 ${t.soundOn}`;
     }
 
     function toggleMute(id) { 
         const obj = timersList.find(d => d.id.toString() === id.toString());
         obj.muted = !obj.muted; 
-        document.getElementById(`btn-mute-${id}`).innerHTML = `${obj.muted?'🔇':'🔊'} ${i18n[currentLang].mute}`;
+        document.getElementById(`btn-mute-${id}`).innerHTML = muteLabel(obj.muted);
         save();
     }
 
@@ -3248,24 +3352,39 @@
         save();
     }
 
-    // Hide a timer: collapse its card into a small empty rectangle. The timer keeps its
-    // state (it just isn't displayed in full). Clicking the small rectangle unhides it.
+    // Hide a timer: collapse its card into a small empty rectangle. If the timer is
+    // finished or still running/auto-resetting, we reset it FIRST so it's never hidden in
+    // a "red"/finished state — it's tucked away clean, ready to start when unhidden.
+    // (A running timer can't reach here via the × dialog, which disables Hide while running,
+    // but hideFinished and other paths may, so we handle it for safety.)
     function hideTimer(id) {
         const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj) return;
-        obj.hidden = true;
         const card = document.getElementById(`card-${id}`);
+        const isFinished = card && card.classList.contains('finished');
+        if (isFinished || obj.start !== null) {
+            stopTimer(id); // back to initial state (clears finished, redraws empty bar)
+        }
+        obj.hidden = true;
         if (card) card.classList.add('hidden-timer');
         save();
     }
 
-    // Unhide a timer: restore its full card display.
+    // Unhide a timer: restore its full card display. If the timer was hidden while it was
+    // finished or still auto-resetting (red bar running), bring it back to a clean "ready
+    // to start" state rather than showing it mid-reset/red.
     function unhideTimer(id) {
         const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj) return;
         obj.hidden = false;
         const card = document.getElementById(`card-${id}`);
         if (card) card.classList.remove('hidden-timer');
+        // If it's finished or has been started (incl. auto-resetting), reset it to its
+        // initial state so it reappears ready to start, not red.
+        const isFinished = card && card.classList.contains('finished');
+        if (isFinished || obj.start !== null) {
+            stopTimer(id); // resets start/extra/muted/paused, clears finished, redraws bar
+        }
         save();
     }
 
@@ -3686,10 +3805,18 @@
         const idx = cards.indexOf(this);
         const voisinDroite = cards[idx + 1];
         const voisinGauche = cards[idx - 1];
-        const memeRangee = (
-            (voisinDroite && Math.abs(voisinDroite.getBoundingClientRect().top - rect.top) < 10) ||
-            (voisinGauche && Math.abs(voisinGauche.getBoundingClientRect().top - rect.top) < 10)
-        );
+        // Compare vertical CENTERS, not tops: a hidden timer is a short box centered in its
+        // grid cell, so its top differs from full-height neighbors even on the same row.
+        // Centers stay aligned because the grid cell height is the same across the row.
+        const centerY = rect.top + rect.height / 2;
+        const sameRowAs = (other) => {
+            if (!other) return false;
+            const r = other.getBoundingClientRect();
+            const otherCenterY = r.top + r.height / 2;
+            // Same row if the vertical centers are close, OR the cards overlap vertically.
+            return Math.abs(otherCenterY - centerY) < 40 || (r.top < rect.bottom && r.bottom > rect.top);
+        };
+        const memeRangee = sameRowAs(voisinDroite) || sameRowAs(voisinGauche);
         const insererAvant = memeRangee
             ? (e.clientX < rect.left + rect.width / 2)
             : (e.clientY < rect.top + rect.height / 2);
@@ -3833,6 +3960,51 @@
         el.addEventListener('touchstart', handleTouchStart, { passive: true });
     }
 
+    // Make the drop forgiving: also listen on the whole list container, not just on cards.
+    // When the pointer is over a gap (or the empty area of the grid), we find the nearest
+    // card and position the indicator relative to it. This avoids the "have to insist"
+    // problem where releasing between cards did nothing because no card got the dragover.
+    function findNearestCard(x, y) {
+        const cards = Array.from(document.querySelectorAll('.duration-card')).filter(c => c !== dragSrcEl);
+        let best = null, bestDist = Infinity;
+        for (const c of cards) {
+            const r = c.getBoundingClientRect();
+            // Distance from the pointer to the card's center (clamped to the card box so
+            // a pointer inside a card has distance ~0).
+            const cx = Math.max(r.left, Math.min(x, r.right));
+            const cy = Math.max(r.top, Math.min(y, r.bottom));
+            const dist = (x - cx) ** 2 + (y - cy) ** 2;
+            if (dist < bestDist) { bestDist = dist; best = c; }
+        }
+        return best;
+    }
+
+    function containerDragOver(e) {
+        if (!dragSrcEl) return;
+        if (e.preventDefault) e.preventDefault();
+        // If the event already bubbled from a specific card, handleDragOver dealt with it.
+        // Here we only act when the pointer isn't directly over a card (the gaps).
+        if (e.target.closest && e.target.closest('.duration-card')) return;
+        const target = findNearestCard(e.clientX, e.clientY);
+        if (!target) return;
+        const rect = target.getBoundingClientRect();
+        const list = document.getElementById('durationsList');
+        const cards = Array.from(list.querySelectorAll('.duration-card'));
+        const idx = cards.indexOf(target);
+        const centerY = rect.top + rect.height / 2;
+        const sameRowAs = (other) => {
+            if (!other) return false;
+            const r = other.getBoundingClientRect();
+            const oc = r.top + r.height / 2;
+            return Math.abs(oc - centerY) < 40 || (r.top < rect.bottom && r.bottom > rect.top);
+        };
+        const memeRangee = sameRowAs(cards[idx + 1]) || sameRowAs(cards[idx - 1]);
+        const insererAvant = memeRangee
+            ? (e.clientX < rect.left + rect.width / 2)
+            : (e.clientY < rect.top + rect.height / 2);
+        positionDropIndicator(target, insererAvant, memeRangee);
+    }
+
     // --- DRAG TACTILE (iPad/Android) ---
     let touchDragState = null;
 
@@ -3956,7 +4128,7 @@
     const helpManual = {
         fr: `
             <h1>Timers — Guide d'utilisation</h1>
-            <p class="help-subtitle">Une application de minuteries multiples, pensée pour l'enseignement et tout usage où l'on suit plusieurs durées en parallèle. Tout fonctionne hors ligne ; l'état est sauvegardé automatiquement.</p>
+            <p class="help-subtitle">Une application de minuteries multiples, pour tout usage où l'on suit plusieurs durées en parallèle. Tout fonctionne hors ligne ; l'état est sauvegardé automatiquement.</p>
 
             <h2>Créer et gérer un timer</h2>
             <p>Le bouton <strong>+</strong> (en bas à droite) ouvre la fenêtre de création : un nom (optionnel) et une durée en heures / minutes / secondes. Chaque timer apparaît sous forme de carte.</p>
@@ -4004,7 +4176,7 @@
         `,
         de: `
             <h1>Timers — Bedienungsanleitung</h1>
-            <p class="help-subtitle">Eine App für mehrere gleichzeitige Timer, gedacht für den Unterricht und alle Situationen, in denen mehrere Zeiten parallel laufen. Alles funktioniert offline; der Zustand wird automatisch gespeichert.</p>
+            <p class="help-subtitle">Eine App für mehrere gleichzeitige Timer, für alle Situationen, in denen mehrere Zeiten parallel laufen. Alles funktioniert offline; der Zustand wird automatisch gespeichert.</p>
 
             <h2>Timer erstellen und verwalten</h2>
             <p>Die Schaltfläche <strong>+</strong> (unten rechts) öffnet das Erstellungsfenster: ein Name (optional) und eine Dauer in Stunden / Minuten / Sekunden. Jeder Timer erscheint als Karte.</p>
@@ -4052,7 +4224,7 @@
         `,
         en: `
             <h1>Timers — User guide</h1>
-            <p class="help-subtitle">A multi-timer app designed for teaching and any situation where you track several durations in parallel. Everything works offline; state is saved automatically.</p>
+            <p class="help-subtitle">A multi-timer app for any situation where you track several durations in parallel. Everything works offline; state is saved automatically.</p>
 
             <h2>Creating and managing a timer</h2>
             <p>The <strong>+</strong> button (bottom right) opens the creation window: a name (optional) and a duration in hours / minutes / seconds. Each timer appears as a card.</p>
@@ -4497,6 +4669,15 @@
         }
     });
 
+    // Container-level drag handlers make dropping forgiving (works in the gaps between
+    // cards, not only directly on a card). Attached once to #durationsList.
+    (function attachContainerDragHandlers() {
+        const list = document.getElementById('durationsList');
+        if (!list) return;
+        list.addEventListener('dragover', containerDragOver, false);
+        list.addEventListener('drop', handleDrop, false);
+    })();
+
     window.onload = () => {
         const savedData = localStorage.getItem('timers_v17_data');
         
@@ -4508,7 +4689,7 @@
             globalSoundEnabled = data.globalSound !== undefined ? data.globalSound : true;
             darkMode = data.darkMode !== undefined ? data.darkMode : false;
             hideSeconds = data.hideSeconds !== undefined ? data.hideSeconds : false;
-            secondsThreshold = data.secondsThreshold !== undefined ? data.secondsThreshold : 180;
+            secondsThreshold = data.secondsThreshold !== undefined ? data.secondsThreshold : 120;
             autoResetDelay = data.autoResetDelay !== undefined ? data.autoResetDelay : 60;
             extraDelay = data.extraDelay !== undefined ? data.extraDelay : 30;
             timersZoom = data.timersZoom !== undefined ? data.timersZoom : 1.0;
@@ -4578,6 +4759,28 @@
             const clockSelect = document.getElementById('clockModeSelect');
             if (clockSelect) clockSelect.value = clockMode;
             applyTheme();
+        } else {
+            // First launch (no saved data): create a default timer so the app isn't empty.
+            // A 3-minute "soft-boiled egg" timer. The name is taken from i18n in the current
+            // language at creation time (then it's a normal editable name, not retranslated).
+            const defaultTimer = {
+                id: Date.now(),
+                nom: i18n[currentLang].defaultTimerName || 'œuf à la coque',
+                totalSecs: 180,
+                start: null,
+                extraSecs: 0,
+                muted: false,
+                pausedAt: null,
+                hidden: false
+            };
+            timersList.push(defaultTimer);
+            createCardHTML(defaultTimer);
+            changeLanguage(currentLang);
+            updateGlobalSoundUI();
+            const threshInput = document.getElementById('thresholdInput');
+            if (threshInput) threshInput.value = Math.round(secondsThreshold / 60);
+            applyTheme();
+            save();
         }
         // Init UI fields that must always reflect values (default or restored)
         const buttonsHoverOnlyCheckbox = document.getElementById('buttonsHoverOnlyCheckbox');
@@ -4600,6 +4803,8 @@
         applyHideTimeWithVisualTimer();
         // Show "auto start" hints on chained timers, based on the restored state.
         refreshChainLabels();
+        // Reflect the current running/paused state on the global pause/resume button.
+        updatePauseAllButton();
         
         // 5. Restaurer l'onglet actif
         const savedTab = localStorage.getItem('timers_current_tab');

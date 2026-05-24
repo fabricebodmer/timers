@@ -317,7 +317,13 @@
            A SINGLE wave runs across the whole bar (overlaying both the gray remaining-time
            track and the blue progress fill), so the motion looks continuous. The wave is a
            white-tinted highlight that brightens whichever color it passes over. */
-        .active .progress-bar-container::after {
+        /* Shimmer (a single light wave crossing the whole bar). It is rendered ONLY when
+           the card carries the explicit .is-running class, which JS adds solely while the
+           timer is actively counting down and removes on pause/stop/finish. Using a single
+           dedicated class (instead of a combination like .active:not(.paused)) removes any
+           ambiguity: no .is-running → the ::after has no content → nothing exists to animate. */
+        .duration-card .progress-bar-container::after { content: none; }
+        .duration-card.is-running .progress-bar-container::after {
             content: "";
             position: absolute;
             top: 0;
@@ -326,17 +332,14 @@
             height: 100%;
             background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%);
             background-size: 200% 100%;
-            animation: progress-shimmer 3.5s ease-in-out infinite;
+            animation: progress-wave 3.5s ease-in-out infinite;
             pointer-events: none;
             z-index: 2;
         }
-        @keyframes progress-shimmer {
+        @keyframes progress-wave {
             0% { background-position: 100% 0; }
             100% { background-position: -100% 0; }
         }
-        .finished .progress-bar-container::after { display: none; }
-        /* Paused timer: stop the shimmer animation so the bar looks "frozen" too. */
-        .paused .progress-bar-container::after { animation-play-state: paused; opacity: 0.5; }
 
         .btn-close { position: absolute; top: 20px; right: 20px; background: var(--btn-close-bg); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-weight: 900; color: var(--text-light); z-index: 10; transition: all 0.3s ease; }
         .btn-close:hover { opacity: 0.7; }
@@ -2872,6 +2875,7 @@
         const card = document.getElementById(`card-${id}`);
         if (!card || card.classList.contains('finished')) return;
         card.classList.add('finished');
+        card.classList.remove('is-running');
         playAlarm(id);
         updatePauseAllButton();
         // Auto-reset runs normally (it animates the bar back down). When "hide finished
@@ -3186,7 +3190,7 @@
         obj.muted = false;
         obj.pausedAt = null;
         const card = document.getElementById(`card-${id}`);
-        card.classList.remove('active', 'finished', 'paused');
+        card.classList.remove('active', 'finished', 'paused', 'is-running');
         // Immediate bar reset, without animation (otherwise we'd see the bar "flow" to 0)
         const fill = document.getElementById(`progress-${id}`);
         if (fill) {
@@ -3267,6 +3271,10 @@
         // Mark the card with the paused state so CSS can adapt (e.g. progress-bar shimmer
         // is muted on paused timers — they shouldn't look "alive").
         card.classList.toggle('paused', obj.pausedAt !== null);
+        // .is-running drives the progress-bar wave: present ONLY while actively counting
+        // down (started, not paused, not finished). Removed otherwise so the wave vanishes.
+        const running = obj.start !== null && obj.pausedAt === null && !card.classList.contains('finished');
+        card.classList.toggle('is-running', running);
         // Action button: PAUSE when running, RESUME when paused.
         const mainBtn = (obj.pausedAt !== null)
             ? `<button class="btn-action btn-resume" onclick="resumeTimer('${id}')">▶ ${t.resume}</button>`

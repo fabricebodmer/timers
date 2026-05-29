@@ -371,6 +371,10 @@
         .modal-actions button:hover { opacity: 0.85; }
         .modal-btn-confirm { background: var(--danger); color: white; }
         .modal-btn-cancel { background: var(--btn-close-bg); color: var(--text-light); border: 1px solid var(--input-border) !important; }
+        /* Delete button used in the schedule modal — neutral red between cancel and confirm. */
+        .modal-btn-delete { background: transparent; color: var(--danger); border: 1px solid var(--danger) !important; }
+        /* In the schedule modal, the confirm button is a regular primary (not red/danger). */
+        .schedule-actions .modal-btn-confirm { background: #7c3aed; color: white; }
         /* Neutral third button (e.g. "Hide") — distinct from delete (red) and cancel. */
         .modal-btn-neutral { background: var(--primary); color: white; }
         .modal-btn-neutral:disabled { background: var(--input-border); color: var(--text-light); cursor: not-allowed; opacity: 0.6; }
@@ -436,11 +440,12 @@
         /* Dark mode adjustments for the dial */
         .dark .with-visual-timer .visual-timer circle:first-child { fill: #f1f5f9; }
         .time-left:hover { background: var(--btn-close-bg); }
+        /* Not-started timer: remaining time shown in a very light gray (it isn't ticking). */
+        .duration-card:not(.active) .time-left { color: var(--input-border); }
         .active .time-left { color: var(--text-dark); }
         .finished .time-left { color: var(--danger); }
         .finished .time-left:hover { background: var(--danger-bg); }
-        /* Paused timer: gray out the remaining time (it isn't ticking). Not-started timers
-           are already gray via the default .time-left color (var(--input-border)). */
+        /* Paused timer: same very light gray as a not-started timer (it isn't ticking). */
         .active.paused .time-left { color: var(--input-border); }
 
         /* Champ seuil secondes */
@@ -489,11 +494,58 @@
             font-weight: 700;
             font-size: 0.9rem;
         }
+        /* Scheduled-start state: the user has set a clock time for this timer. Uses the
+           normal start green (border + text) on a white background, with a solid border to
+           distinguish it from the dashed "auto start (chain)" hint. Label: "Démarrage à HH:MM:SS".
+           On hover, it becomes a normal solid-green "DÉMARRER" button (the hover label comes
+           from data-hover-label) to make starting feel familiar. */
+        .btn-start.btn-start-scheduled {
+            position: relative;
+            background: var(--card-bg);
+            color: var(--success);
+            border: 2px solid var(--success);
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .btn-start.btn-start-scheduled:hover { background: var(--success); border-color: var(--success); }
+        .btn-start.btn-start-scheduled:hover .sched-label { visibility: hidden; }
+        .btn-start.btn-start-scheduled:hover::after {
+            content: attr(data-hover-label);
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 800;
+            font-size: 1rem;
+        }
+        /* Scheduling button (A inside a circular arrow). Sits to the right of the start
+           button when the "Timers automatiques" option is on. Discreet by default, gets
+           the purple accent when a schedule is active (to echo the start-button label). */
+        .btn-schedule {
+            padding: 8px 10px;
+            min-width: 0;
+            color: var(--text-light);
+            background: transparent;
+            border: 2px solid transparent !important;
+        }
+        .btn-schedule:hover { background: var(--btn-close-bg); color: var(--text-dark); }
+        .btn-schedule.has-schedule { color: var(--text-dark); }
         .btn-action { background: var(--card-bg); color: var(--text-light); border: 2px solid var(--input-border); padding: 10px 18px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.3s ease; }
         .btn-action:hover { border-color: var(--text-light); }
         .btn-stop { border-color: var(--danger); color: var(--danger); }
         /* PAUSE button on a running timer card (orange/amber, neutral non-destructive). */
         .btn-pause { border-color: #f59e0b; color: #f59e0b; }
+        /* A finished (red) timer must not be pause-able — the pause button is disabled
+           both visually and functionally. The same effective protection exists in
+           pauseTimer() (it refuses to pause a finished timer), and globalPlayPause()
+           excludes finished timers from the "running" set. */
+        .duration-card.finished .btn-pause {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
         /* RESUME button on a paused timer card (green, "go" signal). */
         .btn-resume { border-color: #16a34a; color: #16a34a; }
 
@@ -517,22 +569,26 @@
         .btn-add-floating:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(14, 165, 233, 0.5); }
         .btn-add-floating:active { transform: scale(0.97); }
 
-        /* Floating "start all" button to the left of the + button */
-        .btn-start-all { position: fixed; bottom: 30px; right: 110px; width: 64px; height: 64px; border-radius: 50%; background: #16a34a; color: white; border: none; cursor: pointer; box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4); z-index: 90; transition: all 0.2s; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; }
+        /* Floating "start all" button (to the left of the reset button) */
+        .btn-start-all { position: fixed; bottom: 30px; right: 190px; width: 64px; height: 64px; border-radius: 50%; background: #16a34a; color: white; border: none; cursor: pointer; box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4); z-index: 90; transition: all 0.2s; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; }
         .btn-start-all.hidden { display: none; }
         .btn-start-all:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(22, 163, 74, 0.5); }
         .btn-start-all:active { transform: scale(0.97); }
         .btn-start-all:disabled { background: #999; cursor: not-allowed; box-shadow: none; opacity: 0.5; }
         .btn-start-all:disabled:hover { transform: none; box-shadow: none; }
+        /* When the single global button is showing the PAUSE icon, switch its palette to
+           orange to keep the visual cue we used to get from the dedicated pause button. */
+        .btn-start-all.as-pause { background: #f59e0b; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); }
+        .btn-start-all.as-pause:hover { box-shadow: 0 8px 24px rgba(245, 158, 11, 0.5); }
 
-        /* Floating "pause all" button between start and stop */
-        .btn-pause-all { position: fixed; bottom: 30px; right: 190px; width: 64px; height: 64px; border-radius: 50%; background: #f59e0b; color: white; border: none; cursor: pointer; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); z-index: 90; transition: all 0.2s; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; }
+        /* Floating "pause all" button (leftmost of the control cluster) */
+        .btn-pause-all { position: fixed; bottom: 30px; right: 270px; width: 64px; height: 64px; border-radius: 50%; background: #f59e0b; color: white; border: none; cursor: pointer; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); z-index: 90; transition: all 0.2s; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; }
         .btn-pause-all.hidden { display: none; }
         .btn-pause-all:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(245, 158, 11, 0.5); }
         .btn-pause-all:active { transform: scale(0.97); }
 
-        /* Floating "stop all" button to the left of the "pause all" button */
-        .btn-stop-all { position: fixed; bottom: 30px; right: 270px; width: 64px; height: 64px; border-radius: 50%; background: #dc2626; color: white; border: none; cursor: pointer; box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4); z-index: 90; transition: all 0.2s; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; }
+        /* Floating "reset all" button, immediately to the right of the start button */
+        .btn-stop-all { position: fixed; bottom: 30px; right: 110px; width: 64px; height: 64px; border-radius: 50%; background: #dc2626; color: white; border: none; cursor: pointer; box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4); z-index: 90; transition: all 0.2s; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; }
         .btn-stop-all.hidden { display: none; }
         .btn-stop-all:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(220, 38, 38, 0.5); }
         .btn-stop-all:active { transform: scale(0.97); }
@@ -639,8 +695,30 @@
         .tab-content.active { display: block; }
         
         /* Markdown editor */
-        /* Instructions tab (WYSIWYG richtext editor) */
-        #instructions-tab.active { display: flex; flex-direction: column; height: calc(100vh - 60px); overflow-x: hidden; }
+        /* Audio-unlock banner (iOS/iPadOS): discreet top banner shown only when a scheduled
+           start is pending and audio hasn't been unlocked yet. A tap anywhere dismisses it. */
+        .audio-unlock-banner {
+            display: none;
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1100;
+            max-width: 90%;
+            background: var(--primary);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px var(--shadow-color);
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-align: center;
+            animation: audio-banner-in 0.3s ease;
+        }
+        .audio-unlock-banner.visible { display: block; }
+        @keyframes audio-banner-in { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        /* Instructions tab (WYSIWYG richtext editor) */        #instructions-tab.active { display: flex; flex-direction: column; height: calc(100vh - 60px); overflow-x: hidden; }
         .richtext-container { flex: 1; width: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .richtext-toolbar { background: var(--settings-bg); border-bottom: 1px solid var(--card-border); padding: 10px 20px; display: none; gap: 6px; align-items: center; flex-wrap: wrap; }
         .richtext-container.editing .richtext-toolbar { display: flex; }
@@ -651,6 +729,33 @@
         .richtext-toolbar button.rt-zoom-level { font-size: 0.8rem; min-width: 50px; color: var(--text-light); }
         .richtext-toolbar .toolbar-sep { width: 1px; height: 22px; background: var(--card-border); margin: 0 4px; }
         .richtext-editor { flex: 1; width: 100%; box-sizing: border-box; padding: 30px 40px; overflow-y: auto; background: var(--bg); color: var(--text-dark); line-height: 1.4; font-size: 1.5rem; outline: none; cursor: text; }
+        /* Notes-tab floating clock: sits top-right inside the editor; text wraps around it.
+           contenteditable=false (set in JS) keeps the caret out. Reuses the clock visuals. */
+        .notes-clock-float {
+            float: right;
+            margin: 0 0 16px 24px;
+            user-select: none;
+            -webkit-user-select: none;
+            position: relative;
+        }
+        .notes-clock-float .clock-clickable { cursor: pointer; position: relative; display: inline-block; }
+        /* The scaled content: clock face + time stacked and centered on the same axis. */
+        .notes-clock-float .notes-clock-inner { display: flex; flex-direction: column; align-items: center; }
+        .notes-clock-float .clock-digital { font-size: 2.6rem; font-weight: 800; color: var(--text-dark); font-variant-numeric: tabular-nums; text-align: center; line-height: 1.1; }
+        /* CFF + digital mode: the two stacked vertically (clock above, time below). */
+        .notes-clock-float.both-mode .clock-digital { margin-top: 6px; }
+        .notes-clock-float .clock-cff { width: 150px; height: 150px; display: block; margin: 0 auto; }
+        /* Resize handle for the Notes clock goes BOTTOM-LEFT (the clock is top-right, so a
+           bottom-left handle is the natural "grow toward the text" corner). */
+        .notes-clock-float .clock-resize-handle {
+            right: auto;
+            left: 0;
+            cursor: nesw-resize;
+            background-image: linear-gradient(225deg, transparent 0 50%, var(--text-light) 50% 60%, transparent 60% 75%, var(--text-light) 75% 85%, transparent 85% 100%);
+            border-radius: 0 0 0 8px;
+        }
+        /* Toolbar clock button active state */
+        .richtext-toolbar button#notesClockBtn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
         /* Outside edit mode, the cursor stays a text-cursor to signal you can edit */
         .richtext-container:not(.editing) .richtext-editor { cursor: text; }
         .richtext-container:not(.editing) .richtext-editor:hover { background: var(--btn-close-bg); }
@@ -858,14 +963,31 @@
             opacity: 0;
             transition: opacity 0.18s ease;
         }
-        /* Reveal when hovering the buttons of ANY running timer: :has lets one card's
-           hover reveal all cards' buttons. Leaving the buttons area hides them again. */
-        body.hide-timer-buttons #durationsList:has(.duration-card.active .card-actions:hover) .duration-card.active:not(.paused) .card-actions > .btn-action:not(.btn-mute) {
+        /* Reveal only the HOVERED card's action buttons (not all cards). The masking
+           condition (.active:not(.paused)) is unchanged, so the action buttons under the
+           remaining time are only hidden while the timer is RUNNING. */
+        body.hide-timer-buttons .duration-card.active:not(.paused):hover .card-actions > .btn-action:not(.btn-mute) {
             visibility: visible;
             opacity: 1;
         }
         /* Reveal via JS-set class (touch devices: tap; auto-hides after a few seconds). */
         body.hide-timer-buttons.timer-buttons-revealed .duration-card.active:not(.paused) .card-actions > .btn-action:not(.btn-mute) {
+            visibility: visible;
+            opacity: 1;
+        }
+        /* The duplicate (+) and close (×) corner buttons are ALSO hidden in this mode,
+           regardless of the timer's state (not-started, running, paused, finished). They
+           reappear on hover/tap of the card, just like the action buttons. */
+        body.hide-timer-buttons .duration-card .btn-duplicate,
+        body.hide-timer-buttons .duration-card .btn-close {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.18s ease;
+        }
+        body.hide-timer-buttons .duration-card:hover .btn-duplicate,
+        body.hide-timer-buttons .duration-card:hover .btn-close,
+        body.hide-timer-buttons.timer-buttons-revealed .duration-card .btn-duplicate,
+        body.hide-timer-buttons.timer-buttons-revealed .duration-card .btn-close {
             visibility: visible;
             opacity: 1;
         }
@@ -1050,6 +1172,15 @@
                         </div>
                     </div>
                     <div class="dropdown-setting">
+                        <label id="txt-label-autostart">Programmation horaire</label>
+                        <div class="dropdown-setting-input">
+                            <label class="dropdown-toggle">
+                                <input type="checkbox" id="autoStartTimersCheckbox" onchange="onAutoStartTimersChange()" onclick="event.stopPropagation()">
+                                <span></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="dropdown-setting">
                         <label id="txt-label-buttons">Masquer les boutons globaux</label>
                         <div class="dropdown-setting-input">
                             <label class="dropdown-toggle">
@@ -1136,17 +1267,48 @@
         </div>
     </div>
 
+    <!-- Schedule modal: lets the user set/edit/delete a recurring daily start time
+         for a specific timer. Opened by the A↻ button on each not-started timer. -->
+    <div class="modal-overlay" id="scheduleModal">
+        <div class="modal-box">
+            <div class="modal-message" id="txt-schedule-modal-title">Programmer le démarrage</div>
+            <div class="add-modal-fields">
+                <div class="field">
+                    <label id="txt-schedule-label">Heure de démarrage automatique (quotidien)</label>
+                    <div class="duration-fields">
+                        <input type="number" id="scheduleH" value="9" min="0" max="23" aria-label="heures">
+                        <span class="duration-sep">:</span>
+                        <input type="number" id="scheduleM" value="0" min="0" max="59" aria-label="minutes">
+                        <span class="duration-sep">:</span>
+                        <input type="number" id="scheduleS" value="0" min="0" max="59" aria-label="secondes">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions schedule-actions">
+                <button class="modal-btn-cancel" onclick="closeScheduleModal()" id="txt-schedule-cancel">Annuler</button>
+                <button class="modal-btn-delete" id="txt-schedule-delete" onclick="confirmScheduleDelete()" style="display:none">Supprimer</button>
+                <button class="modal-btn-confirm" onclick="confirmScheduleSet()" id="txt-schedule-confirm">Programmer</button>
+            </div>
+        </div>
+    </div>
+
     <div id="timers-tab" class="tab-content active">
         <div id="clockContainer" class="clock-container"></div>
         <div id="durationsList"></div>
         <div class="drop-indicator" id="dropIndicator"></div>
     </div>
+    <!-- Audio-unlock banner: shown only when a scheduled start is pending AND the audio
+         context hasn't been unlocked yet this session (iOS/iPadOS blocks sound without a
+         user gesture). A single tap anywhere unlocks audio and hides this. -->
+    <div id="audioUnlockBanner" class="audio-unlock-banner" onclick="dismissAudioUnlockBanner()" role="button" tabindex="0">
+        <span id="txt-audio-unlock">🔔 Touchez l'écran pour activer le son des alarmes programmées</span>
+    </div>
     <button class="btn-zoom-timers btn-zoom-out" id="btnZoomOut" onclick="zoomTimers(-0.1)" title="Réduire les timers">🔍−</button>
     <button class="btn-zoom-timers btn-zoom-reset" id="btnZoomReset" onclick="resetZoomTimers()" title="Zoom 100%"><span id="btnZoomResetLabel">100%</span></button>
     <button class="btn-zoom-timers btn-zoom-in" id="btnZoomIn" onclick="zoomTimers(0.1)" title="Agrandir les timers">🔍＋</button>
-    <button class="btn-stop-all" id="btnStopAll" onclick="stopAll()" title="Arrêter tous les timers"><svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
-        <button class="btn-pause-all" id="btnPauseAll" onclick="togglePauseAll()" title="Pause tous les timers"><svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
-    <button class="btn-start-all" id="btnStartAll" onclick="startAll()" title="Démarrer tous les timers"><svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>
+    <button class="btn-stop-all" id="btnStopAll" onclick="stopAll()" title="Réinitialiser tous les timers"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+        <button class="btn-pause-all" id="btnPauseAll" onclick="globalPlayPause()" title="Pause tous les timers" style="display:none" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
+    <button class="btn-start-all" id="btnStartAll" onclick="globalPlayPause()" title="Démarrer tous les timers"><svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>
     <button class="btn-add-floating" id="btnAddFloating" onclick="openAddModal()" title="Ajouter un timer"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
 
     <div id="instructions-tab" class="tab-content">
@@ -1169,6 +1331,8 @@
                 <div class="toolbar-sep"></div>
                 <button type="button" id="rt-link" title="Lien">🔗</button>
                 <button type="button" id="rt-clear" title="Effacer le formatage">⎚</button>
+                <div class="toolbar-sep"></div>
+                <button type="button" id="notesClockBtn" title="Afficher/masquer l'horloge" onclick="toggleNotesClock()">🕐</button>
                 <div class="toolbar-spacer"></div>
                 <button type="button" class="btn-close-edit" id="rt-close" title="Sortir du mode édition">✕</button>
             </div>
@@ -1178,9 +1342,9 @@
 
 <script>
     const i18n = {
-        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", durationLabel: "Durée (h:m:s)", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "STOP", mute: "MUET", soundOn: "ACTIVÉ", defaultTimerName: "œuf à la coque", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", confirmStopAll: "Souhaitez-vous vraiment arrêter tous les timers ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", editStartTimeTitle: "Modifier l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", fileDropMessage: "Déposer le fichier JSON pour l'importer", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Durée alarme", autoResetUnit: "sec (0=off)", extraLabel: "Temps supplémentaire", extraUnit: "sec", removeExtraTitle: "Annuler le temps supplémentaire", langLabel: "Langue", configSection: "Configuration", buttonsLabel: "Masquer les boutons globaux", hideTimerButtonsLabel: "Masquer les boutons des timers", chainLabel: "Chaîner les timers", hideFinishedLabel: "Masquer les timers terminés", visualTimerLabel: "Timer visuel", visualTimerResizeTitle: "Glisser pour redimensionner ce timer visuel", toggleHideTimeTitle: "Cliquer pour afficher/masquer le temps restant", clearAll: "Réinitialiser…", clockLabel: "Horloge", clockNone: "Aucune", clockDigital: "Numérique", clockCff: "CFF", clockBoth: "CFF + numérique", clockToggleTitle: "Cliquer pour changer d'horloge", clockResizeTitle: "Glisser pour redimensionner", startAllTitle: "Démarrer tous les timers", stopAllTitle: "Arrêter tous les timers", zoomInTitle: "Agrandir les timers", zoomOutTitle: "Réduire les timers", zoomResetTitle: "Zoom 100% (réinitialiser)", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes", startTimeTooEarly: "Impossible de placer le départ plus loin dans le passé que la durée du timer", startTimeTooLate: "Impossible de placer le départ plus tard que le temps déjà écoulé", invalidTimeFormat: "Format d'heure invalide", deleteLabel: "Supprimer", hideLabel: "Masquer", hideDisabledRunning: "Impossible de masquer un timer en cours", unhideTitle: "Cliquer pour réafficher ce timer", autoStart: "Démarrage (auto.)", pause: "PAUSE", resume: "REPRENDRE", pauseAllTitle: "Mettre en pause tous les timers en cours", resumeAllTitle: "Reprendre les timers en pause", chainStartPrompt: "Le mode chaîné est activé. Que souhaitez-vous démarrer ?", chainStartFirst: "Le premier", chainStartAll: "Tous", helpTitle: "Aide", menuPanelTitle: "Réglages", revertImportLabel: "Revenir à la configuration importée", confirmRevertImport: "Réappliquer la dernière configuration importée ? Vos modifications actuelles seront écrasées." },
-        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", durationLabel: "Dauer (h:m:s)", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "STOPP", mute: "STUMM", soundOn: "AKTIV", defaultTimerName: "weiches Ei", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", confirmStopAll: "Möchten Sie wirklich alle Timer stoppen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notizen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", editStartTimeTitle: "Startzeit ändern", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", fileDropMessage: "JSON-Datei hier ablegen, um sie zu importieren", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Alarmdauer", autoResetUnit: "Sek (0=aus)", extraLabel: "Zusätzliche Zeit", extraUnit: "Sek", removeExtraTitle: "Zusätzliche Zeit aufheben", langLabel: "Sprache", configSection: "Konfiguration", buttonsLabel: "Globale Tasten ausblenden", hideTimerButtonsLabel: "Timer-Tasten ausblenden", chainLabel: "Timer verketten", hideFinishedLabel: "Beendete Timer ausblenden", visualTimerLabel: "Visueller Timer", visualTimerResizeTitle: "Ziehen, um diesen visuellen Timer zu skalieren", toggleHideTimeTitle: "Klicken, um die Restzeit ein-/auszublenden", clearAll: "Zurücksetzen…", clockLabel: "Uhr", clockNone: "Keine", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Klicken, um Uhr zu wechseln", clockResizeTitle: "Ziehen zum Vergrößern", startAllTitle: "Alle Timer starten", stopAllTitle: "Alle Timer stoppen", zoomInTitle: "Timer vergrößern", zoomOutTitle: "Timer verkleinern", zoomResetTitle: "Zoom 100% (zurücksetzen)", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden", startTimeTooEarly: "Der Start kann nicht weiter in der Vergangenheit liegen als die Timer-Dauer", startTimeTooLate: "Der Start kann nicht später liegen als die bereits verstrichene Zeit", invalidTimeFormat: "Ungültiges Zeitformat", deleteLabel: "Löschen", hideLabel: "Ausblenden", hideDisabledRunning: "Ein laufender Timer kann nicht ausgeblendet werden", unhideTitle: "Klicken, um diesen Timer wieder anzuzeigen", autoStart: "Start (autom.)", pause: "PAUSE", resume: "WEITER", pauseAllTitle: "Alle laufenden Timer pausieren", resumeAllTitle: "Pausierte Timer fortsetzen", chainStartPrompt: "Der Verkettungsmodus ist aktiv. Was möchten Sie starten?", chainStartFirst: "Den ersten", chainStartAll: "Alle", helpTitle: "Hilfe", menuPanelTitle: "Einstellungen", revertImportLabel: "Zur importierten Konfiguration zurückkehren", confirmRevertImport: "Die letzte importierte Konfiguration erneut anwenden? Ihre aktuellen Änderungen werden überschrieben." },
-        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", durationLabel: "Duration (h:m:s)", duration: "DURATION", finishAt: "End at", start: "START", stop: "STOP", mute: "MUTE", soundOn: "ON", defaultTimerName: "soft-boiled egg", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", confirmStopAll: "Do you really want to stop all timers?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", editStartTimeTitle: "Edit start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", fileDropMessage: "Drop the JSON file to import it", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Alarm duration", autoResetUnit: "sec (0=off)", extraLabel: "Extra time", extraUnit: "sec", removeExtraTitle: "Cancel extra time", langLabel: "Language", configSection: "Configuration", buttonsLabel: "Hide global buttons", hideTimerButtonsLabel: "Hide timer buttons", chainLabel: "Chain timers", hideFinishedLabel: "Hide finished timers", visualTimerLabel: "Visual Timer", visualTimerResizeTitle: "Drag to resize this visual timer", toggleHideTimeTitle: "Click to show/hide remaining time", clearAll: "Reset…", clockLabel: "Clock", clockNone: "None", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Click to switch clock", clockResizeTitle: "Drag to resize", startAllTitle: "Start all timers", stopAllTitle: "Stop all timers", zoomInTitle: "Make timers bigger", zoomOutTitle: "Make timers smaller", zoomResetTitle: "Zoom 100% (reset)", toggleSecondsTitle: "Click to show/hide seconds", startTimeTooEarly: "Cannot place the start further in the past than the timer duration", startTimeTooLate: "Cannot place the start later than the time already elapsed", invalidTimeFormat: "Invalid time format", deleteLabel: "Delete", hideLabel: "Hide", hideDisabledRunning: "Cannot hide a running timer", unhideTitle: "Click to show this timer again", autoStart: "Auto start", pause: "PAUSE", resume: "RESUME", pauseAllTitle: "Pause all running timers", resumeAllTitle: "Resume paused timers", chainStartPrompt: "Chaining mode is on. What do you want to start?", chainStartFirst: "The first", chainStartAll: "All", helpTitle: "Help", menuPanelTitle: "Settings", revertImportLabel: "Revert to imported configuration", confirmRevertImport: "Re-apply the last imported configuration? Your current changes will be overwritten." }
+        fr: { sound: "SON", on: "ON", off: "OFF", clearAll: "Tout effacer", labelName: "Nom", labelMin: "Min", labelSec: "Sec", btnAdd: "Ajouter timer", durationLabel: "Durée (h:m:s)", duration: "DURÉE", finishAt: "Fin à", start: "DÉMARRER", stop: "RESET", mute: "MUET", soundOn: "ALARME", defaultTimerName: "œuf à la coque", plus30: "+ 30 sec", placeholderName: "Ex: Mon timer", untiteld: "Sans titre", confirmDelete: "Supprimer ?", confirmReset: "Réinitialiser l'application ?", confirmStopAll: "Souhaitez-vous vraiment arrêter tous les timers ?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Aperçu", edit: "Éditer", reset: "Réinitialiser", confirmResetInstructions: "Réinitialiser les informations ?", hidePanel: "Masquer", showPanel: "Afficher", addTimer: "+ Ajouter timer", addTimerTitle: "Nouveau timer", duplicate: "Dupliquer", editDurationTitle: "Cliquer pour modifier la durée", editNameTitle: "Cliquer pour renommer", save: "OK", cancel: "Annuler", startedAt: "Début à", showStartTimeTitle: "Cliquer pour afficher/masquer l'heure de début", editStartTimeTitle: "Modifier l'heure de début", export: "Exporter", import: "Importer", importUrl: "Importer depuis URL", share: "Partager le lien", linkCopied: "Lien copié dans le presse-papiers !", fileDropMessage: "Déposer le fichier JSON pour l'importer", linkTooLong: "Lien généré (trop long pour le presse-papiers, voir la console).", confirmSharedImport: "Une configuration a été reçue via le lien partagé. L'importer écrasera vos données actuelles. Continuer ?", promptUrlMessage: "URL du fichier JSON à importer :", urlFetchError: "Impossible de récupérer le fichier depuis cette URL.", confirmImport: "L'import écrasera toute la configuration actuelle (timers, instructions, réglages). Continuer ?", importSuccess: "Configuration importée avec succès. La page va se recharger.", importError: "Fichier invalide. L'import a échoué.", thresholdLabel: "Sec affichées sous", thresholdUnit: "min", autoResetLabel: "Durée alarme", autoResetUnit: "sec (0=off)", extraLabel: "Temps supplémentaire", extraUnit: "sec", removeExtraTitle: "Annuler le temps supplémentaire", langLabel: "Langue", configSection: "Configuration", buttonsLabel: "Masquer les boutons globaux", hideTimerButtonsLabel: "Masquer les boutons des timers", chainLabel: "Chaîner les timers", hideFinishedLabel: "Masquer les timers terminés", visualTimerLabel: "Timer visuel", visualTimerResizeTitle: "Glisser pour redimensionner ce timer visuel", toggleHideTimeTitle: "Cliquer pour afficher/masquer le temps restant", clearAll: "Réinitialiser…", clockLabel: "Horloge", clockNone: "Aucune", clockDigital: "Numérique", clockCff: "CFF", clockBoth: "CFF + numérique", clockToggleTitle: "Cliquer pour changer d'horloge", clockResizeTitle: "Glisser pour redimensionner", startAllTitle: "Démarrer tous les timers", stopAllTitle: "Réinitialiser tous les timers", zoomInTitle: "Agrandir les timers", zoomOutTitle: "Réduire les timers", zoomResetTitle: "Zoom 100% (réinitialiser)", toggleSecondsTitle: "Cliquer pour afficher/masquer les secondes", startTimeTooEarly: "Impossible de placer le départ plus loin dans le passé que la durée du timer", startTimeTooLate: "Impossible de placer le départ plus tard que le temps déjà écoulé", invalidTimeFormat: "Format d'heure invalide", deleteLabel: "Supprimer", hideLabel: "Masquer", hideDisabledRunning: "Impossible de masquer un timer en cours", unhideTitle: "Cliquer pour réafficher ce timer", autoStart: "Démarrage (auto.)", scheduledStartLabel: "Démarrage à", autoStartTimersLabel: "Programmation horaire", audioUnlockBanner: "🔔 Touchez l'écran pour activer le son des alarmes programmées", scheduleTitle: "Programmer un démarrage automatique", scheduleModalTitle: "Programmer le démarrage", scheduleFieldLabel: "Heure de démarrage automatique (quotidien)", scheduleConfirm: "Programmer", scheduleDelete: "Supprimer", pause: "PAUSE", resume: "REPRENDRE", pauseAllTitle: "Mettre en pause tous les timers en cours", resumeAllTitle: "Reprendre les timers en pause", chainStartPrompt: "Le mode chaîné est activé. Que souhaitez-vous démarrer ?", chainStartFirst: "Le premier", chainStartAll: "Tous", helpTitle: "Aide", menuPanelTitle: "Réglages", revertImportLabel: "Revenir à la configuration importée", confirmRevertImport: "Réappliquer la dernière configuration importée ? Vos modifications actuelles seront écrasées." },
+        de: { sound: "TON", on: "AN", off: "AUS", clearAll: "Alles löschen", labelName: "Name", labelMin: "Min", labelSec: "Sek", btnAdd: "Timer hinzufügen", durationLabel: "Dauer (h:m:s)", duration: "DAUER", finishAt: "Ende um", start: "START", stop: "RESET", mute: "STUMM", soundOn: "ALARM", defaultTimerName: "weiches Ei", plus30: "+ 30 Sek", placeholderName: "z.B. Mein Timer", untiteld: "Ohne Titel", confirmDelete: "Löschen?", confirmReset: "Anwendung zurücksetzen?", confirmStopAll: "Möchten Sie wirklich alle Timer stoppen?", hideSeconds: "SEK", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notizen", preview: "Vorschau", edit: "Bearbeiten", reset: "Zurücksetzen", confirmResetInstructions: "Informationen zurücksetzen?", hidePanel: "Ausblenden", showPanel: "Einblenden", addTimer: "+ Timer hinzufügen", addTimerTitle: "Neuer Timer", duplicate: "Duplizieren", editDurationTitle: "Klicken, um Dauer zu ändern", editNameTitle: "Klicken zum Umbenennen", save: "OK", cancel: "Abbrechen", startedAt: "Start um", showStartTimeTitle: "Klicken, um Startzeit ein-/auszublenden", editStartTimeTitle: "Startzeit ändern", export: "Exportieren", import: "Importieren", importUrl: "Aus URL importieren", share: "Link teilen", linkCopied: "Link in die Zwischenablage kopiert!", fileDropMessage: "JSON-Datei hier ablegen, um sie zu importieren", linkTooLong: "Link erzeugt (zu lang für die Zwischenablage, siehe Konsole).", confirmSharedImport: "Eine Konfiguration wurde über den geteilten Link empfangen. Importieren überschreibt Ihre aktuellen Daten. Fortfahren?", promptUrlMessage: "URL der zu importierenden JSON-Datei:", urlFetchError: "Datei konnte nicht von dieser URL abgerufen werden.", confirmImport: "Der Import überschreibt die gesamte aktuelle Konfiguration (Timer, Anweisungen, Einstellungen). Fortfahren?", importSuccess: "Konfiguration erfolgreich importiert. Die Seite wird neu geladen.", importError: "Ungültige Datei. Import fehlgeschlagen.", thresholdLabel: "Sek anzeigen unter", thresholdUnit: "Min", autoResetLabel: "Alarmdauer", autoResetUnit: "Sek (0=aus)", extraLabel: "Zusätzliche Zeit", extraUnit: "Sek", removeExtraTitle: "Zusätzliche Zeit aufheben", langLabel: "Sprache", configSection: "Konfiguration", buttonsLabel: "Globale Tasten ausblenden", hideTimerButtonsLabel: "Timer-Tasten ausblenden", chainLabel: "Timer verketten", hideFinishedLabel: "Beendete Timer ausblenden", visualTimerLabel: "Visueller Timer", visualTimerResizeTitle: "Ziehen, um diesen visuellen Timer zu skalieren", toggleHideTimeTitle: "Klicken, um die Restzeit ein-/auszublenden", clearAll: "Zurücksetzen…", clockLabel: "Uhr", clockNone: "Keine", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Klicken, um Uhr zu wechseln", clockResizeTitle: "Ziehen zum Vergrößern", startAllTitle: "Alle Timer starten", stopAllTitle: "Alle Timer zurücksetzen", zoomInTitle: "Timer vergrößern", zoomOutTitle: "Timer verkleinern", zoomResetTitle: "Zoom 100% (zurücksetzen)", toggleSecondsTitle: "Klicken, um Sekunden ein-/auszublenden", startTimeTooEarly: "Der Start kann nicht weiter in der Vergangenheit liegen als die Timer-Dauer", startTimeTooLate: "Der Start kann nicht später liegen als die bereits verstrichene Zeit", invalidTimeFormat: "Ungültiges Zeitformat", deleteLabel: "Löschen", hideLabel: "Ausblenden", hideDisabledRunning: "Ein laufender Timer kann nicht ausgeblendet werden", unhideTitle: "Klicken, um diesen Timer wieder anzuzeigen", autoStart: "Start (autom.)", scheduledStartLabel: "Start um", autoStartTimersLabel: "Zeitplanung", audioUnlockBanner: "🔔 Tippen Sie auf den Bildschirm, um den Ton für geplante Alarme zu aktivieren", scheduleTitle: "Automatischen Start planen", scheduleModalTitle: "Start planen", scheduleFieldLabel: "Tägliche Startzeit", scheduleConfirm: "Planen", scheduleDelete: "Entfernen", pause: "PAUSE", resume: "WEITER", pauseAllTitle: "Alle laufenden Timer pausieren", resumeAllTitle: "Pausierte Timer fortsetzen", chainStartPrompt: "Der Verkettungsmodus ist aktiv. Was möchten Sie starten?", chainStartFirst: "Den ersten", chainStartAll: "Alle", helpTitle: "Hilfe", menuPanelTitle: "Einstellungen", revertImportLabel: "Zur importierten Konfiguration zurückkehren", confirmRevertImport: "Die letzte importierte Konfiguration erneut anwenden? Ihre aktuellen Änderungen werden überschrieben." },
+        en: { sound: "SOUND", on: "ON", off: "OFF", clearAll: "Clear All", labelName: "Name", labelMin: "Min", labelSec: "Sec", btnAdd: "Add Timer", durationLabel: "Duration (h:m:s)", duration: "DURATION", finishAt: "End at", start: "START", stop: "RESET", mute: "MUTE", soundOn: "ALARM", defaultTimerName: "soft-boiled egg", plus30: "+ 30 sec", placeholderName: "e.g. my timer", untiteld: "Untitled", confirmDelete: "Delete?", confirmReset: "Reset the application?", confirmStopAll: "Do you really want to stop all timers?", hideSeconds: "SEC", tabTimers: "⏱️ Timers", tabInstructions: "📝 Notes", preview: "Preview", edit: "Edit", reset: "Reset", confirmResetInstructions: "Reset information?", hidePanel: "Hide", showPanel: "Show", addTimer: "+ Add Timer", addTimerTitle: "New timer", duplicate: "Duplicate", editDurationTitle: "Click to edit duration", editNameTitle: "Click to rename", save: "OK", cancel: "Cancel", startedAt: "Started at", showStartTimeTitle: "Click to show/hide start time", editStartTimeTitle: "Edit start time", export: "Export", import: "Import", importUrl: "Import from URL", share: "Share link", linkCopied: "Link copied to clipboard!", fileDropMessage: "Drop the JSON file to import it", linkTooLong: "Link generated (too long for clipboard, see console).", confirmSharedImport: "A configuration was received via the shared link. Importing will overwrite your current data. Continue?", promptUrlMessage: "URL of the JSON file to import:", urlFetchError: "Could not fetch the file from this URL.", confirmImport: "Import will overwrite all current configuration (timers, instructions, settings). Continue?", importSuccess: "Configuration imported successfully. The page will reload.", importError: "Invalid file. Import failed.", thresholdLabel: "Show sec below", thresholdUnit: "min", autoResetLabel: "Alarm duration", autoResetUnit: "sec (0=off)", extraLabel: "Extra time", extraUnit: "sec", removeExtraTitle: "Cancel extra time", langLabel: "Language", configSection: "Configuration", buttonsLabel: "Hide global buttons", hideTimerButtonsLabel: "Hide timer buttons", chainLabel: "Chain timers", hideFinishedLabel: "Hide finished timers", visualTimerLabel: "Visual Timer", visualTimerResizeTitle: "Drag to resize this visual timer", toggleHideTimeTitle: "Click to show/hide remaining time", clearAll: "Reset…", clockLabel: "Clock", clockNone: "None", clockDigital: "Digital", clockCff: "SBB", clockBoth: "SBB + Digital", clockToggleTitle: "Click to switch clock", clockResizeTitle: "Drag to resize", startAllTitle: "Start all timers", stopAllTitle: "Reset all timers", zoomInTitle: "Make timers bigger", zoomOutTitle: "Make timers smaller", zoomResetTitle: "Zoom 100% (reset)", toggleSecondsTitle: "Click to show/hide seconds", startTimeTooEarly: "Cannot place the start further in the past than the timer duration", startTimeTooLate: "Cannot place the start later than the time already elapsed", invalidTimeFormat: "Invalid time format", deleteLabel: "Delete", hideLabel: "Hide", hideDisabledRunning: "Cannot hide a running timer", unhideTitle: "Click to show this timer again", autoStart: "Auto start", scheduledStartLabel: "Start at", autoStartTimersLabel: "Scheduled start", audioUnlockBanner: "🔔 Tap the screen to enable sound for scheduled alarms", scheduleTitle: "Schedule an automatic start", scheduleModalTitle: "Schedule start", scheduleFieldLabel: "Daily start time", scheduleConfirm: "Schedule", scheduleDelete: "Remove", pause: "PAUSE", resume: "RESUME", pauseAllTitle: "Pause all running timers", resumeAllTitle: "Resume paused timers", chainStartPrompt: "Chaining mode is on. What do you want to start?", chainStartFirst: "The first", chainStartAll: "All", helpTitle: "Help", menuPanelTitle: "Settings", revertImportLabel: "Revert to imported configuration", confirmRevertImport: "Re-apply the last imported configuration? Your current changes will be overwritten." }
     };
 
     let currentLang = 'fr';
@@ -1199,6 +1363,7 @@
     let buttonsHoverOnly = false; // When true, all floating GLOBAL buttons (add/play/stop/zoom) are hidden until the user moves the mouse / taps.
     let hideTimerButtons = false; // When true, the per-card action buttons are hidden until the user hovers a timer (or taps, on touch).
     let chainTimers = false; // When true, finishing a timer auto-starts the next one (in display order).
+    let autoStartTimers = false; // When true, per-timer scheduled start times (scheduledAt) are honored.
     let hideFinished = false; // When true, a timer is removed from the list once it finishes.
     let showVisualTimer = false; // Display a Visual Timer-style disc on each timer card
     let hideTimeWithVisualTimer = false; // When true (and Visual Timer is on), hide the numeric time-left display
@@ -1207,6 +1372,10 @@
     let wakeLockSentinel = null;
     let visualTimerScale = 1.35; // Global scale of the Visual Timer disc on every timer card
     let clockMode = 'digital'; // 'none' | 'digital' | 'cff' | 'both'
+    // Independent clock shown in the Notes tab (separate state from the Timers-tab clock).
+    let notesClockVisible = true;             // shown/hidden via a toolbar button
+    let notesClockMode = 'both';              // 'digital' | 'cff' | 'both' (cycled by clicking it)
+    let notesClockScale = 1.4;                // resized via its handle
     let currentTab = 'timers';
     let showStartTime = false; // Global display of start time for all active timers
     let richtextZoom = 1.0; // Zoom level for the instructions editor (1.0 = 100%)
@@ -1321,23 +1490,31 @@
         const savedHtml = localStorage.getItem('timers_richtext');
         if (savedHtml !== null) {
             editor.innerHTML = savedHtml;
-            return;
+        } else {
+            // Migration: if Markdown was saved with the old version
+            const oldMarkdown = localStorage.getItem('timers_markdown');
+            if (oldMarkdown) {
+                editor.innerHTML = markdownToHtml(oldMarkdown);
+                saveRichtext();
+                // Keep the old Markdown for now (just in case) — will be cleaned via "Reset"
+            } else {
+                editor.innerHTML = defaultRichtext;
+            }
         }
-        // Migration: if Markdown was saved with the old version
-        const oldMarkdown = localStorage.getItem('timers_markdown');
-        if (oldMarkdown) {
-            editor.innerHTML = markdownToHtml(oldMarkdown);
-            saveRichtext();
-            // Keep the old Markdown for now (just in case) — will be cleaned via "Reset"
-            return;
-        }
-        editor.innerHTML = defaultRichtext;
+        // The saved HTML never contains the clock (stripped on save); (re)insert it here
+        // according to the persisted Notes-clock state.
+        syncNotesClock();
     }
 
     function saveRichtext() {
         const editor = document.getElementById('richtextEditor');
         if (!editor) return;
-        localStorage.setItem('timers_richtext', editor.innerHTML);
+        // The Notes clock lives inside the editor (so text can wrap around it via float),
+        // but it must NOT be part of the saved text. Clone the content, strip the clock,
+        // and save the clean HTML.
+        const clone = editor.cloneNode(true);
+        clone.querySelectorAll('.notes-clock-float').forEach(el => el.remove());
+        localStorage.setItem('timers_richtext', clone.innerHTML);
     }
 
     // Apply a formatting command to the current selection
@@ -1471,6 +1648,8 @@
         }
         // If on the notes tab, update the floating buttons
         if (currentTab === 'instructions') syncZoomButtons();
+        // Keep the Notes clock visually constant regardless of editor zoom.
+        if (typeof applyNotesClockScale === 'function') applyNotesClockScale();
     }
 
 // --- LOGIQUE AUDIO (IPAD FIX) ---
@@ -1512,10 +1691,32 @@
         if (audioUnlocked) return;
         audioUnlocked = true;
         unlockAudio();
+        // A gesture just unlocked audio → the warning banner (if any) is no longer needed.
+        refreshAudioUnlockBanner();
     }
     document.addEventListener('touchstart', firstGestureUnlock, { once: false, passive: true });
     document.addEventListener('click', firstGestureUnlock, { once: false });
     document.addEventListener('keydown', firstGestureUnlock, { once: false });
+
+    // Show a discreet banner ONLY when: the scheduled-start option is on, at least one
+    // timer has a pending schedule, AND audio hasn't been unlocked this session. This
+    // targets the iOS/iPadOS case where an alarm could fire without any prior gesture and
+    // therefore be silent. A single tap anywhere (or on the banner) unlocks and hides it.
+    function refreshAudioUnlockBanner() {
+        const banner = document.getElementById('audioUnlockBanner');
+        if (!banner) return;
+        const shouldShow = !audioUnlocked
+            && autoStartTimers
+            && timersList.some(d => d.scheduledTimeOfDay && d.start === null);
+        banner.classList.toggle('visible', shouldShow);
+    }
+
+    function dismissAudioUnlockBanner() {
+        // Tapping the banner is itself a gesture; ensure unlock + hide.
+        firstGestureUnlock();
+        const banner = document.getElementById('audioUnlockBanner');
+        if (banner) banner.classList.remove('visible');
+    }
     // Also resume on visibility change — iOS suspends AudioContext when the tab/PWA is
     // backgrounded; we need to resume it when the user comes back.
     document.addEventListener('visibilitychange', () => {
@@ -1571,6 +1772,14 @@
         const txtButtons = document.getElementById('txt-label-buttons'); if (txtButtons) txtButtons.textContent = t.buttonsLabel;
         const txtHideTimerBtns = document.getElementById('txt-label-hide-timer-buttons'); if (txtHideTimerBtns) txtHideTimerBtns.textContent = t.hideTimerButtonsLabel;
         const txtChain = document.getElementById('txt-label-chain'); if (txtChain) txtChain.textContent = t.chainLabel;
+        const txtAuto = document.getElementById('txt-label-autostart'); if (txtAuto) txtAuto.textContent = t.autoStartTimersLabel || 'Timers automatiques';
+        const txtAudioUnlock = document.getElementById('txt-audio-unlock'); if (txtAudioUnlock) txtAudioUnlock.textContent = t.audioUnlockBanner || '🔔';
+        // Schedule modal labels
+        const txtSM = document.getElementById('txt-schedule-modal-title'); if (txtSM) txtSM.textContent = t.scheduleModalTitle || 'Programmer le démarrage';
+        const txtSL = document.getElementById('txt-schedule-label'); if (txtSL) txtSL.textContent = t.scheduleFieldLabel || 'Heure de démarrage automatique (quotidien)';
+        const txtSC = document.getElementById('txt-schedule-cancel'); if (txtSC) txtSC.textContent = t.cancel;
+        const txtSD = document.getElementById('txt-schedule-delete'); if (txtSD) txtSD.textContent = t.scheduleDelete || 'Supprimer';
+        const txtSOK = document.getElementById('txt-schedule-confirm'); if (txtSOK) txtSOK.textContent = t.scheduleConfirm || 'Programmer';
         const txtDeleteFinished = document.getElementById('txt-label-hide-finished'); if (txtDeleteFinished) txtDeleteFinished.textContent = t.hideFinishedLabel;
         const txtVisualTimer = document.getElementById('txt-label-visual-timer'); if (txtVisualTimer) txtVisualTimer.textContent = t.visualTimerLabel;
         const txtExport = document.getElementById('txt-export'); if (txtExport) txtExport.textContent = t.export;
@@ -1627,7 +1836,7 @@
             if (card) {
                 updateTimerTitle(d.id);
                 const btnStart = card.querySelector('.btn-start'); if (btnStart) btnStart.textContent = t.start;
-                const btnStop = card.querySelector('.btn-stop'); if (btnStop) btnStop.textContent = `🛑 ${t.stop}`;
+                const btnStop = card.querySelector('.btn-stop'); if (btnStop) btnStop.textContent = `↺ ${t.stop}`;
                 const btnPlus = card.querySelector('.btn-plus'); if (btnPlus) btnPlus.textContent = extraLabel();
                 const btnMute = card.querySelector(`[id^="btn-mute-"]`); if (btnMute) btnMute.innerHTML = muteLabel(d.muted);
                 const btnDup = card.querySelector('.btn-duplicate'); if (btnDup) btnDup.title = t.duplicate;
@@ -1963,7 +2172,7 @@
             return;
         }
         const id = Date.now();
-        const nouvelle = { id, nom, totalSecs, start: null, extraSecs: 0, muted: false, pausedAt: null, hidden: false };
+        const nouvelle = { id, nom, totalSecs, start: null, extraSecs: 0, muted: false, pausedAt: null, hidden: false, scheduledTimeOfDay: null };
         timersList.push(nouvelle);
         createCardHTML(nouvelle);
         save();
@@ -2394,11 +2603,34 @@
         obj.start = Date.now();
         obj.extraSecs = 0;  // Reset extra time on start
         obj.pausedAt = null; // Fresh start: not paused
+        // NOTE: scheduledTimeOfDay is NOT cleared — the programmation recurs daily. The
+        // timer will run today, and tomorrow at the same time the schedule fires again.
         updateActiveUI(id); updateEndTime(id); updateTimerTitle(id); startTick(id); save();
         // Wind-up animation on the Visual Timer disc (if the feature is enabled)
         if (showVisualTimer) animateVisualTimerWindUp(id);
-        // The timer that follows this one may now need the "auto start" hint.
+        // The timer that follows this one may now need the "auto start" hint, and the
+        // scheduled tick may need to stop if this was the last pending schedule.
         refreshChainLabels();
+        refreshScheduledTick();
+        // Make sure the newly-started timer is actually visible: switch to the Timers tab
+        // if we're elsewhere (e.g. a scheduled/chained start fired while on Notes), and
+        // scroll the card into view if it's off-screen.
+        revealStartedTimer(id);
+    }
+
+    // Bring a just-started timer into view: jump to the Timers tab if needed, then scroll
+    // the card into view if it isn't already visible. Kept defensive (no-op on errors).
+    function revealStartedTimer(id) {
+        try {
+            if (currentTab !== 'timers') switchTab('timers');
+            const card = document.getElementById(`card-${id}`);
+            if (!card) return;
+            const rect = card.getBoundingClientRect();
+            const fullyVisible = rect.top >= 0 && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight);
+            if (!fullyVisible) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        } catch (e) { /* non-critical */ }
     }
 
     // Updates the title text "DURATION — X:XX" or "DURATION — X:XX (+30s)" if extraSecs > 0
@@ -2437,6 +2669,11 @@
     function pauseTimer(id) {
         const obj = timersList.find(d => d.id.toString() === id.toString());
         if (!obj || obj.start === null || obj.pausedAt !== null) return;
+        // A finished timer (in its "red" auto-reset phase) must NOT be put on hold —
+        // pausing it would freeze the auto-reset animation in a half-red state, which is
+        // confusing. Just leave it to its reset cycle.
+        const card = document.getElementById(`card-${id}`);
+        if (card && card.classList.contains('finished')) return;
         obj.pausedAt = Date.now();
         // Remove from active tick set so the global tick stops updating this card.
         // (We don't call stopTick because we also want to keep wake-lock if other timers
@@ -2466,14 +2703,65 @@
 
     // Starts all timers that are not yet running, and resumes any that are paused.
     // Does not affect timers that are already running or finished.
-    async function startAll() {
+    // ============================================================================
+    // GLOBAL PLAY/PAUSE — single button that mutates between ▶ (start/resume) and ⏸
+    // (pause everything running). Rule of priority:
+    //   - if anything is currently running → next click PAUSES everything running
+    //   - else if any timer is paused      → next click RESUMES ONLY those (rule (b))
+    //   - else                              → next click STARTS all NON-HIDDEN, not-started timers
+    // Chained mode keeps its existing 3-button dialog (first / all / cancel). The "all"
+    // branch and the simple start branch BOTH filter out hidden timers — the chain's own
+    // propagation (un-hiding a chained hidden timer) is NOT affected by this filter.
+    // ============================================================================
+
+    // Set of timer ids that were paused by the global pause action, so the resume action
+    // can target exactly those — and not timers the user had paused individually beforehand.
+    let pausedByPauseAll = new Set();
+
+    // Public entry point wired to the floating button.
+    async function globalPlayPause() {
+        // A timer is "running" for the purposes of the global pause button only if it's
+        // started, not paused, AND not in its finished/red state — finished timers must
+        // not be put on hold (their auto-reset would freeze mid-animation).
+        const isFinished = (d) => {
+            const card = document.getElementById(`card-${d.id}`);
+            return !!(card && card.classList.contains('finished'));
+        };
+        const running = timersList.filter(d => d.start !== null && d.pausedAt === null && !isFinished(d));
+        if (running.length > 0) {
+            // PAUSE phase: pause everything running, remember which ones.
+            pausedByPauseAll = new Set();
+            running.forEach(d => { pausedByPauseAll.add(d.id.toString()); pauseTimer(d.id); });
+            updateGlobalPlayPauseButton();
+            return;
+        }
+        // Nothing is running → PLAY phase
+        await globalStartOrResume();
+        updateGlobalPlayPauseButton();
+    }
+
+    // PLAY action: rule (b). If any timer is paused, resume ONLY those — leave not-started
+    // timers alone. Only when nothing is paused do we start the (non-hidden) not-started
+    // timers (with the chained-mode dialog if applicable).
+    async function globalStartOrResume() {
         const t = i18n[currentLang];
-        // When chaining is on, "start all" is ambiguous: the user may want only the first
-        // timer to start (the chain will run the rest), or really all of them at once.
-        // Ask — but only if there is more than one not-started timer to chain.
-        const notStarted = timersList.filter(d => d.start === null);
-        const anyPaused = timersList.some(d => d.pausedAt !== null);
-        if (chainTimers && notStarted.length > 1) {
+        const paused = timersList.filter(d => d.pausedAt !== null);
+        if (paused.length > 0) {
+            // Resume the ones the global pause button paused (if still paused); fall back to
+            // resuming any paused timer if the set is empty (e.g. after reload).
+            const toResume = pausedByPauseAll.size > 0
+                ? paused.filter(d => pausedByPauseAll.has(d.id.toString()))
+                : paused;
+            toResume.forEach(d => { if (d.pausedAt !== null) resumeTimer(d.id); });
+            pausedByPauseAll = new Set();
+            return;
+        }
+        // Nothing paused: start the non-hidden, not-started timers.
+        // Hidden timers are never started by the global button (they keep their hidden state).
+        // The chain's own propagation (un-hide + start) is unaffected — it lives in markFinished.
+        const notStartedVisible = timersList.filter(d => d.start === null && !d.hidden);
+        if (notStartedVisible.length === 0) return;
+        if (chainTimers && notStartedVisible.length > 1) {
             const choice = await confirmDialog(t.chainStartPrompt, {
                 okLabel: t.chainStartFirst,        // start only the first
                 thirdLabel: t.chainStartAll,       // start all at once
@@ -2481,63 +2769,41 @@
             });
             if (choice === false) return;          // Cancel
             if (choice === true) {
-                // Start only the first not-started timer; resume any paused ones too.
-                if (anyPaused) timersList.forEach(d => { if (d.pausedAt !== null) resumeTimer(d.id); });
-                startTimer(notStarted[0].id);
+                // Start only the first not-started visible timer; chain handles the rest.
+                startTimer(notStartedVisible[0].id);
                 return;
             }
-            // choice === 'third' → start all (fall through to the default behavior)
+            // choice === 'third' → fall through to "start all visible"
         }
-        timersList.forEach(d => {
-            if (d.start === null) startTimer(d.id);
-            else if (d.pausedAt !== null) resumeTimer(d.id);
-        });
+        notStartedVisible.forEach(d => startTimer(d.id));
     }
 
-    // Pauses all running timers (those that are started and not already paused).
-    // Set of timer ids that were paused by the global "pause all" button, so the same
-    // button (now "resume all") can resume exactly those — and not timers the user had
-    // paused individually beforehand.
-    let pausedByPauseAll = new Set();
-
-    // Global pause/resume toggle. If any timer is currently running (started, not paused),
-    // pause them all and remember which ones. Otherwise, resume the ones we paused.
-    function togglePauseAll() {
-        const running = timersList.filter(d => d.start !== null && d.pausedAt === null);
-        if (running.length > 0) {
-            // PAUSE phase
-            pausedByPauseAll = new Set();
-            running.forEach(d => { pausedByPauseAll.add(d.id.toString()); pauseTimer(d.id); });
-        } else {
-            // RESUME phase: resume only the timers we paused (if they're still paused).
-            pausedByPauseAll.forEach(idStr => {
-                const obj = timersList.find(d => d.id.toString() === idStr);
-                if (obj && obj.pausedAt !== null) resumeTimer(obj.id);
-            });
-            pausedByPauseAll = new Set();
-        }
-        updatePauseAllButton();
-    }
-
-    // Backward-compatible alias (kept in case anything still calls pauseAll()).
-    function pauseAll() { togglePauseAll(); }
-
-    // Update the global pause/resume button icon + title to reflect the current action.
-    function updatePauseAllButton() {
-        const btn = document.getElementById('btnPauseAll');
+    // Update the global button icon + title to reflect the current action.
+    function updateGlobalPlayPauseButton() {
+        const btn = document.getElementById('btnStartAll');
         if (!btn) return;
         const t = i18n[currentLang];
         const anyRunning = timersList.some(d => d.start !== null && d.pausedAt === null);
         if (anyRunning) {
-            // Show the PAUSE icon (two bars)
+            // Show PAUSE icon (two bars) and switch the button to the orange palette.
             btn.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
             btn.title = t.pauseAllTitle;
+            btn.classList.add('as-pause');
         } else {
-            // Show the RESUME icon (play triangle)
+            // Show PLAY icon (triangle) and switch back to the green palette.
             btn.innerHTML = '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
-            btn.title = t.resumeAllTitle || t.pauseAllTitle;
+            btn.title = t.startAllTitle || 'Démarrer';
+            btn.classList.remove('as-pause');
         }
     }
+
+    // Back-compat shims: anything still calling startAll / togglePauseAll / pauseAll /
+    // updatePauseAllButton routes to the new behavior, so we don't have to touch every
+    // historical call site (translateInterface, init, etc.).
+    function startAll()             { return globalPlayPause(); }
+    function togglePauseAll()       { return globalPlayPause(); }
+    function pauseAll()              { return globalPlayPause(); }
+    function updatePauseAllButton() { updateGlobalPlayPauseButton(); }
 
     // Stops all running or finished timers (resets them to initial state).
     async function stopAll() {
@@ -2808,6 +3074,171 @@
         cffClockRaf = requestAnimationFrame(tickCffClock);
     }
 
+    // ===== NOTES-TAB CLOCK (independent instance, prefixed IDs to avoid collisions) =====
+    let notesDigitalTimeout = null;
+    let notesCffRaf = null;
+
+    function stopNotesClockAnimations() {
+        if (notesDigitalTimeout) { clearTimeout(notesDigitalTimeout); notesDigitalTimeout = null; }
+        if (notesCffRaf) { cancelAnimationFrame(notesCffRaf); notesCffRaf = null; }
+    }
+
+    function buildNotesCffSvg() {
+        let ticks = '';
+        for (let i = 0; i < 60; i++) {
+            const angle = (i * 6 - 90) * Math.PI / 180;
+            const isHour = i % 5 === 0;
+            const r1 = isHour ? 70 : 86;
+            const r2 = 92;
+            const x1 = 100 + r1 * Math.cos(angle);
+            const y1 = 100 + r1 * Math.sin(angle);
+            const x2 = 100 + r2 * Math.cos(angle);
+            const y2 = 100 + r2 * Math.sin(angle);
+            ticks += `<line class="${isHour ? 'cff-tick-hour' : 'cff-tick-min'}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+        }
+        return `
+        <svg class="clock-cff" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle class="cff-bg" cx="100" cy="100" r="95"/>
+            ${ticks}
+            <g id="notes-cff-hour-group"><rect class="cff-hand-hour" x="94" y="46" width="12" height="62" rx="2"/></g>
+            <g id="notes-cff-min-group"><rect class="cff-hand-min" x="96" y="20" width="8" height="88" rx="2"/></g>
+            <g class="cff-hand-sec" id="notes-cff-sec-group"><rect x="98.5" y="32" width="3" height="74"/><circle cx="100" cy="40" r="9"/></g>
+        </svg>`;
+    }
+
+    function tickNotesDigitalClock() {
+        const el = document.getElementById('notesClockDigital');
+        if (!el) return;
+        const now = new Date();
+        el.textContent = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+        const ms = 60000 - (Date.now() % 60000);
+        notesDigitalTimeout = setTimeout(tickNotesDigitalClock, ms);
+    }
+
+    function tickNotesCffClock() {
+        const hourGroup = document.getElementById('notes-cff-hour-group');
+        const minGroup = document.getElementById('notes-cff-min-group');
+        const secGroup = document.getElementById('notes-cff-sec-group');
+        if (!hourGroup || !minGroup || !secGroup) return;
+        const now = new Date();
+        const h = now.getHours() % 12;
+        const m = now.getMinutes();
+        hourGroup.setAttribute('transform', `rotate(${h*30 + m*0.5} 100 100)`);
+        minGroup.setAttribute('transform', `rotate(${m*6} 100 100)`);
+        const msInMinute = (now.getSeconds() * 1000) + now.getMilliseconds();
+        const secAngle = Math.min(msInMinute / 58500, 1) * 360;
+        secGroup.setAttribute('transform', `rotate(${secAngle} 100 100)`);
+        notesCffRaf = requestAnimationFrame(tickNotesCffClock);
+    }
+
+    // (Re)build the Notes clock inside the editor, honoring notesClockVisible/Mode/Scale.
+    // The clock is a contenteditable=false floating element; text wraps around it.
+    function syncNotesClock() {
+        const editor = document.getElementById('richtextEditor');
+        if (!editor) return;
+        stopNotesClockAnimations();
+        // Remove any existing clock first.
+        editor.querySelectorAll('.notes-clock-float').forEach(el => el.remove());
+        if (!notesClockVisible) return;
+        const t = i18n[currentLang];
+        const handle = `<div class="clock-resize-handle" onmousedown="event.stopPropagation(); startNotesClockResize(event)" ontouchstart="event.stopPropagation(); startNotesClockResize(event)" title="${t.clockResizeTitle || 'Glisser pour redimensionner'}"></div>`;
+        let inner = '';
+        if (notesClockMode === 'digital') {
+            inner = `<div class="clock-digital" id="notesClockDigital"></div>`;
+        } else if (notesClockMode === 'cff') {
+            inner = buildNotesCffSvg();
+        } else { // both
+            inner = `${buildNotesCffSvg()}<div class="clock-digital" id="notesClockDigital"></div>`;
+        }
+        // Build the floating element. contenteditable=false so the caret can't enter it.
+        // Structure: .clock-clickable > (.notes-clock-inner [scaled content] + handle).
+        // The handle is a sibling of the scaled content, so it neither shifts the centering
+        // nor distorts the transform-origin used for scaling.
+        const wrap = document.createElement('div');
+        wrap.className = 'notes-clock-float' + (notesClockMode === 'cff' ? ' cff-mode' : (notesClockMode === 'both' ? ' both-mode' : ''));
+        wrap.setAttribute('contenteditable', 'false');
+        wrap.innerHTML = `<div class="clock-clickable" onclick="cycleNotesClock()" title="${t.clockToggleTitle || ''}"><div class="notes-clock-inner">${inner}</div>${handle}</div>`;
+        // Insert as the first child so the float sits at the top-right and text flows around.
+        editor.insertBefore(wrap, editor.firstChild);
+        applyNotesClockScale();
+        if (notesClockMode === 'cff' || notesClockMode === 'both') tickNotesCffClock();
+        if (notesClockMode === 'digital' || notesClockMode === 'both') tickNotesDigitalClock();
+    }
+
+    function applyNotesClockScale() {
+        // Scale the inner content only (not the handle), so the transform-origin matches
+        // the visual center of the clock and the handle stays put.
+        const wrapper = document.querySelector('.notes-clock-float .notes-clock-inner');
+        if (!wrapper) return;
+        // The clock lives inside the editor, which itself may be zoomed (richtextZoom).
+        // To keep the clock's apparent size independent of the editor zoom, divide the
+        // clock scale by the current editor zoom (so zoom × (scale/zoom) = scale).
+        const z = (typeof richtextZoom === 'number' && richtextZoom > 0) ? richtextZoom : 1;
+        applyScale(wrapper, notesClockScale / z);
+    }
+
+    // Toggle clock on/off (toolbar button).
+    function toggleNotesClock() {
+        notesClockVisible = !notesClockVisible;
+        if (notesClockVisible && (notesClockMode === 'none' || !notesClockMode)) notesClockMode = 'both';
+        syncNotesClock();
+        updateNotesClockButton();
+        save();
+    }
+
+    // Cycle through the 3 display modes when clicking the clock.
+    function cycleNotesClock() {
+        const order = ['digital', 'cff', 'both'];
+        const i = order.indexOf(notesClockMode);
+        notesClockMode = order[(i + 1) % order.length];
+        syncNotesClock();
+        save();
+    }
+
+    function updateNotesClockButton() {
+        const btn = document.getElementById('notesClockBtn');
+        if (btn) btn.classList.toggle('active', notesClockVisible);
+    }
+
+    function startNotesClockResize(e) {
+        const wrapper = document.querySelector('.notes-clock-float .clock-clickable');
+        if (!wrapper) return;
+        e.preventDefault();
+        const point = e.touches ? e.touches[0] : e;
+        const startX = point.clientX, startY = point.clientY;
+        const startScale = notesClockScale;
+        wrapper.classList.add('resizing');
+        let aBouge = false;
+        const onMove = (ev) => {
+            const p = ev.touches ? ev.touches[0] : ev;
+            const dx = p.clientX - startX, dy = p.clientY - startY;
+            if (Math.abs(dx) + Math.abs(dy) > 3) aBouge = true;
+            // Handle is bottom-LEFT: dragging left (dx negative) and/or down (dy positive)
+            // should enlarge. So we use (-dx + dy)/2 as the growth delta.
+            let newScale = startScale + (-dx + dy) / 2 / 100;
+            if (newScale < 0.4) newScale = 0.4;
+            // No maximum cap — let it grow as large as the user wants.
+            notesClockScale = Math.round(newScale * 100) / 100;
+            applyNotesClockScale();
+        };
+        const onEnd = () => {
+            wrapper.classList.remove('resizing');
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onEnd);
+            if (aBouge) {
+                const blockClick = (ev) => { ev.stopPropagation(); ev.preventDefault(); document.removeEventListener('click', blockClick, true); };
+                document.addEventListener('click', blockClick, true);
+            }
+            save();
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onEnd);
+    }
+
 
     function globalTick() {
         activeTickIds.forEach(id => {
@@ -2859,6 +3290,202 @@
         }
         // Drop the wake lock if no timer is running anymore.
         refreshWakeLock();
+    }
+
+    // ============================================================================
+    // SCHEDULED START — daily-recurring auto-start at a chosen time of day.
+    // Each timer carries a `scheduledTimeOfDay` string "HH:MM:SS" (or null). When the
+    // autoStartTimers option is ON and the current wall-clock time crosses this time,
+    // the timer is started. The schedule does NOT get consumed — tomorrow at the same
+    // wall-clock time it will fire again. So a programmed timer is essentially a daily
+    // alarm. To avoid firing twice in the same crossing, we remember each timer's last
+    // fired day+time in a transient Map (not persisted).
+    //
+    // Crossing logic: at every tick, for each timer with a schedule, we compute the
+    // most-recent-past occurrence of its time-of-day. If that occurrence is more recent
+    // than what we last fired AND the timer isn't currently running (start === null),
+    // we fire. This naturally handles the case where the page was opened after the
+    // scheduled time has passed today (we won't fire — we wait for tomorrow's crossing).
+    // ============================================================================
+    let scheduledTickInterval = null;
+    const lastFiredOccurrence = new Map(); // id -> ms timestamp of the last occurrence we fired
+
+    // Parse "HH:MM:SS" or "HH:MM" → {h,m,s}. Returns null on invalid input.
+    function parseTimeOfDay(str) {
+        if (typeof str !== 'string') return null;
+        const m = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+        if (!m) return null;
+        const h = parseInt(m[1], 10), mn = parseInt(m[2], 10), s = m[3] ? parseInt(m[3], 10) : 0;
+        if (h < 0 || h > 23 || mn < 0 || mn > 59 || s < 0 || s > 59) return null;
+        return { h, m: mn, s };
+    }
+
+    function formatTimeOfDay(str) {
+        const p = parseTimeOfDay(str);
+        if (!p) return '';
+        return `${p.h.toString().padStart(2,'0')}:${p.m.toString().padStart(2,'0')}:${p.s.toString().padStart(2,'0')}`;
+    }
+
+    // Given a time-of-day "HH:MM:SS", return the most recent past (or current) occurrence
+    // as a Date.now()-style timestamp. If today's occurrence is still in the future,
+    // returns yesterday's occurrence (so the difference with Date.now() tells whether we
+    // are before or after the next crossing).
+    function mostRecentOccurrenceMs(timeOfDay) {
+        const p = parseTimeOfDay(timeOfDay);
+        if (!p) return null;
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), p.h, p.m, p.s, 0).getTime();
+        if (today <= Date.now()) return today;
+        // today's occurrence is in the future → most-recent-past is yesterday's
+        return today - 24 * 3600 * 1000;
+    }
+
+    // Next occurrence in the future (for display purposes).
+    function nextOccurrenceMs(timeOfDay) {
+        const p = parseTimeOfDay(timeOfDay);
+        if (!p) return null;
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), p.h, p.m, p.s, 0).getTime();
+        return (today > Date.now()) ? today : (today + 24 * 3600 * 1000);
+    }
+
+    function anyScheduledPending() {
+        if (!autoStartTimers) return false;
+        return timersList.some(d => d.scheduledTimeOfDay && d.start === null);
+    }
+
+    // Start/stop the scheduled tick based on whether there's anything to wait for.
+    function refreshScheduledTick() {
+        if (anyScheduledPending()) {
+            if (scheduledTickInterval === null) {
+                scheduledTickInterval = setInterval(scheduledTick, 250);
+            }
+        } else if (scheduledTickInterval !== null) {
+            clearInterval(scheduledTickInterval);
+            scheduledTickInterval = null;
+        }
+    }
+
+    // At each tick, fire any timer whose most-recent occurrence is in the (recent) past
+    // and hasn't been fired for that occurrence yet. We seed lastFiredOccurrence on load
+    // with today's-or-past occurrence so we DON'T retroactively fire one that was crossed
+    // before the page opened.
+    function scheduledTick() {
+        if (!autoStartTimers) { refreshScheduledTick(); return; }
+        let didFire = false;
+        timersList.forEach(d => {
+            if (!d.scheduledTimeOfDay || d.start !== null) return;
+            const occ = mostRecentOccurrenceMs(d.scheduledTimeOfDay);
+            if (occ === null) return;
+            const last = lastFiredOccurrence.get(d.id.toString()) || 0;
+            // Fire only if a NEW occurrence has been crossed since the last one we fired,
+            // and it's within a reasonable window (≤ 12h ago) so we never auto-start a
+            // timer for an occurrence the user couldn't have wanted to honor (e.g. opened
+            // the page hours after the scheduled time).
+            const ageMs = Date.now() - occ;
+            if (occ > last && ageMs <= 12 * 3600 * 1000 && ageMs >= 0) {
+                lastFiredOccurrence.set(d.id.toString(), occ);
+                startTimer(d.id);
+                didFire = true;
+            }
+        });
+        if (didFire) {
+            refreshChainLabels();
+            save();
+        }
+    }
+
+    // Seed lastFiredOccurrence at load time so retroactive crossings don't fire on open.
+    // Called once after timers are loaded.
+    function seedSchedulesAtLoad() {
+        timersList.forEach(d => {
+            if (!d.scheduledTimeOfDay) return;
+            const occ = mostRecentOccurrenceMs(d.scheduledTimeOfDay);
+            if (occ !== null) lastFiredOccurrence.set(d.id.toString(), occ);
+        });
+    }
+
+    // Programmatic API to schedule a timer. Pass an "HH:MM:SS" string, or null to clear.
+    function setTimerSchedule(id, timeOfDay) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        if (obj.start !== null) return;  // can't schedule an already-running timer
+        const normalized = timeOfDay ? formatTimeOfDay(timeOfDay) : '';
+        obj.scheduledTimeOfDay = normalized || null;
+        // When a NEW schedule is set, seed lastFired so today's already-past occurrence
+        // doesn't fire immediately on the next tick. (If the user wants to fire today,
+        // they should set a time slightly in the future.)
+        if (obj.scheduledTimeOfDay) {
+            const occ = mostRecentOccurrenceMs(obj.scheduledTimeOfDay);
+            if (occ !== null) lastFiredOccurrence.set(id.toString(), occ);
+        } else {
+            lastFiredOccurrence.delete(id.toString());
+        }
+        refreshChainLabels();
+        save();
+        refreshScheduledTick();
+        refreshAudioUnlockBanner();
+    }
+
+    // ---- Schedule modal (opened by the A↻ button on each not-started timer card) ----
+    let currentScheduleTimerId = null;
+
+    function openScheduleModal(id) {
+        const obj = timersList.find(d => d.id.toString() === id.toString());
+        if (!obj) return;
+        currentScheduleTimerId = id;
+        const modal = document.getElementById('scheduleModal');
+        const hI = document.getElementById('scheduleH');
+        const mI = document.getElementById('scheduleM');
+        const sI = document.getElementById('scheduleS');
+        const delBtn = document.getElementById('txt-schedule-delete');
+        // Pre-fill: existing schedule, or current time + 1 minute if none yet.
+        const existing = parseTimeOfDay(obj.scheduledTimeOfDay || '');
+        if (existing) {
+            hI.value = existing.h; mI.value = existing.m; sI.value = existing.s;
+            if (delBtn) delBtn.style.display = '';
+        } else {
+            const now = new Date(Date.now() + 60000);
+            hI.value = now.getHours(); mI.value = now.getMinutes(); sI.value = now.getSeconds();
+            if (delBtn) delBtn.style.display = 'none';
+        }
+        modal.classList.add('visible');
+        // Focus the hours field for quick editing
+        setTimeout(() => hI.focus(), 50);
+        // Escape closes, Enter confirms
+        const onKey = (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); closeScheduleModal(); }
+            else if (e.key === 'Enter' && ['scheduleH','scheduleM','scheduleS'].includes(e.target.id)) {
+                e.preventDefault(); confirmScheduleSet();
+            }
+        };
+        document.addEventListener('keydown', onKey);
+        modal._onKey = onKey;
+    }
+
+    function closeScheduleModal() {
+        const modal = document.getElementById('scheduleModal');
+        if (!modal) return;
+        modal.classList.remove('visible');
+        if (modal._onKey) { document.removeEventListener('keydown', modal._onKey); modal._onKey = null; }
+        currentScheduleTimerId = null;
+    }
+
+    function confirmScheduleSet() {
+        if (currentScheduleTimerId === null) return;
+        const h = parseInt(document.getElementById('scheduleH').value, 10) || 0;
+        const m = parseInt(document.getElementById('scheduleM').value, 10) || 0;
+        const s = parseInt(document.getElementById('scheduleS').value, 10) || 0;
+        const clamp = (v, max) => Math.max(0, Math.min(max, v));
+        const time = `${clamp(h,23).toString().padStart(2,'0')}:${clamp(m,59).toString().padStart(2,'0')}:${clamp(s,59).toString().padStart(2,'0')}`;
+        setTimerSchedule(currentScheduleTimerId, time);
+        closeScheduleModal();
+    }
+
+    function confirmScheduleDelete() {
+        if (currentScheduleTimerId === null) return;
+        setTimerSchedule(currentScheduleTimerId, null);
+        closeScheduleModal();
     }
 
     function playAlarm(id) { playBellSound(id); soundIntervals[id] = setInterval(() => playBellSound(id), 3000); }
@@ -2988,6 +3615,18 @@
         save();
         // Toggling chaining changes whether "auto start" hints are shown.
         refreshChainLabels();
+    }
+
+    function onAutoStartTimersChange() {
+        const checkbox = document.getElementById('autoStartTimersCheckbox');
+        if (!checkbox) return;
+        autoStartTimers = checkbox.checked;
+        save();
+        // Toggling this option changes whether "scheduled start" labels appear, and
+        // whether the scheduled tick is running.
+        refreshChainLabels();
+        refreshScheduledTick();
+        refreshAudioUnlockBanner();
     }
 
     function onHideFinishedChange() {
@@ -3231,26 +3870,48 @@
     function startActionsHTML(id) {
         const t = i18n[currentLang];
         const idx = timersList.findIndex(d => d.id.toString() === id.toString());
-        // Cascade: this not-started timer shows "auto start" if, walking backwards over a
-        // continuous run of not-started timers, we reach an active timer. That means the
-        // chain will eventually flow down to this one. If any timer in between is itself
-        // active (already running) the walk stops at it (still counts as active → auto).
+        const obj = timersList[idx];
+        // PRIORITY 1: scheduled start. If autoStartTimers is on AND this timer has a
+        // scheduledTimeOfDay, the start button shows "Démarrage programmé à HH:MM:SS"
+        // — overriding the chain "auto start" hint. The label is the wall-clock time
+        // (daily-recurring), not a one-shot timestamp.
+        let scheduledLabel = null;
+        if (autoStartTimers && obj && obj.scheduledTimeOfDay) {
+            const prefix = t.scheduledStartLabel || 'Démarrage à';
+            scheduledLabel = `${prefix} ${formatTimeOfDay(obj.scheduledTimeOfDay)}`;
+        }
+        // PRIORITY 2 (cascade): this not-started timer shows "auto start" if, walking
+        // backwards over a continuous run of not-started timers, we reach an active timer.
         let pending = false;
-        if (chainTimers && idx > 0) {
+        if (!scheduledLabel && chainTimers && idx > 0) {
             for (let j = idx - 1; j >= 0; j--) {
                 if (isTimerActive(timersList[j])) { pending = true; break; }
-                // timersList[j] is not started: keep walking back through the chain.
             }
         }
-        const mainBtn = pending
-            // Pending auto-start: show a label and still allow a manual start.
-            ? `<button class="btn-start btn-start-auto" onclick="startTimer('${id}')">${t.autoStart || 'Démarrage (auto.)'}</button>`
-            : `<button class="btn-start" onclick="startTimer('${id}')">${t.start}</button>`;
+        let mainBtn;
+        if (scheduledLabel) {
+            // The scheduled button shows "Démarrage à HH:MM:SS"; on hover it reveals the
+            // normal green "DÉMARRER" affordance (via the .btn-start-scheduled CSS, using
+            // the label carried in data-hover-label) — so hovering feels like a normal start.
+            mainBtn = `<button class="btn-start btn-start-scheduled" onclick="startTimer('${id}')" data-hover-label="${t.start}"><span class="sched-label">${scheduledLabel}</span></button>`;
+        } else if (pending) {
+            mainBtn = `<button class="btn-start btn-start-auto" onclick="startTimer('${id}')">${t.autoStart || 'Démarrage (auto.)'}</button>`;
+        } else {
+            mainBtn = `<button class="btn-start" onclick="startTimer('${id}')">${t.start}</button>`;
+        }
+        // The A↻ button (auto-start scheduling) appears to the RIGHT of the start button
+        // when the autoStartTimers option is ON. It opens the schedule modal and follows
+        // the same hover/visibility rules as the other timer-action buttons.
+        let schedBtn = '';
+        if (autoStartTimers) {
+            const sched = obj && obj.scheduledTimeOfDay;
+            schedBtn = `<button class="btn-action btn-schedule${sched ? ' has-schedule' : ''}" onclick="openScheduleModal('${id}')" title="${t.scheduleTitle || 'Programmer un démarrage automatique'}" aria-label="${t.scheduleTitle || 'Programmer'}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="13" r="7.5"/><polyline points="11 9 11 13 14 14.5"/><text x="20" y="8" font-size="11" font-weight="800" text-anchor="middle" stroke="none" fill="currentColor">A</text></svg></button>`;
+        }
         // Reserve the vertical space of the MUTE line (which exists once the timer runs) so
         // the card height doesn't jump when the timer is started. The spacer is an invisible
         // button of the same size as a real action button, on its own line (via the break).
         const muteSpacer = `<span class="btn-mute-break"></span><button class="btn-action btn-mute-spacer" tabindex="-1" aria-hidden="true">🔊 ${t.soundOn}</button>`;
-        return mainBtn + muteSpacer;
+        return mainBtn + schedBtn + muteSpacer;
     }
 
     // Refresh the START button / "auto start" hint on every not-started timer. Called
@@ -3282,7 +3943,7 @@
         document.getElementById(`actions-${id}`).innerHTML = `
             ${mainBtn}
             <button class="btn-action btn-plus" onclick="addExtraTime('${id}')">${extraLabel()}</button>
-            <button class="btn-action btn-stop" onclick="stopTimer('${id}')">🛑 ${t.stop}</button>
+            <button class="btn-action btn-stop" onclick="stopTimer('${id}')">↺ ${t.stop}</button>
             <span class="btn-mute-break"></span>
             <button id="btn-mute-${id}" class="btn-action btn-mute" onclick="toggleMute('${id}')">${muteLabel(obj.muted)}</button>`;
         updatePauseAllButton();
@@ -3475,7 +4136,8 @@
             extraSecs: obj.extraSecs,   // same extra time
             muted: obj.muted,           // same mute state
             pausedAt: obj.pausedAt,     // same pause state
-            hidden: false               // a duplicate is always visible
+            hidden: false,              // a duplicate is always visible
+            scheduledTimeOfDay: obj.scheduledTimeOfDay  // duplicates inherit the scheduled time
         };
         // Insert right after the original in the data list
         const index = timersList.findIndex(d => d.id.toString() === id.toString());
@@ -3777,11 +4439,15 @@
             buttonsHoverOnly: buttonsHoverOnly,
             hideTimerButtons: hideTimerButtons,
             chainTimers: chainTimers,
+            autoStartTimers: autoStartTimers,
             hideFinished: hideFinished,
             showVisualTimer: showVisualTimer,
             hideTimeWithVisualTimer: hideTimeWithVisualTimer,
             visualTimerScale: visualTimerScale,
             clockMode: clockMode,
+            notesClockVisible: notesClockVisible,
+            notesClockMode: notesClockMode,
+            notesClockScale: notesClockScale,
             showStartTime: showStartTime,
             richtextZoom: richtextZoom
         };
@@ -4140,43 +4806,46 @@
 
             <h2>Créer et gérer un timer</h2>
             <p>Le bouton <strong>+</strong> (en bas à droite) ouvre la fenêtre de création : un nom (optionnel) et une durée en heures / minutes / secondes. Chaque timer apparaît sous forme de carte.</p>
-            <p>Sur une carte, clique directement pour modifier la <strong>durée</strong>, le <strong>nom</strong>, ou l'<strong>heure de début</strong> (une fois lancé). Autres actions : <strong>dupliquer</strong>, <strong>supprimer / masquer</strong> (croix ×), et un clic sur le temps restant masque ou affiche les secondes.</p>
+            <p>Sur une carte, clique directement pour modifier la <strong>durée</strong>, le <strong>nom</strong>, ou l'<strong>heure de début</strong> (une fois lancé). Autres actions : <strong>dupliquer</strong>, <strong>supprimer / masquer</strong> (croix ×), et un clic sur le temps restant affiche les secondes ou les masque, sauf durant les dernières minutes (temps configurable).</p>
 
             <h2>Lancer, mettre en pause, arrêter</h2>
-            <p>Chaque carte a ses boutons : <strong>DÉMARRER</strong>, puis <strong>PAUSE</strong> / <strong>REPRENDRE</strong> et <strong>STOP</strong>. Le bouton <strong>+30 s</strong> ajoute du temps en cours de route (durée réglable dans le menu), et <strong>MUET</strong> coupe l'alarme de ce timer.</p>
-            <p>En bas à droite, trois boutons flottants agissent sur <strong>tous</strong> les timers : tout démarrer (▶), tout mettre en pause (⏸), tout arrêter (◼, avec confirmation). À côté, les boutons de <strong>zoom</strong> agrandissent ou réduisent la grille.</p>
+            <p>Chaque carte a ses boutons : <strong>DÉMARRER</strong>, puis <strong>PAUSE</strong> / <strong>REPRENDRE</strong> et <strong>RESET</strong>. Le bouton <strong>+30 s</strong> ajoute du temps en cours de route (durée réglable dans le menu), et <strong>MUET</strong> coupe l'alarme de ce timer.</p>
+            <p>En bas à droite, des boutons flottants agissent sur <strong>tous</strong> les timers : un bouton <strong>play/pause</strong> unique (▶ pour tout démarrer ou reprendre, ⏸ pour tout mettre en pause, selon l'état) et un bouton <strong>RESET</strong> (↺) qui réinitialise tous les timers. À côté, les boutons de <strong>zoom</strong> agrandissent ou réduisent la grille. Le démarrage global ne lance que les timers visibles (non masqués).</p>
             <p>À la fin d'un timer, une alarme se déclenche. Si un délai est réglé (« Durée alarme »), le timer revient ensuite seul à son état initial.</p>
 
             <h2>Le timer visuel</h2>
-            <p>Activable dans le menu, il ajoute à chaque carte un disque façon Time Timer : un secteur rouge représente le temps restant sur une heure. Au-delà de 60 minutes, un second disque bordeaux se superpose (jusqu'à 120 minutes). On peut le <strong>redimensionner</strong> (poignée) et <strong>cliquer dessus</strong> pour masquer/afficher le décompte chiffré.</p>
+            <p>Activable dans le menu, il représente le temps restant au moyen d'un secteur rouge. Au-delà de 60 minutes, un second disque bordeaux se superpose (jusqu'à 120 minutes). On peut le <strong>redimensionner</strong> (poignée) et <strong>cliquer dessus</strong> pour masquer/afficher le décompte chiffré.</p>
 
             <h2>Chaîner les timers</h2>
             <p>Avec l'option <strong>« Chaîner les timers »</strong>, la fin d'un timer démarre automatiquement le suivant (dans l'ordre d'affichage). Les timers en attente affichent <strong>« Démarrage (auto.) »</strong>. Idéal pour une séquence (échauffement → exercice → pause…). Le glisser-déposer des cartes définit l'ordre de la chaîne.</p>
 
+            <h2>Programmation horaire</h2>
+            <p>Avec l'option <strong>« Programmation horaire »</strong>, chaque timer non lancé affiche un bouton <strong>horloge</strong> (à droite de DÉMARRER) qui ouvre une fenêtre pour fixer une <strong>heure de démarrage automatique</strong> (à la seconde près). Le bouton DÉMARRER affiche alors <strong>« Démarrage à HH:MM:SS »</strong>, et le timer se lance tout seul à l'heure dite. La programmation est <strong>quotidienne</strong> : elle se répète chaque jour à la même heure tant que la page reste ouverte.</p>
+
             <h2>Masquer un timer</h2>
-            <p>Via la croix <strong>×</strong>, tu peux choisir de <strong>masquer</strong> plutôt que supprimer (un timer en cours ne peut pas être masqué). Un timer masqué devient un petit rectangle ; un clic le rétablit. L'option <strong>« Masquer les timers terminés »</strong> masque automatiquement chaque timer une fois écoulé. Un timer masqué que la chaîne doit démarrer réapparaît automatiquement.</p>
+            <p>Via la croix <strong>×</strong>, tu peux choisir de supprimer ou <strong>masquer</strong> un timer (un timer en cours ne peut pas être masqué). Un timer masqué devient un petit rectangle ; un clic le rétablit. L'option <strong>« Masquer les timers terminés »</strong> masque automatiquement chaque timer une fois écoulé. Un timer masqué dont le démarrage est programmé réapparaît automatiquement.</p>
 
             <h2>L'horloge</h2>
-            <p>En haut, une horloge optionnelle : <strong>numérique</strong>, <strong>analogique CFF</strong>, les deux, ou aucune. Clique dessus pour faire défiler les modes, ou choisis dans le menu. Redimensionnable par sa poignée.</p>
+            <p>En haut, une horloge optionnelle : <strong>numérique</strong>, <strong>analogique</strong>, les deux, ou aucune. Clique dessus pour faire défiler les modes, ou choisis dans le menu. Redimensionnable par sa poignée. Une horloge indépendante est aussi disponible dans l'onglet <strong>Notes</strong> : un bouton de la barre d'outils l'affiche en haut à droite.</p>
 
             <h2>L'onglet Notes</h2>
-            <p>À côté de « Timers », un <strong>éditeur de texte</strong> avec mise en forme (titres, gras, listes, citations) pour préparer des consignes. Zoomable indépendamment.</p>
+            <p>L'onglet Notes permet d'afficher un texte. Le mode édition est activé en cliquant dessus.</p>
 
             <h2>Réglages (menu ⋮)</h2>
-            <p>Seuil d'affichage des secondes, durée d'alarme, temps du bouton +Xs, mode d'horloge, <strong>masquer les boutons</strong> (ils n'apparaissent qu'au survol / au toucher), <strong>timer visuel</strong>, <strong>chaînage</strong>, <strong>masquage des timers terminés</strong>, et la <strong>langue</strong> (français, allemand, anglais).</p>
+            <p>Seuil d'affichage des secondes, durée d'alarme, temps du bouton +Xs, mode d'horloge, puis les options : <strong>timer visuel</strong>, <strong>chaîner les timers</strong>, <strong>programmation horaire</strong>, <strong>masquer les boutons globaux</strong> (ils n'apparaissent qu'au survol / au toucher), <strong>masquer les boutons des timers</strong> (de même, pour le timer survolé), <strong>masquer les timers terminés</strong>, et la <strong>langue</strong> (français, allemand, anglais).</p>
 
             <h2>Sauvegarde et partage</h2>
             <p>Tout est mémorisé automatiquement. Dans le menu :</p>
             <ul>
                 <li><strong>Exporter / Importer</strong> une configuration complète (fichier <code>.json</code>) — tu peux aussi glisser-déposer un fichier sur la fenêtre ;</li>
                 <li><strong>Partager le lien</strong> : encode toute la configuration dans une URL ;</li>
-                <li><strong>Revenir au dernier import</strong> : réapplique la dernière config importée (utile comme « modèle » de leçon) ;</li>
+                <li><strong>Revenir à la configuration importée</strong> : réapplique la dernière config importée (utile comme « modèle ») ;</li>
                 <li><strong>Réinitialiser</strong> : efface tout.</li>
             </ul>
             <p><strong>Astuce :</strong> ajoute <code>&force=1</code> à la fin d'un lien de partage (qui contient déjà <code>?config=…</code>) pour que la configuration s'importe <strong>sans demander de confirmation</strong>. Pratique pour un lien que l'on ouvre régulièrement, ou à distribuer. Cela fonctionne aussi avec <code>?configUrl=…</code>.</p>
 
             <h2>Bon à savoir</h2>
-            <p>L'écran <strong>reste allumé</strong> tant qu'un timer tourne (utile en projection). L'app s'installe comme une <strong>application</strong> (écran d'accueil / bureau) et fonctionne en <strong>plein écran</strong>. L'affichage s'adapte à l'iPad et au mobile.</p>
+            <p>L'écran <strong>reste allumé</strong> tant qu'un timer tourne (utile en projection). L'app s'installe comme une <strong>application</strong> (écran d'accueil / bureau) et fonctionne en <strong>plein écran</strong>.</p>
 
             <h2>À propos</h2>
             <p>© 2026 Fabrice Bodmer. Développé avec l'assistance de Claude (Anthropic).</p>
@@ -4188,43 +4857,46 @@
 
             <h2>Timer erstellen und verwalten</h2>
             <p>Die Schaltfläche <strong>+</strong> (unten rechts) öffnet das Erstellungsfenster: ein Name (optional) und eine Dauer in Stunden / Minuten / Sekunden. Jeder Timer erscheint als Karte.</p>
-            <p>Auf einer Karte kannst du direkt die <strong>Dauer</strong>, den <strong>Namen</strong> oder die <strong>Startzeit</strong> (sobald gestartet) ändern. Weitere Aktionen: <strong>duplizieren</strong>, <strong>löschen / ausblenden</strong> (Kreuz ×), und ein Klick auf die Restzeit blendet die Sekunden ein oder aus.</p>
+            <p>Auf einer Karte kannst du direkt die <strong>Dauer</strong>, den <strong>Namen</strong> oder die <strong>Startzeit</strong> (sobald gestartet) ändern. Weitere Aktionen: <strong>duplizieren</strong>, <strong>löschen / ausblenden</strong> (Kreuz ×), und ein Klick auf die Restzeit blendet die Sekunden ein oder aus, ausser während der letzten Minuten (Zeit einstellbar).</p>
 
             <h2>Starten, pausieren, stoppen</h2>
-            <p>Jede Karte hat ihre Tasten: <strong>START</strong>, dann <strong>PAUSE</strong> / <strong>WEITER</strong> und <strong>STOPP</strong>. Die Taste <strong>+30 Sek</strong> fügt während des Laufs Zeit hinzu (im Menü einstellbar), und <strong>STUMM</strong> schaltet den Alarm dieses Timers aus.</p>
-            <p>Unten rechts wirken drei schwebende Tasten auf <strong>alle</strong> Timer: alle starten (▶), alle pausieren (⏸), alle stoppen (◼, mit Bestätigung). Daneben vergrössern oder verkleinern die <strong>Zoom</strong>-Tasten das Raster.</p>
+            <p>Jede Karte hat ihre Tasten: <strong>START</strong>, dann <strong>PAUSE</strong> / <strong>WEITER</strong> und <strong>RESET</strong>. Die Taste <strong>+30 Sek</strong> fügt während des Laufs Zeit hinzu (im Menü einstellbar), und <strong>STUMM</strong> schaltet den Alarm dieses Timers aus.</p>
+            <p>Unten rechts wirken schwebende Tasten auf <strong>alle</strong> Timer: eine einzige <strong>Play/Pause</strong>-Taste (▶ zum Starten oder Fortsetzen aller, ⏸ zum Pausieren aller, je nach Zustand) und eine <strong>RESET</strong>-Taste (↺), die alle Timer zurücksetzt. Daneben vergrössern oder verkleinern die <strong>Zoom</strong>-Tasten das Raster. Der globale Start startet nur die sichtbaren (nicht ausgeblendeten) Timer.</p>
             <p>Am Ende eines Timers ertönt ein Alarm. Ist eine Verzögerung eingestellt («Alarmdauer»), kehrt der Timer danach automatisch in seinen Ausgangszustand zurück.</p>
 
             <h2>Der visuelle Timer</h2>
-            <p>Im Menü aktivierbar, fügt er jeder Karte eine Time-Timer-ähnliche Scheibe hinzu: ein roter Sektor zeigt die verbleibende Zeit über eine Stunde. Über 60 Minuten legt sich eine zweite, dunkelrote Scheibe darüber (bis 120 Minuten). Sie lässt sich <strong>skalieren</strong> (Griff) und per <strong>Klick</strong> blendet sie die Zifferanzeige ein/aus.</p>
+            <p>Im Menü aktivierbar, zeigt er die verbleibende Zeit anhand eines roten Sektors. Über 60 Minuten legt sich eine zweite, dunkelrote Scheibe darüber (bis 120 Minuten). Sie lässt sich <strong>skalieren</strong> (Griff) und per <strong>Klick</strong> blendet sie die Zifferanzeige ein/aus.</p>
 
             <h2>Timer verketten</h2>
             <p>Mit der Option <strong>«Timer verketten»</strong> startet das Ende eines Timers automatisch den nächsten (in der Anzeigereihenfolge). Wartende Timer zeigen <strong>«Start (autom.)»</strong>. Ideal für eine Abfolge (Aufwärmen → Übung → Pause…). Per Drag-and-drop legst du die Reihenfolge der Kette fest.</p>
 
+            <h2>Zeitplanung</h2>
+            <p>Mit der Option <strong>«Zeitplanung»</strong> zeigt jeder nicht gestartete Timer eine <strong>Uhr</strong>-Taste (rechts neben START), die ein Fenster öffnet, um eine <strong>automatische Startzeit</strong> festzulegen (sekundengenau). Die START-Taste zeigt dann <strong>«Start um HH:MM:SS»</strong>, und der Timer startet zur angegebenen Zeit von selbst. Die Planung ist <strong>täglich</strong>: Sie wiederholt sich jeden Tag zur selben Zeit, solange die Seite geöffnet bleibt.</p>
+
             <h2>Einen Timer ausblenden</h2>
-            <p>Über das Kreuz <strong>×</strong> kannst du <strong>ausblenden</strong> statt löschen (ein laufender Timer kann nicht ausgeblendet werden). Ein ausgeblendeter Timer wird zu einem kleinen Rechteck; ein Klick stellt ihn wieder her. Die Option <strong>«Beendete Timer ausblenden»</strong> blendet jeden Timer nach Ablauf automatisch aus. Ein ausgeblendeter Timer, den die Kette starten soll, erscheint automatisch wieder.</p>
+            <p>Über das Kreuz <strong>×</strong> kannst du einen Timer löschen oder <strong>ausblenden</strong> (ein laufender Timer kann nicht ausgeblendet werden). Ein ausgeblendeter Timer wird zu einem kleinen Rechteck; ein Klick stellt ihn wieder her. Die Option <strong>«Beendete Timer ausblenden»</strong> blendet jeden Timer nach Ablauf automatisch aus. Ein ausgeblendeter Timer, dessen Start geplant ist, erscheint automatisch wieder.</p>
 
             <h2>Die Uhr</h2>
-            <p>Oben eine optionale Uhr: <strong>digital</strong>, <strong>analog SBB</strong>, beide oder keine. Klick zum Wechseln der Modi, oder Auswahl im Menü. Über den Griff skalierbar.</p>
+            <p>Oben eine optionale Uhr: <strong>digital</strong>, <strong>analog</strong>, beide oder keine. Klick zum Wechseln der Modi, oder Auswahl im Menü. Über den Griff skalierbar. Eine unabhängige Uhr gibt es auch im Reiter <strong>Notizen</strong>: eine Schaltfläche in der Symbolleiste zeigt sie oben rechts an.</p>
 
             <h2>Der Reiter Notizen</h2>
-            <p>Neben «Timers» ein <strong>Texteditor</strong> mit Formatierung (Titel, Fett, Listen, Zitate) zum Vorbereiten von Anweisungen. Unabhängig zoombar.</p>
+            <p>Der Reiter Notizen zeigt einen Text an. Der Bearbeitungsmodus wird durch Klicken darauf aktiviert.</p>
 
             <h2>Einstellungen (Menü ⋮)</h2>
-            <p>Schwelle für die Sekundenanzeige, Alarmdauer, Zeit der +X-Sek-Taste, Uhrmodus, <strong>Tasten ausblenden</strong> (erscheinen nur beim Überfahren / Berühren), <strong>visueller Timer</strong>, <strong>Verkettung</strong>, <strong>beendete Timer ausblenden</strong> und die <strong>Sprache</strong> (Französisch, Deutsch, Englisch).</p>
+            <p>Schwelle für die Sekundenanzeige, Alarmdauer, Zeit der +X-Sek-Taste, Uhrmodus, dann die Optionen: <strong>visueller Timer</strong>, <strong>Timer verketten</strong>, <strong>Zeitplanung</strong>, <strong>globale Tasten ausblenden</strong> (erscheinen nur beim Überfahren / Berühren), <strong>Timer-Tasten ausblenden</strong> (ebenso, für den überfahrenen Timer), <strong>beendete Timer ausblenden</strong> und die <strong>Sprache</strong> (Französisch, Deutsch, Englisch).</p>
 
             <h2>Speichern und teilen</h2>
             <p>Alles wird automatisch gespeichert. Im Menü:</p>
             <ul>
                 <li><strong>Exportieren / Importieren</strong> einer vollständigen Konfiguration (<code>.json</code>-Datei) — du kannst auch eine Datei ins Fenster ziehen;</li>
                 <li><strong>Link teilen</strong>: kodiert die gesamte Konfiguration in eine URL;</li>
-                <li><strong>Zum letzten Import zurückkehren</strong>: wendet die zuletzt importierte Konfiguration erneut an (nützlich als Lektions-«Vorlage»);</li>
+                <li><strong>Zur importierten Konfiguration zurückkehren</strong>: wendet die zuletzt importierte Konfiguration erneut an (nützlich als «Vorlage»);</li>
                 <li><strong>Zurücksetzen</strong>: löscht alles.</li>
             </ul>
             <p><strong>Tipp:</strong> Hänge <code>&force=1</code> an einen Freigabe-Link an (der bereits <code>?config=…</code> enthält), damit die Konfiguration <strong>ohne Bestätigung</strong> importiert wird. Praktisch für einen Link, den man regelmässig öffnet oder verteilt. Funktioniert auch mit <code>?configUrl=…</code>.</p>
 
             <h2>Gut zu wissen</h2>
-            <p>Der Bildschirm <strong>bleibt an</strong>, solange ein Timer läuft (nützlich bei Projektion). Die App lässt sich als <strong>Anwendung</strong> installieren (Startbildschirm / Desktop) und läuft im <strong>Vollbild</strong>. Die Anzeige passt sich an iPad und Mobilgeräte an.</p>
+            <p>Der Bildschirm <strong>bleibt an</strong>, solange ein Timer läuft (nützlich bei Projektion). Die App lässt sich als <strong>Anwendung</strong> installieren (Startbildschirm / Desktop) und läuft im <strong>Vollbild</strong>.</p>
 
             <h2>Über</h2>
             <p>© 2026 Fabrice Bodmer. Entwickelt mit Unterstützung von Claude (Anthropic).</p>
@@ -4236,43 +4908,46 @@
 
             <h2>Creating and managing a timer</h2>
             <p>The <strong>+</strong> button (bottom right) opens the creation window: a name (optional) and a duration in hours / minutes / seconds. Each timer appears as a card.</p>
-            <p>On a card, click directly to edit the <strong>duration</strong>, the <strong>name</strong>, or the <strong>start time</strong> (once started). Other actions: <strong>duplicate</strong>, <strong>delete / hide</strong> (× cross), and clicking the remaining time hides or shows the seconds.</p>
+            <p>On a card, click directly to edit the <strong>duration</strong>, the <strong>name</strong>, or the <strong>start time</strong> (once started). Other actions: <strong>duplicate</strong>, <strong>delete / hide</strong> (× cross), and clicking the remaining time shows or hides the seconds, except during the final minutes (configurable time).</p>
 
             <h2>Start, pause, stop</h2>
-            <p>Each card has its buttons: <strong>START</strong>, then <strong>PAUSE</strong> / <strong>RESUME</strong> and <strong>STOP</strong>. The <strong>+30 s</strong> button adds time on the fly (adjustable in the menu), and <strong>MUTE</strong> silences this timer's alarm.</p>
-            <p>Bottom right, three floating buttons act on <strong>all</strong> timers: start all (▶), pause all (⏸), stop all (◼, with confirmation). Next to them, the <strong>zoom</strong> buttons enlarge or shrink the grid.</p>
+            <p>Each card has its buttons: <strong>START</strong>, then <strong>PAUSE</strong> / <strong>RESUME</strong> and <strong>RESET</strong>. The <strong>+30 s</strong> button adds time on the fly (adjustable in the menu), and <strong>MUTE</strong> silences this timer's alarm.</p>
+            <p>Bottom right, floating buttons act on <strong>all</strong> timers: a single <strong>play/pause</strong> button (▶ to start or resume all, ⏸ to pause all, depending on state) and a <strong>RESET</strong> button (↺) that resets every timer. Next to them, the <strong>zoom</strong> buttons enlarge or shrink the grid. The global start only launches visible (non-hidden) timers.</p>
             <p>When a timer ends, an alarm sounds. If a delay is set ("Alarm duration"), the timer then returns to its initial state on its own.</p>
 
             <h2>The visual timer</h2>
-            <p>Enabled from the menu, it adds a Time Timer-style disc to each card: a red sector shows the time remaining over one hour. Beyond 60 minutes, a second dark-red disc overlays it (up to 120 minutes). You can <strong>resize</strong> it (handle) and <strong>click it</strong> to hide/show the numeric countdown.</p>
+            <p>Enabled from the menu, it shows the remaining time as a red sector. Beyond 60 minutes, a second dark-red disc overlays it (up to 120 minutes). You can <strong>resize</strong> it (handle) and <strong>click it</strong> to hide/show the numeric countdown.</p>
 
             <h2>Chaining timers</h2>
             <p>With the <strong>"Chain timers"</strong> option, finishing a timer automatically starts the next one (in display order). Waiting timers show <strong>"Auto start"</strong>. Ideal for a sequence (warm-up → exercise → break…). Drag-and-drop of the cards defines the chain order.</p>
 
+            <h2>Scheduled start</h2>
+            <p>With the <strong>"Scheduled start"</strong> option, every not-started timer shows a <strong>clock</strong> button (to the right of START) that opens a window to set an <strong>automatic start time</strong> (to the second). The START button then shows <strong>"Start at HH:MM:SS"</strong>, and the timer launches by itself at that time. The schedule is <strong>daily</strong>: it repeats every day at the same time as long as the page stays open.</p>
+
             <h2>Hiding a timer</h2>
-            <p>Via the <strong>×</strong> cross, you can choose to <strong>hide</strong> rather than delete (a running timer cannot be hidden). A hidden timer becomes a small rectangle; a click restores it. The <strong>"Hide finished timers"</strong> option automatically hides each timer once it has elapsed. A hidden timer that the chain needs to start reappears automatically.</p>
+            <p>Via the <strong>×</strong> cross, you can choose to delete or <strong>hide</strong> a timer (a running timer cannot be hidden). A hidden timer becomes a small rectangle; a click restores it. The <strong>"Hide finished timers"</strong> option automatically hides each timer once it has elapsed. A hidden timer whose start is scheduled reappears automatically.</p>
 
             <h2>The clock</h2>
-            <p>At the top, an optional clock: <strong>digital</strong>, <strong>analog SBB</strong>, both, or none. Click to cycle through modes, or choose in the menu. Resizable via its handle.</p>
+            <p>At the top, an optional clock: <strong>digital</strong>, <strong>analog</strong>, both, or none. Click to cycle through modes, or choose in the menu. Resizable via its handle. An independent clock is also available in the <strong>Notes</strong> tab: a toolbar button shows it in the top-right corner.</p>
 
             <h2>The Notes tab</h2>
-            <p>Next to "Timers", a <strong>text editor</strong> with formatting (headings, bold, lists, quotes) to prepare instructions. Independently zoomable.</p>
+            <p>The Notes tab displays a text. Edit mode is activated by clicking it.</p>
 
             <h2>Settings (menu ⋮)</h2>
-            <p>Seconds-display threshold, alarm duration, +Xs button time, clock mode, <strong>hide buttons</strong> (they only appear on hover / touch), <strong>visual timer</strong>, <strong>chaining</strong>, <strong>hide finished timers</strong>, and the <strong>language</strong> (French, German, English).</p>
+            <p>Seconds-display threshold, alarm duration, +Xs button time, clock mode, then the options: <strong>visual timer</strong>, <strong>chain timers</strong>, <strong>scheduled start</strong>, <strong>hide global buttons</strong> (they only appear on hover / touch), <strong>hide timer buttons</strong> (likewise, for the hovered timer), <strong>hide finished timers</strong>, and the <strong>language</strong> (French, German, English).</p>
 
             <h2>Saving and sharing</h2>
             <p>Everything is saved automatically. In the menu:</p>
             <ul>
                 <li><strong>Export / Import</strong> a complete configuration (<code>.json</code> file) — you can also drag-and-drop a file onto the window;</li>
                 <li><strong>Share link</strong>: encodes the whole configuration into a URL;</li>
-                <li><strong>Revert to last import</strong>: re-applies the last imported configuration (useful as a lesson "template");</li>
+                <li><strong>Revert to imported configuration</strong>: re-applies the last imported configuration (useful as a "template");</li>
                 <li><strong>Reset</strong>: clears everything.</li>
             </ul>
             <p><strong>Tip:</strong> add <code>&force=1</code> to the end of a share link (which already contains <code>?config=…</code>) so the configuration imports <strong>without asking for confirmation</strong>. Handy for a link you open regularly or distribute. This also works with <code>?configUrl=…</code>.</p>
 
             <h2>Good to know</h2>
-            <p>The screen <strong>stays on</strong> while a timer is running (useful when projecting). The app installs as an <strong>application</strong> (home screen / desktop) and runs <strong>full screen</strong>. The display adapts to iPad and mobile.</p>
+            <p>The screen <strong>stays on</strong> while a timer is running (useful when projecting). The app installs as an <strong>application</strong> (home screen / desktop) and runs <strong>full screen</strong>.</p>
 
             <h2>About</h2>
             <p>© 2026 Fabrice Bodmer. Developed with the assistance of Claude (Anthropic).</p>
@@ -4561,6 +5236,21 @@
     }
 
     // --- URL SHARING (config encoded as URL-safe base64) ---
+    // Lightweight checksum (FNV-1a, 32-bit, hex) used to detect a truncated/corrupted
+    // shared link. It is NOT cryptographic — just a fast integrity check so that a link cut
+    // off in transit (by a messaging app, proxy, etc.) is rejected instead of importing a
+    // partial config. Synchronous and dependency-free.
+    function configChecksum(str) {
+        let h = 0x811c9dc5;
+        for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            // 32-bit FNV prime multiply, kept in 32-bit range via Math.imul
+            h = Math.imul(h, 0x01000193);
+        }
+        // Unsigned 32-bit, hex
+        return (h >>> 0).toString(16);
+    }
+
     function encodeBase64UrlSafe(str) {
         const bytes = new TextEncoder().encode(str);
         let bin = '';
@@ -4596,7 +5286,9 @@
         const json = JSON.stringify(config);
         const encoded = encodeBase64UrlSafe(json);
         const base = location.origin + location.pathname;
-        const lien = `${base}?config=${encoded}`;
+        // Append a checksum of the encoded payload so a truncated link can be detected.
+        const ck = configChecksum(encoded);
+        const lien = `${base}?config=${encoded}&ck=${ck}`;
         let copied = false;
         try {
             await navigator.clipboard.writeText(lien);
@@ -4629,11 +5321,18 @@
         const configParam = params.get('config');
         const configUrlParam = params.get('configUrl');
         const forceParam = params.get('force') === '1';
+        const ckParam = params.get('ck');
         if (!configParam && !configUrlParam) return;
         const t = i18n[currentLang];
         try {
             let parsed;
             if (configParam) {
+                // If a checksum is present (newer links), verify the payload wasn't
+                // truncated/corrupted in transit. Older links without 'ck' are still
+                // accepted as-is (no checksum to compare).
+                if (ckParam && configChecksum(configParam) !== ckParam) {
+                    throw new Error('Checksum mismatch (lien tronqué ou corrompu)');
+                }
                 const json = decodeBase64UrlSafe(configParam);
                 parsed = JSON.parse(json);
             } else {
@@ -4705,11 +5404,15 @@
             buttonsHoverOnly = data.buttonsHoverOnly !== undefined ? data.buttonsHoverOnly : false;
             hideTimerButtons = data.hideTimerButtons !== undefined ? data.hideTimerButtons : false;
             chainTimers = data.chainTimers !== undefined ? data.chainTimers : false;
+            autoStartTimers = data.autoStartTimers !== undefined ? data.autoStartTimers : false;
             hideFinished = data.hideFinished !== undefined ? data.hideFinished : false;
             showVisualTimer = data.showVisualTimer !== undefined ? data.showVisualTimer : (data.showTimeTimer !== undefined ? data.showTimeTimer : false);
             hideTimeWithVisualTimer = data.hideTimeWithVisualTimer !== undefined ? data.hideTimeWithVisualTimer : false;
             visualTimerScale = data.visualTimerScale !== undefined ? data.visualTimerScale : (data.timeTimerScale !== undefined ? data.timeTimerScale : 1.35);
             clockMode = data.clockMode || 'digital';
+            notesClockVisible = data.notesClockVisible !== undefined ? data.notesClockVisible : true;
+            notesClockMode = data.notesClockMode || 'both';
+            notesClockScale = data.notesClockScale !== undefined ? data.notesClockScale : 1.4;
             // Migration : si l'ancienne forme (Set d'IDs) existe, on prend "true" si non vide
             if (data.showStartTime !== undefined) {
                 showStartTime = data.showStartTime;
@@ -4731,6 +5434,7 @@
                     // before the pause feature was added.
                     if (d.pausedAt === undefined) d.pausedAt = null;
                     if (d.hidden === undefined) d.hidden = false;
+                    if (d.scheduledTimeOfDay === undefined) d.scheduledTimeOfDay = null;
                     timersList.push(d);
                     createCardHTML(d);
                     
@@ -4779,7 +5483,8 @@
                 extraSecs: 0,
                 muted: false,
                 pausedAt: null,
-                hidden: false
+                hidden: false,
+                scheduledTimeOfDay: null
             };
             timersList.push(defaultTimer);
             createCardHTML(defaultTimer);
@@ -4799,6 +5504,15 @@
         applyHideTimerButtonsMode();
         const chainTimersCheckbox = document.getElementById('chainTimersCheckbox');
         if (chainTimersCheckbox) chainTimersCheckbox.checked = chainTimers;
+        const autoStartTimersCheckbox = document.getElementById('autoStartTimersCheckbox');
+        if (autoStartTimersCheckbox) autoStartTimersCheckbox.checked = autoStartTimers;
+        // Seed the last-fired map with today's most-recent occurrences so we don't fire
+        // retroactively for timers whose scheduled time already passed before the page
+        // was opened. New crossings (later today or tomorrow) will fire normally.
+        seedSchedulesAtLoad();
+        // If there are pending schedules and the option is on, start the scheduled tick.
+        refreshScheduledTick();
+        refreshAudioUnlockBanner();
         const hideFinishedCheckbox = document.getElementById('hideFinishedCheckbox');
         if (hideFinishedCheckbox) hideFinishedCheckbox.checked = hideFinished;
         const visualTimerCheckbox = document.getElementById('visualTimerCheckbox');
@@ -4838,6 +5552,7 @@
         // 7. Initialize the richtext editor (toolbar + content)
         attachRichtextToolbar();
         loadRichtext();
+        updateNotesClockButton();
 
         // 8. Attacher le gestionnaire d'import de fichier
         const importInput = document.getElementById('importFileInput');
